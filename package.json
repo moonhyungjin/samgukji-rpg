@@ -1,0 +1,23 @@
+{
+  "name": "samgukji-rpg",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "tools/*"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p packages/battle-engine && tsc -p packages/game-data && tsc -p tools/sim && tsc -p apps/balance-lab",
+    "sim": "npm run start -w @samgukji/sim --",
+    "lab": "npm run dev -w @samgukji/balance-lab --",
+    "lab:build": "npm run build -w @samgukji/balance-lab"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

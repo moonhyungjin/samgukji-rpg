@@ -1,0 +1,48 @@
+import type { BalanceConfig, Family, GameData, LineupMode, RoleMode, TargetPolicy } from '@samgukji/battle-engine';
+
+export interface SlotEntry {
+  characterId: string;
+  /** 비어 있으면 캐릭터의 기본 군단 레벨 */
+  level?: number;
+}
+
+/** 편성 슬롯 6칸. 0~2는 전열, 3~5는 후열. 빈 칸은 null */
+export type Slots = (SlotEntry | null)[];
+
+export interface SimSettings {
+  iterations: number;
+  seed: number;
+  roles: RoleMode;
+  lineups: LineupMode;
+  targetPolicy: TargetPolicy;
+  /** 수치를 고치면 잠시 뒤 자동으로 다시 돌린다 */
+  autoRun: boolean;
+  autoRunIterations: number;
+}
+
+export interface FamilySurvivalTarget {
+  enabled: boolean;
+  target: number;
+  tolerance: number;
+}
+
+/** 밸런스 목표 지표. 결과가 이 범위를 벗어나면 경고한다. */
+export interface TargetSettings {
+  attackerWinRate: [number, number];
+  averageRounds: [number, number];
+  /** 무작위 편성에서만 평가 */
+  familyWinRate: [number, number];
+  characterWinRate: [number, number];
+  /** 공격 스킬 평균 피해 ÷ 공격 스킬 전체 평균 */
+  skillDamageRatio: [number, number];
+  familySurvival: Record<Family, FamilySurvivalTarget>;
+}
+
+export interface LabState {
+  data: GameData;
+  balance: BalanceConfig;
+  teamA: Slots;
+  teamB: Slots;
+  sim: SimSettings;
+  targets: TargetSettings;
+}

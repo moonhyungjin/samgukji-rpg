@@ -1,0 +1,13 @@
+{
+  "name": "@samgukji/sim",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/run.ts"
+  },
+  "dependencies": {
+    "@samgukji/battle-engine": "*",
+    "@samgukji/game-data": "*"
+  }
+}

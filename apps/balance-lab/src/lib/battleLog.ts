@@ -1,0 +1,45 @@
+import type { BattleResult, GameData } from '@samgukji/battle-engine';
+import { DECIDED_BY_LABEL, END_CAUSE_LABEL } from './format';
+
+/** 엔진 이벤트를 사람이 읽는 로그로 바꾼다. result.events가 있어야 한다. */
+export function formatBattleLog(result: BattleResult, data: GameData): string[] {
+  const names = new Map(result.units.map((u) => [u.uid, `${u.side === 'attacker' ? '공' : '방'}:${u.name}`]));
+  const name = (uid: string) => names.get(uid) ?? uid;
+  const sideLabel = (side: 'attacker' | 'defender') => (side === 'attacker' ? '공격측' : '방어측');
+  const lines: string[] = [];
+
+  for (const e of result.events ?? []) {
+    switch (e.type) {
+      case 'roundStart':
+        lines.push(`── 라운드 ${e.round} ──`);
+        break;
+      case 'action':
+        lines.push(
+          e.skillId === 'wait'
+            ? `${name(e.actor)} 대기`
+            : `${name(e.actor)} → ${data.skills[e.skillId]?.name ?? e.skillId} → ${e.target ? name(e.target) : '-'}  (AP ${e.apAfter} 남음)`,
+        );
+        break;
+      case 'damage':
+        lines.push(`    ${e.kind === 'counter' ? '반격' : '피해'} ${e.amount} → ${name(e.target)} 병력 ${e.troopsAfter}`);
+        break;
+      case 'heal':
+        lines.push(`    회복 ${e.amount} → ${name(e.target)} 병력 ${e.troopsAfter}`);
+        break;
+      case 'unitDestroyed':
+        lines.push(`    ✕ ${name(e.unit)} 전멸 (${name(e.by)})`);
+        break;
+      case 'rowAdvance':
+        lines.push(`    ▶ ${sideLabel(e.side)} 후열이 전열로 이동: ${e.units.map(name).join(', ')}`);
+        break;
+      case 'battleEnd':
+        lines.push(
+          `══ 종료: ${sideLabel(e.winner)} 승 (${END_CAUSE_LABEL[e.endCause]}, 판정 ${DECIDED_BY_LABEL[e.decidedBy]}) — ${e.rounds}라운드`,
+        );
+        break;
+      case 'morale':
+        break;
+    }
+  }
+  return lines;
+}
