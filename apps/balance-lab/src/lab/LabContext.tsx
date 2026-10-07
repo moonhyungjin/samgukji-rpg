@@ -6,7 +6,7 @@ import type { LabState } from './types';
 
 // 기본 데이터가 바뀌면 저장 키를 올린다. 이전 저장값이 새 기본값을 가리지 않도록 이전 저장값은 쓰지 않는다.
 // v2: 사기 5:5·피해 영향 없음 / v3: 병력 배율(풍수사 0.6, 책사·기병 0.8), 곽가 도사, 보병 가드, 기병 전열 공격
-const STORAGE_KEY = 'samgukji-balance-lab-v4';
+const STORAGE_KEY = 'samgukji-balance-lab-v12';
 
 const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 
@@ -39,7 +39,7 @@ export function normalizeState(saved: LabState): LabState {
   const defaults = createDefaultState();
   // 이후 추가된 필드를 기본값으로 채운다 (예: 병종의 troopScale)
   const unitTypes = Object.fromEntries(
-    Object.entries(saved.data.unitTypes).map(([id, u]) => [id, { ...u, troopScale: u.troopScale ?? 1 }]),
+    Object.entries(saved.data.unitTypes).map(([id, u]) => [id, { ...u, troopScale: u.troopScale ?? 1, statMods: { attack: 0, defense: 0, intellect: 0, speed: 0, ...u.statMods } }]),
   );
   return {
     ...saved,

@@ -1,7 +1,8 @@
-import type { DecidedBy, EndCause, Family, Side } from '@samgukji/battle-engine';
+import type { BuffStat, DecidedBy, EndCause, Family, Side } from '@samgukji/battle-engine';
 
 export const FAMILY_LABEL: Record<Family, string> = {
   infantry: '보병',
+  shield: '방패병',
   cavalry: '기병',
   archer: '궁병',
   strategist: '책사',
@@ -10,7 +11,9 @@ export const FAMILY_LABEL: Record<Family, string> = {
 };
 
 /** 버프가 올리는 스탯 */
-export const STAT_LABEL: Record<'attack' | 'defense', string> = { attack: '공격', defense: '방어' };
+export const STAT_LABEL: Record<BuffStat, string> = { attack: '공격', defense: '방어', intellect: '지력', speed: '속도' };
+/** 카드 배지용 한 글자 이름 */
+export const STAT_SHORT: Record<BuffStat, string> = { attack: '공', defense: '방', intellect: '지', speed: '속' };
 
 export const SIDE_LABEL: Record<Side, string> = { attacker: '공격측', defender: '방어측' };
 

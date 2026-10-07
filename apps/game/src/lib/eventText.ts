@@ -29,7 +29,11 @@ export function formatEvent(event: BattleEvent, names: ReadonlyMap<string, strin
     case 'heal':
       return `    회복 ${event.amount} → ${name(event.target)} (병력 ${event.troopsAfter})`;
     case 'buff':
-      return `    ${STAT_LABEL[event.stat]} +${event.amount} → ${name(event.target)} (${STAT_LABEL[event.stat]} ${event.value})`;
+      return `    ${event.changes.map((c) => `${STAT_LABEL[c.stat]} +${c.amount}`).join(', ')} → ${name(event.target)}`;
+    case 'barrier':
+      return event.reason === 'gain'
+        ? `    결계 → ${name(event.unit)} (피해 ${event.charges}회 무시)`
+        : `    결계가 피해를 무시 → ${name(event.unit)} (남은 ${event.charges}회)`;
     case 'unitDestroyed':
       return `    ✕ ${name(event.unit)} 전멸`;
     case 'rowAdvance':

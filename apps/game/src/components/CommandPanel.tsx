@@ -5,9 +5,14 @@ import { DECIDED_BY_LABEL, END_CAUSE_LABEL, FAMILY_LABEL, SIDE_LABEL, STAT_LABEL
 /** 대상 버튼에 보여 줄 예상 결과 */
 export function previewText(preview: CommandPreview): string {
   if (preview.kind === 'heal') return `회복 +${preview.amount}`;
-  if (preview.kind === 'buff') return `${STAT_LABEL[preview.stat]} +${preview.amount} (→ ${preview.valueAfter})`;
+  if (preview.kind === 'buff') {
+    const e = preview.effect;
+    if (e.type === 'barrier') return `다음 피해 ${e.charges}회 무시`;
+    const stats = e.pool.map((k) => STAT_LABEL[k]).join('/');
+    return `${stats} 중 무작위 ${e.minCount}~${e.maxCount}가지 +${e.amount}`;
+  }
   if (preview.kind === 'guard') return `막을 확률 ${preview.rateAfter}%`;
-  const parts = [`피해 ${preview.damage}`];
+  const parts = [preview.targetBarrier ? '결계로 피해 무시' : `피해 ${preview.damage}`];
   if (preview.targetTroopsAfter === 0) parts.push('격파');
   if (preview.counter > 0) parts.push(`반격 ${preview.counter}`);
   // 같은 열 가드 유닛이 대신 맞을 수 있으면 알려 준다 (피해와 반격은 가드가 없을 때의 값이다)

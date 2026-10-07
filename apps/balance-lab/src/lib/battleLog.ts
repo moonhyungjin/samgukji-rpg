@@ -1,6 +1,8 @@
 import type { BattleResult, GameData } from '@samgukji/battle-engine';
 import { DECIDED_BY_LABEL, END_CAUSE_LABEL } from './format';
 
+const STAT_NAME = { attack: '공격', defense: '방어', intellect: '지력', speed: '속도' } as const;
+
 /** 엔진 이벤트를 사람이 읽는 로그로 바꾼다. result.events가 있어야 한다. */
 export function formatBattleLog(result: BattleResult, data: GameData): string[] {
   const names = new Map(result.units.map((u) => [u.uid, `${u.side === 'attacker' ? '공' : '방'}:${u.name}`]));
@@ -35,7 +37,10 @@ export function formatBattleLog(result: BattleResult, data: GameData): string[] 
         lines.push(`    회복 ${e.amount} → ${name(e.target)} 병력 ${e.troopsAfter}`);
         break;
       case 'buff':
-        lines.push(`    ${e.stat === 'attack' ? '공격' : '방어'} +${e.amount} → ${name(e.target)} (${e.value})`);
+        lines.push(`    ${e.changes.map((c) => `${STAT_NAME[c.stat]} +${c.amount}`).join(', ')} → ${name(e.target)}`);
+        break;
+      case 'barrier':
+        lines.push(e.reason === 'gain' ? `    결계 → ${name(e.unit)} (피해 ${e.charges}회 무시)` : `    결계가 피해를 무시 → ${name(e.unit)} (남은 ${e.charges}회)`);
         break;
       case 'unitDestroyed':
         lines.push(`    ✕ ${name(e.unit)} 전멸 (${name(e.by)})`);

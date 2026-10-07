@@ -1,6 +1,6 @@
-import { maxTroops } from './stats';
+import { maxTroops, totalAp } from './stats';
 import type { Rng } from './rng';
-import type { BalanceConfig, CharacterState, GameData, LineupEntry, Row, Side } from './types';
+import type { BalanceConfig, CharacterState, GameData, LineupEntry, Row, Side, Stats, UnitTypeData } from './types';
 
 export const ROW_CAPACITY = 3;
 export const MAX_UNITS_PER_SIDE = 6;
@@ -29,6 +29,14 @@ export function generateRandomLineup(data: GameData, rng: Rng, size = MAX_UNITS_
   return lineup;
 }
 
+/** 캐릭터 스탯에 병종 보정을 더한다 (0 아래로는 내려가지 않는다) */
+export function applyStatMods(base: Stats, mods: UnitTypeData['statMods']): Stats {
+  const stats = { ...base };
+  if (!mods) return stats;
+  for (const key of Object.keys(mods) as (keyof typeof mods)[]) stats[key] = Math.max(0, stats[key] + (mods[key] ?? 0));
+  return stats;
+}
+
 /** 편성 → 전투 상태. 진영당 1~6군단, 열당 최대 3군단. */
 export function buildUnits(side: Side, lineup: LineupEntry[], data: GameData, balance: BalanceConfig): CharacterState[] {
   if (lineup.length === 0) throw new Error(`${side} lineup is empty`);
@@ -48,6 +56,8 @@ export function buildUnits(side: Side, lineup: LineupEntry[], data: GameData, ba
 
     const level = entry.level ?? character.level;
     const max = Math.max(1, Math.round(maxTroops(balance, level) * (unitType.troopScale ?? 1)));
+    const stats = applyStatMods(character.stats, unitType.statMods);
+    const maxAp = totalAp(balance, unitType.baseAp, stats.action);
     return {
       uid: `${side}:${index}`,
       characterId: character.id,
@@ -58,14 +68,16 @@ export function buildUnits(side: Side, lineup: LineupEntry[], data: GameData, ba
       unitType: unitType.id,
       family: unitType.family,
       traitIds: [...unitType.traitIds],
-      stats: { ...character.stats },
+      stats,
       level,
       maxTroops: max,
       troops: max,
-      ap: character.ap,
-      maxAp: character.ap,
+      ap: maxAp,
+      maxAp,
       guardRate: unitType.guard?.start ?? 0,
-      buffs: { attack: 0, defense: 0 },
+      buffs: { attack: 0, defense: 0, intellect: 0, speed: 0 },
+      buffUses: {},
+      barrier: 0,
       isDead: false,
     };
   });

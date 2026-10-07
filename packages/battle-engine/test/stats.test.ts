@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRng, deriveSeed, effectiveStat, maxTroops, moraleMultiplier, troopFactor } from '../src';
+import { applyStatMods, apFromAction, createRng, totalAp, deriveSeed, effectiveStat, maxTroops, moraleMultiplier, troopFactor } from '../src';
 import { testBalance } from './fixtures';
 
 describe('rng', () => {
@@ -65,5 +65,46 @@ describe('moraleMultiplier', () => {
     expect(moraleMultiplier(testBalance, 50)).toBeCloseTo(1);
     expect(moraleMultiplier(testBalance, 100)).toBeCloseTo(1.1);
     expect(moraleMultiplier(testBalance, 0)).toBeCloseTo(0.9);
+  });
+});
+
+describe('병종 스탯 보정 (applyStatMods)', () => {
+  const base = { attack: 8, defense: 9, intellect: 4, speed: 5, action: 8, diplomacy: 5, politics: 5, charm: 5 };
+
+  it('캐릭터 기본 스탯에 보정을 더한다', () => {
+    expect(applyStatMods(base, { attack: -1, defense: 1, speed: -1 })).toMatchObject({ attack: 7, defense: 10, intellect: 4, speed: 4 });
+  });
+
+  it('보정이 없으면 그대로이고, 원본은 바뀌지 않는다', () => {
+    expect(applyStatMods(base, undefined)).toEqual(base);
+    applyStatMods(base, { attack: 3 });
+    expect(base.attack).toBe(8);
+  });
+
+  it('0 아래로는 내려가지 않는다', () => {
+    expect(applyStatMods({ ...base, speed: 0 }, { speed: -1 }).speed).toBe(0);
+  });
+});
+
+describe('행동력 → 추가 AP (apFromAction), 총 AP (totalAp)', () => {
+  it('행동력 2마다 추가 AP 1 (올림)', () => {
+    const ap = (action: number) => apFromAction(testBalance, action);
+    expect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(ap)).toEqual([0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
+  });
+
+  it('행동력 상한(cap)을 넘는 값은 세지 않는다', () => {
+    expect(apFromAction(testBalance, 14)).toBe(5);
+  });
+
+  it('balance.action으로 비율과 상한을 바꿀 수 있다', () => {
+    const b = { ...testBalance, action: { perAp: 1, cap: 8 } };
+    expect(apFromAction(b, 3)).toBe(3);
+    expect(apFromAction(b, 12)).toBe(8);
+  });
+
+  it('총 AP = 병종 기본 AP + 추가 AP, 최소 1', () => {
+    expect(totalAp(testBalance, 2, 3)).toBe(4); // 방패병 기본 2 + 행동력 3(+2)
+    expect(totalAp(testBalance, undefined, 6)).toBe(3);
+    expect(totalAp(testBalance, 0, 0)).toBe(1);
   });
 });

@@ -1,7 +1,7 @@
 import { Container, Graphics, Text } from 'pixi.js';
-import type { Row } from '@samgukji/battle-engine';
+import type { BuffStat, Row } from '@samgukji/battle-engine';
 import type { ViewUnit } from '../battle/viewState';
-import { FAMILY_LABEL } from '../lib/labels';
+import { FAMILY_LABEL, STAT_SHORT } from '../lib/labels';
 import { CARD_H, CARD_W, FAMILY_COLOR, FAMILY_GLYPH, FONT, SIDE_COLOR, slotPosition } from './theme';
 import { easeOut, tween } from './tween';
 import type { Clock } from './tween';
@@ -33,7 +33,8 @@ export class UnitSprite {
   private readonly guardText: Text;
   private guardRate = 0;
   private readonly buffText: Text;
-  private buffs = { attack: 0, defense: 0 };
+  private buffs: Record<BuffStat, number> = { attack: 0, defense: 0, intellect: 0, speed: 0 };
+  private barrier = 0;
   private dead = false;
 
   constructor(
@@ -77,11 +78,12 @@ export class UnitSprite {
     this.guardText.anchor.set(1, 0.5);
     this.guardText.position.set(CARD_W - 17, 100);
 
-    // 버프 표시 (이름 줄 오른쪽). 올라간 스탯이 없으면 비어 있다
-    this.buffText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 12, fill: 0xffd166, fontWeight: 'bold' } });
-    this.buffText.anchor.set(1, 0);
-    this.buffText.position.set(CARD_W - 10, 13);
+    // 버프 표시 (AP 칸 오른쪽, 가드 배지와 같은 줄). 올라간 스탯이 없으면 비어 있다
+    this.buffText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 11, fill: 0xffd166, fontWeight: 'bold' } });
+    this.buffText.anchor.set(0, 0);
+    this.buffText.position.set(70, 93);
     this.buffs = { ...unit.buffs };
+    this.barrier = unit.barrier;
 
     this.root.addChild(
       bg, portrait, glyph, name, subtitle, this.troopsText, this.hpBar, this.pips,
@@ -124,15 +126,23 @@ export class UnitSprite {
   }
 
   /** 버프로 올라간 스탯 표시를 갱신한다 */
-  setBuffs(stat: 'attack' | 'defense', amount: number): void {
+  setBuffs(stat: BuffStat, amount: number): void {
     this.buffs[stat] += amount;
+    if (!this.gone) this.drawBuffs();
+  }
+
+  /** 남은 피해 무시(결계) 횟수 표시를 갱신한다 */
+  setBarrier(charges: number): void {
+    this.barrier = charges;
     if (!this.gone) this.drawBuffs();
   }
 
   private drawBuffs(): void {
     const parts: string[] = [];
-    if (this.buffs.attack > 0) parts.push(`공+${this.buffs.attack}`);
-    if (this.buffs.defense > 0) parts.push(`방+${this.buffs.defense}`);
+    if (this.barrier > 0) parts.push(`결계${this.barrier}`);
+    for (const key of ['attack', 'defense', 'intellect', 'speed'] as const) {
+      if (this.buffs[key] > 0) parts.push(`${STAT_SHORT[key]}+${this.buffs[key]}`);
+    }
     this.buffText.text = parts.join(' ');
   }
 

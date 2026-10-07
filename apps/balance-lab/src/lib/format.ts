@@ -2,6 +2,7 @@ import type { DecidedBy, EndCause, Family } from '@samgukji/battle-engine';
 
 export const FAMILY_LABEL: Record<Family, string> = {
   infantry: '보병',
+  shield: '방패병',
   cavalry: '기병',
   archer: '궁병',
   strategist: '책사',

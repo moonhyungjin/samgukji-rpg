@@ -11,6 +11,7 @@ export const FONT = 'Malgun Gothic, Apple SD Gothic Neo, Noto Sans KR, sans-seri
 
 export const FAMILY_COLOR: Record<Family, number> = {
   infantry: 0x3f7fbf,
+  shield: 0x6c7a99,
   cavalry: 0xc9703a,
   archer: 0x4aa86b,
   strategist: 0x8d5fc4,
@@ -20,6 +21,7 @@ export const FAMILY_COLOR: Record<Family, number> = {
 
 export const FAMILY_GLYPH: Record<Family, string> = {
   infantry: '보',
+  shield: '방',
   cavalry: '기',
   archer: '궁',
   strategist: '책',

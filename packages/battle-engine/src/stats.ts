@@ -30,3 +30,15 @@ export function troopFactor(balance: BalanceConfig, currentTroops: number): numb
 export function moraleMultiplier(balance: BalanceConfig, share: number): number {
   return 1 + (balance.morale.maxEffect * (share - 50)) / 50;
 }
+
+/** 행동력 스탯 → 캐릭터가 얻는 추가 AP. 행동력 2마다 1 (올림). 행동력 0이면 0 */
+export function apFromAction(balance: BalanceConfig, action: number): number {
+  const perAp = balance.action?.perAp ?? 2;
+  const cap = balance.action?.cap ?? 10;
+  return Math.ceil(Math.min(Math.max(action, 0), cap) / perAp);
+}
+
+/** 전투 총 AP = 병종 기본 AP + 행동력으로 얻는 추가 AP (최소 1) */
+export function totalAp(balance: BalanceConfig, baseAp: number | undefined, action: number): number {
+  return Math.max(1, (baseAp ?? 0) + apFromAction(balance, action));
+}

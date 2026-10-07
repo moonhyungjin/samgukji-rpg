@@ -1,12 +1,12 @@
 // 전투 엔진의 공용 타입. React/PixiJS/DOM에 의존하지 않는다.
 
-export const FAMILIES = ['infantry', 'cavalry', 'archer', 'strategist', 'taoist', 'geomancer'] as const;
+export const FAMILIES = ['infantry', 'shield', 'cavalry', 'archer', 'strategist', 'taoist', 'geomancer'] as const;
 export type Family = (typeof FAMILIES)[number];
 
 export type Row = 'front' | 'back';
 export type Side = 'attacker' | 'defender';
 
-export type StatKey = 'attack' | 'defense' | 'intellect' | 'speed' | 'diplomacy' | 'politics' | 'charm';
+export type StatKey = 'attack' | 'defense' | 'intellect' | 'speed' | 'action' | 'diplomacy' | 'politics' | 'charm';
 export type Stats = Record<StatKey, number>;
 
 /** 적 대상 선택 규칙. front-first: 전열이 남아 있으면 전열만, any: 전열/후열 모두 */
@@ -30,17 +30,24 @@ export interface SkillData {
    * 책략처럼 막을 수 없는 공격은 false. 생략하면 false.
    */
   guardable?: boolean;
+  /** 물리 공격이 대상의 방어 스탯을 이만큼 무시한다 (0 미만으로는 내려가지 않는다). 생략하면 0 */
+  ignoreDefense?: number;
   /** kind가 buff일 때: 아군 하나의 스탯을 전투가 끝날 때까지 올린다 */
   buff?: BuffEffect;
 }
 
-export interface BuffEffect {
-  stat: 'attack' | 'defense';
-  /** 한 번에 오르는 스탯 */
-  amount: number;
-  /** 한 아군에게 쌓을 수 있는 횟수 (생략하면 1) */
-  maxStacks?: number;
-}
+/** 버프로 오를 수 있는 스탯 */
+export type BuffStat = 'attack' | 'defense' | 'intellect' | 'speed';
+
+/**
+ * 버프 효과 (kind가 buff인 스킬).
+ * stats: 아군 하나의 스탯 중 무작위 minCount~maxCount가지(pool에서 중복 없이)를 amount만큼 전투가 끝날 때까지 올린다. (책사)
+ * barrier: 아군 하나가 다음 charges번의 피해를 무시한다. (도사, 전국란스의 음양사 같은 느낌)
+ * maxStacks: 한 아군에게 이 스킬을 쓸 수 있는 횟수 (생략하면 1)
+ */
+export type BuffEffect =
+  | { type: 'stats'; pool: BuffStat[]; minCount: number; maxCount: number; amount: number; maxStacks?: number }
+  | { type: 'barrier'; charges: number; maxStacks?: number };
 
 /**
  * 가드(방패) 설정. 가드 확률은 "같은 열 아군을 대신 맞아줄 확률"이며 %p 단위로 쌓고 100을 넘을 수 있다.
@@ -53,6 +60,8 @@ export interface GuardConfig {
   gain: number;
   /** 한 번 막을 때 줄어드는 확률 */
   decay: number;
+  /** 가드 확률이 0보다 큰 동안(가드 상태) 받는 피해에 곱하는 값. 생략하면 1 (피해 감소 없음) */
+  damageTaken?: number;
 }
 
 /**
@@ -89,6 +98,10 @@ export interface UnitTypeData {
    * 예: 보병 1, 풍수사 0.5 → 같은 레벨에서 풍수사의 최대 병력이 절반이다.
    */
   troopScale?: number;
+  /** 병종 스탯 보정. 캐릭터의 기본 스탯에 더해진다 (0 아래로는 내려가지 않는다). 승급 병종은 자기 보정을 따로 가진다 */
+  /** 병종 기본 AP. 전투 총 AP = 병종 기본 AP + 캐릭터 행동력으로 얻는 추가 AP (생략하면 0) */
+  baseAp?: number;
+  statMods?: Partial<Pick<Stats, 'attack' | 'defense' | 'intellect' | 'speed' | 'action'>>;
   /** 가드를 쓸 수 있는 병종 (스킬 목록에 kind: 'guard' 스킬도 있어야 한다) */
   guard?: GuardConfig;
 }
@@ -99,8 +112,6 @@ export interface CharacterData {
   unitType: string;
   /** 기본 스탯 0~10 (아이템 등으로 초과 가능) */
   stats: Stats;
-  /** 전투 총 행동력 */
-  ap: number;
   /** 기본 군단 레벨 */
   level: number;
 }
@@ -119,6 +130,8 @@ export interface BalanceConfig {
   statCurve: number[];
   /** 스탯 입력 상한 (아이템 보정 하드캡) */
   statCap: number;
+  /** 행동력 스탯 → 추가 AP: ceil(행동력 / perAp), 행동력은 cap(기본 10)까지만 센다. 생략하면 perAp 2, cap 10 */
+  action?: { perAp: number; cap: number };
   damage: {
     attackScale: number;
     /** 물리 피해 경감: 1 / (1 + 방어 × defenseScale) */
@@ -177,7 +190,11 @@ export interface CharacterState {
   /** 같은 열 아군을 대신 맞아줄 확률 (%p). 가드를 못 쓰는 병종은 항상 0 */
   guardRate: number;
   /** 버프로 올라간 스탯 (stats에 이미 반영돼 있다). 쌓인 양을 세는 용도 */
-  buffs: { attack: number; defense: number };
+  buffs: Record<BuffStat, number>;
+  /** 스킬별로 받은 버프 횟수 (maxStacks 판정용) */
+  buffUses: Record<string, number>;
+  /** 남은 피해 무시 횟수. 피해를 입을 때마다 1 줄고 그 피해는 0이 된다 */
+  barrier: number;
   isDead: boolean;
 }
 
@@ -213,7 +230,9 @@ export type BattleEvent =
   /** 가드 확률이 바뀌었다. raise: 가드 커맨드, block: 막은 뒤 감소, reset: 공격해서 해제 */
   | { type: 'guardChange'; round: number; unit: string; rate: number; reason: 'raise' | 'block' | 'reset' }
   /** 버프로 target의 스탯이 올랐다. value는 올라간 뒤의 스탯 */
-  | { type: 'buff'; round: number; source: string; target: string; stat: 'attack' | 'defense'; amount: number; value: number }
+  | { type: 'buff'; round: number; source: string; target: string; changes: { stat: BuffStat; amount: number; value: number }[] }
+  /** 피해 무시 횟수가 바뀌었다. gain: 도사의 결계, block: 피해를 무시했다 (이어지는 damage는 0) */
+  | { type: 'barrier'; round: number; unit: string; charges: number; reason: 'gain' | 'block' }
   | { type: 'morale'; round: number; defenderMorale: number }
   | { type: 'battleEnd'; winner: Side; endCause: EndCause; decidedBy: DecidedBy; rounds: number };
 

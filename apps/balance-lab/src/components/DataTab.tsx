@@ -37,7 +37,7 @@ export function DataTab() {
       const extra = type.extraSkillIds.filter((id) => s.data.skills[id]?.kind !== 'guard');
       let next;
       if (on) {
-        next = { ...type, guard: type.guard ?? { start: 50, gain: 70, decay: 40 }, extraSkillIds: guardSkill ? [...extra, guardSkill.id] : extra };
+        next = { ...type, guard: type.guard ?? { start: 50, gain: 70, decay: 40, damageTaken: 1 }, extraSkillIds: guardSkill ? [...extra, guardSkill.id] : extra };
       } else {
         const { guard: _removed, ...rest } = type;
         next = { ...rest, extraSkillIds: extra };
@@ -122,12 +122,14 @@ export function DataTab() {
             <tr>
               <th>병종</th>
               <th>병력 배율</th>
+              <th>기본 AP</th>
+              <th>스탯 보정 (공 / 방 / 지 / 속)</th>
               <th>시작 배치 가능 열</th>
               <th>대상 규칙</th>
               <th>반격</th>
               <th>일반공격</th>
               <th>특성</th>
-              <th>가드 (시작 / 상승 / 감소, %p)</th>
+              <th>가드 (시작 / 상승 / 감소 %p / 가드 중 받는 피해 배수)</th>
             </tr>
           </thead>
           <tbody>
@@ -138,6 +140,16 @@ export function DataTab() {
                 </td>
                 <td>
                   <NumberField path={`data.unitTypes.${u.id}.troopScale`} step={0.05} min={0.05} />
+                </td>
+                <td>
+                  <NumberField path={`data.unitTypes.${u.id}.baseAp`} min={0} />
+                </td>
+                <td>
+                  <span className="check-group">
+                    {(['attack', 'defense', 'intellect', 'speed'] as const).map((k) => (
+                      <NumberField key={k} path={`data.unitTypes.${u.id}.statMods.${k}`} step={1} />
+                    ))}
+                  </span>
                 </td>
                 <td>
                   <CheckGroup path={`data.unitTypes.${u.id}.allowedRows`} options={ROW_OPTIONS} />
@@ -170,6 +182,7 @@ export function DataTab() {
                       <NumberField path={`data.unitTypes.${u.id}.guard.start`} step={5} min={0} />
                       <NumberField path={`data.unitTypes.${u.id}.guard.gain`} step={5} min={0} />
                       <NumberField path={`data.unitTypes.${u.id}.guard.decay`} step={5} min={0} />
+                      <NumberField path={`data.unitTypes.${u.id}.guard.damageTaken`} step={0.05} min={0} />
                     </span>
                   )}
                 </td>
@@ -191,7 +204,8 @@ export function DataTab() {
               <th>AP 소모</th>
               <th>반격 받음</th>
               <th>가드로 막힘</th>
-              <th>버프 (스탯 / 올리는 양 / 최대 중첩)</th>
+              <th>방어 무시</th>
+              <th>버프</th>
             </tr>
           </thead>
           <tbody>
@@ -231,18 +245,28 @@ export function DataTab() {
                   <CheckField label="막을 수 있음" path={`data.skills.${s.id}.guardable`} />
                 </td>
                 <td>
+                  {s.kind === 'attack' && s.scalesWith === 'attack' ? <NumberField path={`data.skills.${s.id}.ignoreDefense`} step={0.5} min={0} /> : null}
+                </td>
+                <td>
                   {s.kind === 'buff' && s.buff ? (
-                    <>
-                      <SelectField
-                        path={`data.skills.${s.id}.buff.stat`}
-                        options={[
-                          { value: 'attack', label: '공격' },
-                          { value: 'defense', label: '방어' },
-                        ]}
-                      />
-                      <NumberField path={`data.skills.${s.id}.buff.amount`} step={0.5} min={0} />
-                      <NumberField path={`data.skills.${s.id}.buff.maxStacks`} min={1} />
-                    </>
+                    s.buff.type === 'stats' ? (
+                      <span className="check-group">
+                        <small>무작위 가짓수</small>
+                        <NumberField path={`data.skills.${s.id}.buff.minCount`} min={1} />
+                        <NumberField path={`data.skills.${s.id}.buff.maxCount`} min={1} />
+                        <small>올리는 양</small>
+                        <NumberField path={`data.skills.${s.id}.buff.amount`} step={0.5} min={0} />
+                        <small>최대 중첩</small>
+                        <NumberField path={`data.skills.${s.id}.buff.maxStacks`} min={1} />
+                      </span>
+                    ) : (
+                      <span className="check-group">
+                        <small>피해 무시 횟수</small>
+                        <NumberField path={`data.skills.${s.id}.buff.charges`} min={1} />
+                        <small>최대 중첩</small>
+                        <NumberField path={`data.skills.${s.id}.buff.maxStacks`} min={1} />
+                      </span>
+                    )
                   ) : null}
                 </td>
               </tr>
@@ -253,7 +277,7 @@ export function DataTab() {
           "반격 받음"이 켜진 공격(근접)은 대상이 살아 있고 반격할 수 있는 병종이면 공격자도 일부 피해를 입습니다. 원거리 공격은 끕니다.
           "가드로 막힘"이 켜진 공격은 대상과 같은 열의 가드 유닛이 확률로 대신 맞습니다. 책략처럼 막을 수 없는 공격은 끕니다.
           가드는 공격하면 풀리고, 막을 때마다 확률이 줄어듭니다.
-          버프는 아군 하나의 스탯을 전투가 끝날 때까지 올립니다 (병력과 무관). 한 아군에게 쌓을 수 있는 횟수가 "최대 중첩"입니다.
+          버프는 병력과 무관하게 아군 하나를 돕습니다. 스탯형(책사)은 공/방/지/속 중 무작위 몇 가지를 전투가 끝날 때까지 올리고, 피해 무시형(도사)은 다음 피해를 횟수만큼 0으로 만듭니다. "최대 중첩"은 한 아군에게 그 스킬을 쓸 수 있는 횟수입니다.
         </p>
       </section>
     </div>

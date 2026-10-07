@@ -80,9 +80,9 @@ describe('Lab 상태', () => {
     expect(normalized.sim.autoRunIterations).toBe(state.sim.autoRunIterations);
   });
 
-  it('궁병 생존율 20%가 기본 목표로 켜져 있다', () => {
+  it('궁병 생존율 40%가 기본 목표로 켜져 있다', () => {
     const { archer } = createDefaultState().targets.familySurvival;
-    expect(archer).toEqual({ enabled: true, target: 0.2, tolerance: 0.1 });
+    expect(archer).toEqual({ enabled: true, target: 0.4, tolerance: 0.1 });
   });
 });
 

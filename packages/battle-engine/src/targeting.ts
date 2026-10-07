@@ -53,5 +53,5 @@ export function chooseTarget(
 export function canBuff(target: CharacterState, skill: SkillData): boolean {
   const buff = skill.buff;
   if (!buff || target.isDead) return false;
-  return target.buffs[buff.stat] < buff.amount * (buff.maxStacks ?? 1);
+  return (target.buffUses[skill.id] ?? 0) < (buff.maxStacks ?? 1);
 }

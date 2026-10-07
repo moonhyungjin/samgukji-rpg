@@ -12,6 +12,8 @@ import type {
   BattleEvent,
   BattleResult,
   BattleState,
+  BuffEffect,
+  BuffStat,
   CharacterState,
   EndCause,
   GameData,
@@ -49,9 +51,11 @@ export type CommandPreview =
       actorTroopsAfter: number;
       /** 같은 열 가드 유닛이 대신 맞을 확률 (0~1). damage/counter는 가드가 없을 때(원래 대상이 맞을 때)의 값이다 */
       interceptChance: number;
+      /** 원래 대상에게 피해 무시(결계)가 남아 있는가. true면 이 공격은 피해가 0이 된다 */
+      targetBarrier: boolean;
     }
   | { kind: 'heal'; amount: number }
-  | { kind: 'buff'; stat: 'attack' | 'defense'; amount: number; valueAfter: number }
+  | { kind: 'buff'; effect: BuffEffect }
   | { kind: 'guard'; rateAfter: number };
 
 /**
@@ -203,9 +207,7 @@ export class BattleEngine {
     if (skill.kind === 'heal') {
       return { kind: 'heal', amount: Math.min(this.calc.heal(actor, skill), target.maxTroops - target.troops) };
     }
-    if (skill.kind === 'buff' && skill.buff) {
-      return { kind: 'buff', stat: skill.buff.stat, amount: skill.buff.amount, valueAfter: target.stats[skill.buff.stat] + skill.buff.amount };
-    }
+    if (skill.kind === 'buff' && skill.buff) return { kind: 'buff', effect: skill.buff };
     if (skill.kind === 'guard') {
       return { kind: 'guard', rateAfter: actor.guardRate + (data.unitTypes[actor.unitType].guard?.gain ?? 0) };
     }
@@ -236,6 +238,7 @@ export class BattleEngine {
       targetTroopsAfter: remaining,
       actorTroopsAfter: actor.troops - counter,
       interceptChance: 1 - noIntercept,
+      targetBarrier: target.barrier > 0,
     };
   }
 
@@ -346,17 +349,25 @@ export class BattleEngine {
   private performBuff(actor: CharacterState, target: CharacterState, skill: SkillData): void {
     const buff = skill.buff;
     if (!buff) throw new Error(`Skill ${skill.id} has no buff effect`);
-    target.stats[buff.stat] += buff.amount;
-    target.buffs[buff.stat] += buff.amount;
-    this.emit({
-      type: 'buff',
-      round: this.state.round,
-      source: actor.uid,
-      target: target.uid,
-      stat: buff.stat,
-      amount: buff.amount,
-      value: target.stats[buff.stat],
-    });
+    target.buffUses[skill.id] = (target.buffUses[skill.id] ?? 0) + 1;
+
+    if (buff.type === 'barrier') {
+      target.barrier += buff.charges;
+      this.emit({ type: 'barrier', round: this.state.round, unit: target.uid, charges: target.barrier, reason: 'gain' });
+      return;
+    }
+
+    // 스탯 버프: pool에서 무작위로 minCount~maxCount가지를 고른다 (중복 없음)
+    const count = Math.min(buff.pool.length, buff.minCount + Math.floor(this.rng() * (buff.maxCount - buff.minCount + 1)));
+    const pool = [...buff.pool];
+    const changes: { stat: BuffStat; amount: number; value: number }[] = [];
+    for (let i = 0; i < count; i++) {
+      const stat = pool.splice(Math.floor(this.rng() * pool.length), 1)[0];
+      target.stats[stat] += buff.amount;
+      target.buffs[stat] += buff.amount;
+      changes.push({ stat, amount: buff.amount, value: target.stats[stat] });
+    }
+    this.emit({ type: 'buff', round: this.state.round, source: actor.uid, target: target.uid, changes });
   }
 
   // ---------- 가드 ----------
@@ -401,6 +412,12 @@ export class BattleEngine {
 
   /** 피해를 적용하고 실제로 깎인 병력을 돌려준다. 사망/사기 변동도 여기서 처리한다. */
   private inflict(source: CharacterState, target: CharacterState, amount: number, kind: 'attack' | 'counter'): number {
+    // 피해 무시(결계): 피해 한 번을 통째로 0으로 만든다 (반격 피해도 마찬가지)
+    if (amount > 0 && target.barrier > 0) {
+      target.barrier--;
+      amount = 0;
+      this.emit({ type: 'barrier', round: this.state.round, unit: target.uid, charges: target.barrier, reason: 'block' });
+    }
     const applied = Math.min(amount, target.troops);
     target.troops -= applied;
     this.report(source).damageDealt += applied;

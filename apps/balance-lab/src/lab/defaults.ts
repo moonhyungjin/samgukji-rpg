@@ -10,8 +10,8 @@ function clone<T>(value: T): T {
 
 export function createDefaultState(): LabState {
   const familySurvival = Object.fromEntries(
-    // 궁병 생존율 20%가 첫 목표 지표다. 나머지 병종은 필요할 때 켠다.
-    FAMILIES.map((f): [Family, FamilySurvivalTarget] => [f, { enabled: f === 'archer', target: 0.2, tolerance: 0.1 }]),
+    // 궁병 생존율 40%가 첫 목표 지표다. 나머지 병종은 필요할 때 켠다.
+    FAMILIES.map((f): [Family, FamilySurvivalTarget] => [f, { enabled: f === 'archer', target: 0.4, tolerance: 0.1 }]),
   ) as Record<Family, FamilySurvivalTarget>;
 
   return {

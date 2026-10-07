@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BattleEngine, BattleSimulator, createRng, generateRandomLineup, runBattle } from '../src';
+import { apFromAction, BattleEngine, BattleSimulator, createRng, generateRandomLineup, runBattle } from '../src';
 import type { BalanceConfig, BattleInput, LineupEntry } from '../src';
 import { testBalance, testData } from './fixtures';
 
@@ -53,7 +53,7 @@ describe('BattleEngine: 6 vs 6', () => {
       if (e.type === 'action' && e.skillId !== 'wait') used[e.actor] = (used[e.actor] ?? 0) + 1;
     }
     for (const u of result.units) {
-      const maxAp = testData.characters[u.characterId].ap;
+      const maxAp = apFromAction(testBalance, testData.characters[u.characterId].stats.action);
       expect(used[u.uid] ?? 0).toBeLessThanOrEqual(maxAp);
     }
   });

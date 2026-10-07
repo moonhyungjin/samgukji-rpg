@@ -90,18 +90,18 @@ export function createDefaultPolicy(options: DefaultPolicyOptions = {}): Command
 }
 
 /**
- * 버프를 받을 아군. 공격 버프는 물리 공격을 쓰는 아군(공격 스탯이 높은 순), 방어 버프는 전열(방어가 낮은 순)부터.
- * 쓸모가 없는 대상(책략만 쓰는 군단에 공격 버프 등)은 고르지 않는다.
+ * 버프를 받을 아군. 아직 이 스킬을 받지 않은 아군 중에서 고른다.
+ * stats(책사): 주력 공격 스탯(공격 또는 지력)이 가장 높은 아군, barrier(도사): 전열 우선, 방어가 낮은 아군.
+ * AP가 남지 않은 아군은 고르지 않는다 (받아도 쓸 곳이 없다).
  */
 function chooseBuffTarget(actor: CharacterState, state: BattleState, data: GameData, skill: SkillData): CharacterState | null {
   const buff = skill.buff!;
-  const candidates = TargetSelector.getAllies(actor, state).filter((u) => {
-    if (!canBuff(u, skill) || u.ap <= 0) return false;
-    if (buff.stat === 'attack') return data.skills[data.unitTypes[u.unitType].basicSkillId].scalesWith === 'attack';
-    return true;
-  });
+  const candidates = TargetSelector.getAllies(actor, state).filter((u) => canBuff(u, skill) && u.ap > 0);
   if (candidates.length === 0) return null;
-  if (buff.stat === 'attack') return candidates.reduce((best, c) => (c.stats.attack > best.stats.attack ? c : best));
+  if (buff.type === 'stats') {
+    const main = (u: CharacterState) => (data.skills[data.unitTypes[u.unitType].basicSkillId].scalesWith === 'attack' ? u.stats.attack : u.stats.intellect);
+    return candidates.reduce((best, c) => (main(c) > main(best) ? c : best));
+  }
   const rowRank = (u: CharacterState) => (u.row === 'front' ? 0 : 1);
   return candidates.reduce((best, c) => {
     if (rowRank(c) !== rowRank(best)) return rowRank(c) < rowRank(best) ? c : best;

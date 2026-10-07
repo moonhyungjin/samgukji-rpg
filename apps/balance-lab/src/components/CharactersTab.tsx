@@ -1,3 +1,4 @@
+import { totalAp } from '@samgukji/battle-engine';
 import { useLab } from '../lab/LabContext';
 import { NumberField, SelectField, TextField } from './Fields';
 
@@ -6,12 +7,13 @@ const STATS: { key: string; label: string }[] = [
   { key: 'defense', label: '방어' },
   { key: 'intellect', label: '지력' },
   { key: 'speed', label: '속도' },
+  { key: 'action', label: '행동력' },
   { key: 'diplomacy', label: '외교' },
   { key: 'politics', label: '내정' },
   { key: 'charm', label: '매력' },
 ];
 
-/** 캐릭터 스탯(0~10, 아이템으로 초과 가능), AP, 군단 레벨, 병종을 편집한다. 외교·내정·매력은 아직 전투에서 쓰이지 않는다. */
+/** 캐릭터 스탯(0~10, 아이템으로 초과 가능), 병종 기본 AP + 행동력(2마다 AP 1), 군단 레벨, 병종을 편집한다. 외교·내정·매력은 아직 전투에서 쓰이지 않는다. */
 export function CharactersTab() {
   const { state } = useLab();
   const unitTypeOptions = Object.values(state.data.unitTypes).map((u) => ({ value: u.id, label: u.name }));
@@ -45,9 +47,7 @@ export function CharactersTab() {
                   <NumberField path={`data.characters.${c.id}.stats.${s.key}`} step={0.5} min={0} max={state.balance.statCap} />
                 </td>
               ))}
-              <td>
-                <NumberField path={`data.characters.${c.id}.ap`} min={1} />
-              </td>
+              <td>{totalAp(state.balance, state.data.unitTypes[c.unitType]?.baseAp, c.stats.action + (state.data.unitTypes[c.unitType]?.statMods?.action ?? 0))}</td>
               <td>
                 <NumberField path={`data.characters.${c.id}.level`} min={1} />
               </td>

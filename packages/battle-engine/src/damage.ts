@@ -39,6 +39,12 @@ export class DamageCalculator {
     return multiplier;
   }
 
+  /** 가드 상태(가드 확률 > 0)인 유닛이 받는 피해 보정 */
+  guardMultiplier(defender: CharacterState): number {
+    if (defender.guardRate <= 0) return 1;
+    return this.data.unitTypes[defender.unitType]?.guard?.damageTaken ?? 1;
+  }
+
   damage(attacker: CharacterState, defender: CharacterState, skill: SkillData, attackerMoraleShare: number): number {
     const b = this.balance;
     const physical = skill.scalesWith === 'attack';
@@ -46,7 +52,9 @@ export class DamageCalculator {
     const attackStat = physical ? attacker.stats.attack : attacker.stats.intellect;
     const base = effectiveStat(b, attackStat) * b.damage.attackScale * skill.power;
 
-    const defenseStat = physical ? defender.stats.defense : defender.stats.intellect;
+    const defenseStat = physical
+      ? Math.max(0, defender.stats.defense - (skill.ignoreDefense ?? 0))
+      : defender.stats.intellect;
     const scale = physical ? b.damage.defenseScale : b.damage.resistScale;
     const mitigation = 1 / (1 + effectiveStat(b, defenseStat) * scale);
 
@@ -54,6 +62,7 @@ export class DamageCalculator {
       base *
       this.traitMultiplier(attacker, defender) *
       troopFactor(b, attacker.troops) *
+      this.guardMultiplier(defender) *
       moraleMultiplier(b, attackerMoraleShare) *
       mitigation;
 

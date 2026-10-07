@@ -13,11 +13,12 @@ export const testBalance: BalanceConfig = {
   morale: { defenderStart: 60, maxEffect: 0.1, onUnitDestroyed: 8, onHit: 1 },
 };
 
-const stats = (attack: number, defense: number, intellect: number, speed: number) => ({
+const stats = (attack: number, defense: number, intellect: number, speed: number, action = 8) => ({
   attack,
   defense,
   intellect,
   speed,
+  action,
   diplomacy: 5,
   politics: 5,
   charm: 5,
@@ -29,8 +30,8 @@ export const testData: GameData = {
     shoot: { id: 'shoot', name: '사격', kind: 'attack', scalesWith: 'attack', power: 1, apCost: 1, counterable: false, guardable: true },
     mind: { id: 'mind', name: '책략', kind: 'attack', scalesWith: 'intellect', power: 1, apCost: 1, counterable: false },
     mend: { id: 'mend', name: '치유', kind: 'heal', scalesWith: 'intellect', power: 1, apCost: 1, counterable: false },
-    inspire: { id: 'inspire', name: '독려', kind: 'buff', scalesWith: 'intellect', power: 0, apCost: 1, counterable: false, buff: { stat: 'attack', amount: 1 } },
-    ward: { id: 'ward', name: '결계', kind: 'buff', scalesWith: 'intellect', power: 0, apCost: 1, counterable: false, buff: { stat: 'defense', amount: 1, maxStacks: 2 } },
+    inspire: { id: 'inspire', name: '독려', kind: 'buff', scalesWith: 'intellect', power: 0, apCost: 1, counterable: false, buff: { type: 'stats', pool: ['attack', 'defense', 'intellect', 'speed'], minCount: 1, maxCount: 3, amount: 1 } },
+    ward: { id: 'ward', name: '결계', kind: 'buff', scalesWith: 'intellect', power: 0, apCost: 1, counterable: false, buff: { type: 'barrier', charges: 1, maxStacks: 2 } },
     guard: { id: 'guard', name: '가드', kind: 'guard', scalesWith: 'attack', power: 0, apCost: 1, counterable: false },
   },
   traits: {
@@ -51,17 +52,17 @@ export const testData: GameData = {
     },
   },
   characters: {
-    inf: { id: 'inf', name: '보병A', unitType: 'inf', stats: stats(5, 5, 5, 5), ap: 4, level: 15 },
-    infFast: { id: 'infFast', name: '보병빠름', unitType: 'inf', stats: stats(5, 5, 5, 9), ap: 4, level: 15 },
-    infSlow: { id: 'infSlow', name: '보병느림', unitType: 'inf', stats: stats(5, 5, 5, 1), ap: 4, level: 15 },
-    infOneAp: { id: 'infOneAp', name: '보병AP1', unitType: 'inf', stats: stats(5, 5, 5, 5), ap: 1, level: 15 },
-    infWeak: { id: 'infWeak', name: '보병약함', unitType: 'inf', stats: stats(0, 5, 5, 5), ap: 4, level: 15 },
-    cav: { id: 'cav', name: '기병A', unitType: 'cav', stats: stats(5, 5, 5, 5), ap: 4, level: 15 },
-    arc: { id: 'arc', name: '궁병A', unitType: 'arc', stats: stats(5, 5, 5, 5), ap: 3, level: 15 },
-    str: { id: 'str', name: '책사A', unitType: 'str', stats: stats(2, 3, 8, 5), ap: 4, level: 15 },
-    geo: { id: 'geo', name: '풍수사A', unitType: 'geo', stats: stats(1, 3, 8, 5), ap: 4, level: 15 },
-    advisor: { id: 'advisor', name: '참모A', unitType: 'advisor', stats: stats(2, 3, 8, 5), ap: 4, level: 15 },
-    shield: { id: 'shield', name: '방패병A', unitType: 'shield', stats: stats(5, 5, 5, 5), ap: 4, level: 15 },
+    inf: { id: 'inf', name: '보병A', unitType: 'inf', stats: stats(5, 5, 5, 5, 8), level: 15 },
+    infFast: { id: 'infFast', name: '보병빠름', unitType: 'inf', stats: stats(5, 5, 5, 9, 8), level: 15 },
+    infSlow: { id: 'infSlow', name: '보병느림', unitType: 'inf', stats: stats(5, 5, 5, 1, 8), level: 15 },
+    infOneAp: { id: 'infOneAp', name: '보병AP1', unitType: 'inf', stats: stats(5, 5, 5, 5, 2), level: 15 },
+    infWeak: { id: 'infWeak', name: '보병약함', unitType: 'inf', stats: stats(0, 5, 5, 5, 8), level: 15 },
+    cav: { id: 'cav', name: '기병A', unitType: 'cav', stats: stats(5, 5, 5, 5, 8), level: 15 },
+    arc: { id: 'arc', name: '궁병A', unitType: 'arc', stats: stats(5, 5, 5, 5, 6), level: 15 },
+    str: { id: 'str', name: '책사A', unitType: 'str', stats: stats(2, 3, 8, 5, 8), level: 15 },
+    geo: { id: 'geo', name: '풍수사A', unitType: 'geo', stats: stats(1, 3, 8, 5, 8), level: 15 },
+    advisor: { id: 'advisor', name: '참모A', unitType: 'advisor', stats: stats(2, 3, 8, 5, 8), level: 15 },
+    shield: { id: 'shield', name: '방패병A', unitType: 'shield', stats: stats(5, 5, 5, 5, 8), level: 15 },
   },
 };
 
@@ -83,7 +84,9 @@ export function makeUnit(overrides: Partial<CharacterState> = {}): CharacterStat
     ap: 4,
     maxAp: 4,
     guardRate: 0,
-    buffs: { attack: 0, defense: 0 },
+    buffs: { attack: 0, defense: 0, intellect: 0, speed: 0 },
+    buffUses: {},
+    barrier: 0,
     isDead: false,
     ...overrides,
   };

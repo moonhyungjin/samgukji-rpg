@@ -1,4 +1,4 @@
-import type { BattleEvent, CharacterState, DecidedBy, EndCause, Family, Row, Side } from '@samgukji/battle-engine';
+import type { BattleEvent, BuffStat, CharacterState, DecidedBy, EndCause, Family, Row, Side } from '@samgukji/battle-engine';
 
 /**
  * 화면이 보여 주는 전투 상태. 엔진의 BattleEvent만으로 재구성할 수 있어야 하며,
@@ -18,7 +18,9 @@ export interface ViewUnit {
   /** 같은 열 아군을 대신 맞아줄 확률 (%p). 가드를 못 쓰는 병종은 0 */
   guardRate: number;
   /** 버프로 올라간 스탯 */
-  buffs: { attack: number; defense: number };
+  buffs: Record<BuffStat, number>;
+  /** 남은 피해 무시(결계) 횟수 */
+  barrier: number;
   row: Row;
   slot: number;
   dead: boolean;
@@ -57,6 +59,7 @@ export function createViewState(units: readonly CharacterState[], defenderMorale
       maxAp: u.maxAp,
       guardRate: u.guardRate,
       buffs: { ...u.buffs },
+      barrier: u.barrier,
       row: u.row,
       slot: u.slot,
       dead: u.isDead,
@@ -92,8 +95,12 @@ export function applyEvent(state: ViewState, event: BattleEvent): ViewState {
     case 'buff': {
       const unit = state.units.find((u) => u.uid === event.target);
       if (!unit) return state;
-      return patch(state, event.target, { buffs: { ...unit.buffs, [event.stat]: unit.buffs[event.stat] + event.amount } });
+      const buffs = { ...unit.buffs };
+      for (const c of event.changes) buffs[c.stat] += c.amount;
+      return patch(state, event.target, { buffs });
     }
+    case 'barrier':
+      return patch(state, event.unit, { barrier: event.charges });
     case 'intercept':
       // 대신 맞는 것은 이어지는 damage 이벤트가 처리한다. 상태는 바뀌지 않는다.
       return state;

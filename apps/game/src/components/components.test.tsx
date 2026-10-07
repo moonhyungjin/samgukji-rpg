@@ -37,16 +37,26 @@ const panel = (snapshot: ControllerSnapshot) =>
 
 describe('previewText', () => {
   it('공격: 피해, 격파, 반격을 보여 준다', () => {
-    const base = { kind: 'attack' as const, interceptChance: 0 };
+    const base = { kind: 'attack' as const, interceptChance: 0, targetBarrier: false };
     expect(previewText({ ...base, damage: 218, counter: 87, targetTroopsAfter: 782, actorTroopsAfter: 913 })).toBe('피해 218 · 반격 87');
     expect(previewText({ ...base, damage: 500, counter: 0, targetTroopsAfter: 0, actorTroopsAfter: 1000 })).toBe('피해 500 · 격파');
     expect(previewText({ ...base, damage: 100, counter: 0, targetTroopsAfter: 900, actorTroopsAfter: 1000 })).toBe('피해 100');
   });
 
   it('같은 열 가드가 막을 수 있으면 확률을 알려 준다', () => {
-    const preview = { kind: 'attack' as const, damage: 218, counter: 87, targetTroopsAfter: 782, actorTroopsAfter: 913 };
+    const preview = { kind: 'attack' as const, targetBarrier: false, damage: 218, counter: 87, targetTroopsAfter: 782, actorTroopsAfter: 913 };
     expect(previewText({ ...preview, interceptChance: 0.75 })).toBe('피해 218 · 반격 87 · 가드가 막을 확률 75%');
     expect(previewText({ ...preview, interceptChance: 1 })).toContain('가드가 막을 확률 100%');
+  });
+
+  it('버프: 스탯형과 피해 무시형을 설명한다', () => {
+    expect(previewText({ kind: 'buff', effect: { type: 'stats', pool: ['attack', 'defense', 'intellect', 'speed'], minCount: 1, maxCount: 3, amount: 1 } })).toBe('공격/방어/지력/속도 중 무작위 1~3가지 +1');
+    expect(previewText({ kind: 'buff', effect: { type: 'barrier', charges: 1 } })).toBe('다음 피해 1회 무시');
+  });
+
+  it('대상에게 결계가 남아 있으면 피해 대신 알려 준다', () => {
+    const preview = { kind: 'attack' as const, interceptChance: 0, damage: 218, counter: 0, targetTroopsAfter: 782, actorTroopsAfter: 1000 };
+    expect(previewText({ ...preview, targetBarrier: true })).toBe('결계로 피해 무시');
   });
 
   it('가드: 올린 뒤의 확률을 보여 준다', () => {
@@ -62,7 +72,7 @@ describe('CommandPanel', () => {
   it('내 차례: 군단 정보, 스킬, 대기, AI 위임 버튼이 나온다', async () => {
     const html = panel(await snapshotOf('attacker'));
     expect(html).toContain('의 차례');
-    expect(html).toContain('AP 4/4');
+    expect(html).toContain('AP 3/3');
     expect(html).toContain('돌격 (AP 1)');
     expect(html).toContain('대기 (AP 소모 없음)');
     expect(html).toContain('AI에게 맡기기');

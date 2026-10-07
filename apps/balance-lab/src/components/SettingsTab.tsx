@@ -67,7 +67,7 @@ export function SettingsTab() {
 
       <section className="panel">
         <h3>병종별 생존율 목표</h3>
-        <p className="note">첫 목표는 궁병 생존율 20% (±10%p)입니다.</p>
+        <p className="note">첫 목표는 궁병 생존율 40% (±10%p)입니다.</p>
         <table>
           <thead>
             <tr>

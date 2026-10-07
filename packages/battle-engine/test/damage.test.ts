@@ -10,6 +10,7 @@ const stats = (attack: number, defense: number, intellect: number) => ({
   defense,
   intellect,
   speed: 5,
+  action: 8,
   diplomacy: 5,
   politics: 5,
   charm: 5,
@@ -106,5 +107,49 @@ describe('DamageCalculator.counterDamage / heal', () => {
     expect(scaled.heal(makeUnit({ stats: stats(1, 1, 6), troops: 500 }), testData.skills.mend)).toBe(30);
     expect(scaled.heal(makeUnit({ stats: stats(1, 1, 6), troops: 1000 }), testData.skills.mend)).toBe(60);
     expect(scaled.heal(makeUnit({ stats: stats(1, 1, 6), troops: 50 }), testData.skills.mend)).toBe(18); // 하한 0.3
+  });
+});
+
+describe('가드 상태의 받는 피해 보정', () => {
+  const data = {
+    ...testData,
+    unitTypes: {
+      ...testData.unitTypes,
+      shield: { ...testData.unitTypes.shield, guard: { start: 50, gain: 70, decay: 40, damageTaken: 0.5 } },
+    },
+  };
+  const guarded = new DamageCalculator(testBalance, data);
+
+  it('가드 확률이 있는 동안 받는 피해에 damageTaken을 곱한다', () => {
+    const target = makeUnit({ unitType: 'shield', guardRate: 50 });
+    expect(guarded.damage(makeUnit(), target, hit, 50)).toBe(17); // 33.33 × 0.5
+    expect(guarded.damage(makeUnit(), target, mind, 50)).toBe(17); // 책략도 같다
+  });
+
+  it('가드 확률이 0이면(공격해서 해제) 보정이 없다', () => {
+    expect(guarded.damage(makeUnit(), makeUnit({ unitType: 'shield', guardRate: 0 }), hit, 50)).toBe(33);
+  });
+
+  it('damageTaken을 생략하면 피해가 줄지 않는다', () => {
+    expect(calc.damage(makeUnit(), makeUnit({ unitType: 'shield', guardRate: 50 }), hit, 50)).toBe(33);
+  });
+});
+
+describe('방어 무시 (ignoreDefense)', () => {
+  const pierce = { ...hit, ignoreDefense: 2 };
+  // 공격 5 × 10 = 50. 방어 5 → 50/1.5 = 33, 방어 5-2=3 → 50/1.3 = 38
+  it('물리 공격이 대상의 방어를 그만큼 무시한다', () => {
+    expect(calc.damage(makeUnit(), makeUnit(), hit, 50)).toBe(33);
+    expect(calc.damage(makeUnit(), makeUnit(), pierce, 50)).toBe(38);
+  });
+
+  it('방어가 0 아래로는 내려가지 않는다', () => {
+    const lowDef = makeUnit({ stats: stats(5, 1, 5) });
+    expect(calc.damage(makeUnit(), lowDef, pierce, 50)).toBe(50);
+  });
+
+  it('지력 계열 공격(책략)에는 영향이 없다', () => {
+    const magic = { ...mind, ignoreDefense: 3 };
+    expect(calc.damage(makeUnit(), makeUnit(), magic, 50)).toBe(calc.damage(makeUnit(), makeUnit(), mind, 50));
   });
 });
