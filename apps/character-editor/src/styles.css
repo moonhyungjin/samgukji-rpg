@@ -267,3 +267,108 @@ td.actions button {
   padding: 1px 5px;
   border-radius: 4px;
 }
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.tab {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+}
+
+.tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.preset {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.preset.changed {
+  border-color: var(--warn);
+}
+
+.preset.added {
+  border-color: var(--ok);
+}
+
+.preset.invalid {
+  border-color: var(--err);
+}
+
+.preset-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.preset-head .label-input {
+  width: 190px;
+  font-weight: 600;
+}
+
+.preset-head .id-input {
+  width: 110px;
+  font-size: 12px;
+}
+
+.preset-id {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.slot-grid {
+  display: grid;
+  gap: 6px;
+}
+
+.slot-row {
+  display: grid;
+  grid-template-columns: 38px repeat(3, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.row-name {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.slot-row select {
+  width: 100%;
+  min-width: 0;
+}
+
+.preset-summary {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.preset-summary .error {
+  color: var(--err);
+}
+
+.preset-summary .warning {
+  color: var(--warn);
+}

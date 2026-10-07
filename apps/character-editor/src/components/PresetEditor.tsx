@@ -1,0 +1,102 @@
+import type { BalanceConfig, CharacterData, GameData } from '@samgukji/battle-engine';
+import type { PresetDef } from '@samgukji/game-data';
+import type { Issue } from '../lib/editor';
+import { REQUIRED_PRESETS, ROW_CAPACITY, slotsFromLineup, summarizeLineup } from '../lib/presets';
+
+interface Props {
+  presets: readonly PresetDef[];
+  savedIds: ReadonlySet<string>;
+  changed: ReadonlySet<string>;
+  issues: readonly Issue[];
+  characters: readonly CharacterData[];
+  data: GameData;
+  balance: BalanceConfig;
+  onEdit: (id: string, patch: Partial<Pick<PresetDef, 'id' | 'label'>>) => void;
+  onSetSlot: (id: string, index: number, characterId: string) => void;
+  onDuplicate: (id: string) => void;
+  onRevert: (id: string) => void;
+  onRemove: (id: string) => void;
+}
+
+/** 기본 편성 목록. 칸마다 장수를 골라 전열 3 + 후열 3을 짠다. */
+export function PresetEditor({ presets, savedIds, changed, issues, characters, data, balance, onEdit, onSetSlot, onDuplicate, onRevert, onRemove }: Props) {
+  const bad = new Set(issues.filter((i) => i.level === 'error' && i.id !== undefined).map((i) => i.id));
+  const typeName = (c: CharacterData) => data.unitTypes[c.unitType]?.name ?? c.unitType;
+
+  return (
+    <div className="presets">
+      {presets.map((p) => {
+        const slots = slotsFromLineup(p.lineup);
+        const summary = summarizeLineup(p.lineup, data, balance);
+        const isSaved = savedIds.has(p.id);
+        const className = ['preset', !isSaved ? 'added' : changed.has(p.id) ? 'changed' : '', bad.has(p.id) ? 'invalid' : ''].filter(Boolean).join(' ');
+        const own = issues.filter((i) => i.id === p.id);
+        const required = REQUIRED_PRESETS.includes(p.id);
+        return (
+          <section key={p.id} className={className} data-preset={p.id}>
+            <header className="preset-head">
+              <input className="label-input" aria-label={`${p.id} 이름`} value={p.label} onChange={(e) => onEdit(p.id, { label: e.target.value })} />
+              {isSaved ? (
+                <code className="preset-id">{p.id}</code>
+              ) : (
+                <input className="id-input" aria-label="새 편성 id" value={p.id} onChange={(e) => onEdit(p.id, { id: e.target.value })} />
+              )}
+              <span className="spacer" />
+              <span className="badge">
+                {summary.units}군단 · 병력 {summary.troops}
+              </span>
+              <button type="button" onClick={() => onDuplicate(p.id)}>
+                복제
+              </button>
+              {isSaved && changed.has(p.id) && (
+                <button type="button" onClick={() => onRevert(p.id)}>
+                  되돌리기
+                </button>
+              )}
+              <button
+                type="button"
+                className="danger"
+                disabled={required}
+                title={required ? 'Lab과 게임의 기본 대결(촉 vs 위)에 쓰여 삭제할 수 없습니다' : '삭제'}
+                onClick={() => onRemove(p.id)}
+              >
+                삭제
+              </button>
+            </header>
+            <div className="slot-grid">
+              {(['front', 'back'] as const).map((row) => (
+                <div className="slot-row" key={row}>
+                  <span className="row-name">{row === 'front' ? '전열' : '후열'}</span>
+                  {Array.from({ length: ROW_CAPACITY }, (_, i) => {
+                    const index = (row === 'front' ? 0 : ROW_CAPACITY) + i;
+                    return (
+                      <select key={index} aria-label={`${p.id} ${row === 'front' ? '전열' : '후열'} ${i + 1}`} value={slots[index]?.characterId ?? ''} onChange={(e) => onSetSlot(p.id, index, e.target.value)}>
+                        <option value="">(비움)</option>
+                        {characters.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} · {typeName(c)}
+                          </option>
+                        ))}
+                        {slots[index] && !characters.some((c) => c.id === slots[index]!.characterId) && (
+                          <option value={slots[index]!.characterId}>{slots[index]!.characterId} (없음)</option>
+                        )}
+                      </select>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+            <div className="preset-summary">
+              {summary.composition}
+              {own.map((i, index) => (
+                <div key={index} className={i.level}>
+                  {i.message}
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}

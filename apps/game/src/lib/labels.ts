@@ -1,3 +1,4 @@
+import { presetLabels } from '@samgukji/game-data';
 import type { BuffStat, DecidedBy, EndCause, Family, Side } from '@samgukji/battle-engine';
 
 export const FAMILY_LABEL: Record<Family, string> = {
@@ -17,8 +18,8 @@ export const STAT_SHORT: Record<BuffStat, string> = { attack: '공', defense: '�
 
 export const SIDE_LABEL: Record<Side, string> = { attacker: '공격측', defender: '방어측' };
 
-/** 기본 편성 이름 (game-data/presets) */
-export const PRESET_LABEL: Record<string, string> = { shu: '촉', wei: '위', yellow: '황건적', shuStart: '촉 초반(유관장)', yellowEasy: '황건적 쉬움(보보방)', yellowNormal: '황건적 보통(보방궁)', yellowHard: '황건적 어려움(보보방궁)' };
+/** 기본 편성 이름 (game-data/data/presets.json의 label) */
+export const PRESET_LABEL: Record<string, string> = presetLabels;
 
 export const END_CAUSE_LABEL: Record<EndCause, string> = {
   wipe: '한쪽 전멸',

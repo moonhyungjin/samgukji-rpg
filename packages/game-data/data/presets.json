@@ -1,0 +1,168 @@
+[
+  {
+    "id": "shu",
+    "label": "촉",
+    "lineup": [
+      {
+        "characterId": "zhangFei",
+        "row": "front"
+      },
+      {
+        "characterId": "guanYu",
+        "row": "front"
+      },
+      {
+        "characterId": "zhaoYun",
+        "row": "front"
+      },
+      {
+        "characterId": "huangZhong",
+        "row": "back"
+      },
+      {
+        "characterId": "zhugeLiang",
+        "row": "back"
+      },
+      {
+        "characterId": "pangTong",
+        "row": "back"
+      }
+    ]
+  },
+  {
+    "id": "wei",
+    "label": "위",
+    "lineup": [
+      {
+        "characterId": "xuChu",
+        "row": "front"
+      },
+      {
+        "characterId": "xiahouDun",
+        "row": "front"
+      },
+      {
+        "characterId": "zhangLiao",
+        "row": "front"
+      },
+      {
+        "characterId": "xiahouYuan",
+        "row": "back"
+      },
+      {
+        "characterId": "xunYu",
+        "row": "back"
+      },
+      {
+        "characterId": "guoJia",
+        "row": "back"
+      }
+    ]
+  },
+  {
+    "id": "yellow",
+    "label": "황건적",
+    "lineup": [
+      {
+        "characterId": "ytShieldA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytInfantryA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytCavalryA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytArcherA",
+        "row": "back"
+      },
+      {
+        "characterId": "ytStrategistA",
+        "row": "back"
+      },
+      {
+        "characterId": "ytTaoistA",
+        "row": "back"
+      }
+    ]
+  },
+  {
+    "id": "shuStart",
+    "label": "촉 초반(유관장)",
+    "lineup": [
+      {
+        "characterId": "zhangFei",
+        "row": "front"
+      },
+      {
+        "characterId": "liuBei",
+        "row": "front"
+      },
+      {
+        "characterId": "guanYu",
+        "row": "front"
+      }
+    ]
+  },
+  {
+    "id": "yellowEasy",
+    "label": "황건적 쉬움(보보방)",
+    "lineup": [
+      {
+        "characterId": "ytShieldA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytInfantryA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytInfantryB",
+        "row": "front"
+      }
+    ]
+  },
+  {
+    "id": "yellowNormal",
+    "label": "황건적 보통(보방궁)",
+    "lineup": [
+      {
+        "characterId": "ytShieldA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytInfantryA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytArcherA",
+        "row": "back"
+      }
+    ]
+  },
+  {
+    "id": "yellowHard",
+    "label": "황건적 어려움(보보방궁)",
+    "lineup": [
+      {
+        "characterId": "ytShieldA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytInfantryA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytInfantryB",
+        "row": "front"
+      },
+      {
+        "characterId": "ytArcherA",
+        "row": "back"
+      }
+    ]
+  }
+]

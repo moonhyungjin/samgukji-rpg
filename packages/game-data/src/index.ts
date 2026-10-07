@@ -1,3 +1,4 @@
 export { defaultBalance } from './balance';
 export { gameData } from './data';
-export { presets } from './presets';
+export { presetLabels, presetList, presets } from './presets';
+export type { PresetDef } from './presets';

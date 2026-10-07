@@ -1,55 +1,19 @@
 import type { LineupEntry } from '@samgukji/battle-engine';
+import presetsJson from '../data/presets.json';
 
-/** 시뮬레이션/테스트용 기본 편성. 전열 3 + 후열 3 */
-export const presets: Record<string, LineupEntry[]> = {
-  shu: [
-    { characterId: 'zhangFei', row: 'front' },
-    { characterId: 'guanYu', row: 'front' },
-    { characterId: 'zhaoYun', row: 'front' },
-    { characterId: 'huangZhong', row: 'back' },
-    { characterId: 'zhugeLiang', row: 'back' },
-    { characterId: 'pangTong', row: 'back' },
-  ],
-  // 초반 시나리오: 촉은 유관장(유비 보병, 관우 기병, 장비 방패병) 셋으로 시작해 황건적과 싸운다.
-  shuStart: [
-    { characterId: 'zhangFei', row: 'front' },
-    { characterId: 'liuBei', row: 'front' },
-    { characterId: 'guanYu', row: 'front' },
-  ],
-  // 황건적 쉬움: 보, 보, 방
-  yellowEasy: [
-    { characterId: 'ytShieldA', row: 'front' },
-    { characterId: 'ytInfantryA', row: 'front' },
-    { characterId: 'ytInfantryB', row: 'front' },
-  ],
-  // 황건적 보통: 보, 방, 궁
-  yellowNormal: [
-    { characterId: 'ytShieldA', row: 'front' },
-    { characterId: 'ytInfantryA', row: 'front' },
-    { characterId: 'ytArcherA', row: 'back' },
-  ],
-  // 황건적 어려움: 보, 보, 방 + 궁
-  yellowHard: [
-    { characterId: 'ytShieldA', row: 'front' },
-    { characterId: 'ytInfantryA', row: 'front' },
-    { characterId: 'ytInfantryB', row: 'front' },
-    { characterId: 'ytArcherA', row: 'back' },
-  ],
-  // 평범한 장수들 (황건적)
-  yellow: [
-    { characterId: 'ytShieldA', row: 'front' },
-    { characterId: 'ytInfantryA', row: 'front' },
-    { characterId: 'ytCavalryA', row: 'front' },
-    { characterId: 'ytArcherA', row: 'back' },
-    { characterId: 'ytStrategistA', row: 'back' },
-    { characterId: 'ytTaoistA', row: 'back' },
-  ],
-  wei: [
-    { characterId: 'xuChu', row: 'front' },
-    { characterId: 'xiahouDun', row: 'front' },
-    { characterId: 'zhangLiao', row: 'front' },
-    { characterId: 'xiahouYuan', row: 'back' },
-    { characterId: 'xunYu', row: 'back' },
-    { characterId: 'guoJia', row: 'back' },
-  ],
-};
+/** 기본 편성 한 개. id는 CLI(--team-a)와 게임 주소의 편성 이름이고, label은 화면에 보이는 이름이다. */
+export interface PresetDef {
+  id: string;
+  label: string;
+  lineup: LineupEntry[];
+}
+
+// 기본 편성의 원본은 data/presets.json이다. 장수 편집기(apps/character-editor, `npm run chars`)의 "기본 편성" 탭에서 고친다.
+// 6 vs 6 기본 대결(촉/위/황건적)과 초반 시나리오(유관장 vs 황건적 쉬움/보통/어려움)가 들어 있다.
+export const presetList = presetsJson as unknown as PresetDef[];
+
+/** 시뮬레이션/테스트용 기본 편성 (id → 편성) */
+export const presets: Record<string, LineupEntry[]> = Object.fromEntries(presetList.map((p) => [p.id, p.lineup]));
+
+/** 편성의 화면 이름 (id → 이름) */
+export const presetLabels: Record<string, string> = Object.fromEntries(presetList.map((p) => [p.id, p.label]));

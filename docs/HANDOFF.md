@@ -17,14 +17,14 @@
 
 ```bash
 npm install
-npm test                 # 261개 (엔진, 통합, Lab, 게임 로직/패널)
+npm test                 # 276개 (엔진, 통합, Lab, 게임 로직/패널)
 npm run typecheck        # 5개 패키지를 각각 tsc -p 로 검사
 
 npm run game             # 게임 화면 http://localhost:5174  (설정 → 관전 / 수동 플레이)
 npm run lab              # Balance Lab (터미널에 나오는 주소)
 npm run e2e:lab          # Lab을 실제 브라우저로 조작 확인 8개 (먼저 npm run lab, Edge/Chrome 필요)
-npm run chars            # 장수 편집기 (http://localhost:5175). 저장하면 packages/game-data/data/characters.json이 바뀌고 Lab/게임/시뮬레이터에 반영
-npm run e2e:chars        # 장수 편집기 브라우저 확인 16개 (먼저 npm run chars)
+npm run chars            # 장수 편집기 (http://localhost:5175). 장수와 기본 편성을 고쳐 저장하면 packages/game-data/data/characters.json, presets.json이 바뀌고 Lab/게임/시뮬레이터에 반영
+npm run e2e:chars        # 장수 편집기 브라우저 확인 27개 (장수 + 기본 편성) (먼저 npm run chars)
 npm run e2e              # 게임 화면을 실제 브라우저로 조작해 확인 23개 (먼저 npm run game, Edge/Chrome 필요)
 npm run sim -- --iterations 10000 --lineups random     # CLI 시뮬레이션, 옵션은 README 참고
 ```

@@ -1,4 +1,4 @@
-import { presets } from '@samgukji/game-data';
+import { presetList } from '@samgukji/game-data';
 import { useLab } from '../lab/LabContext';
 import type { SlotEntry } from '../lab/types';
 import { FRONT_SLOTS, SLOT_COUNT, slotRow, slotsFromLineup } from '../lib/slots';
@@ -56,24 +56,11 @@ export function LineupEditor({ teamKey, title }: Props) {
       <header className="lineup-head">
         <h3>{title}</h3>
         <span className="presets">
-          <button type="button" onClick={() => set(teamKey, slotsFromLineup(presets.shu))}>
-            촉 편성
-          </button>
-          <button type="button" onClick={() => set(teamKey, slotsFromLineup(presets.wei))}>
-            위 편성
-          </button>
-          <button type="button" onClick={() => set(teamKey, slotsFromLineup(presets.shuStart))}>
-            유관장
-          </button>
-          <button type="button" onClick={() => set(teamKey, slotsFromLineup(presets.yellowEasy))}>
-            황건 쉬움
-          </button>
-          <button type="button" onClick={() => set(teamKey, slotsFromLineup(presets.yellowNormal))}>
-            황건 보통
-          </button>
-          <button type="button" onClick={() => set(teamKey, slotsFromLineup(presets.yellowHard))}>
-            황건 어려움
-          </button>
+          {presetList.map((p) => (
+            <button key={p.id} type="button" title={p.id} onClick={() => set(teamKey, slotsFromLineup(p.lineup))}>
+              {p.label}
+            </button>
+          ))}
           <button type="button" onClick={() => set(teamKey, Array.from({ length: SLOT_COUNT }, () => null))}>
             비우기
           </button>

@@ -98,6 +98,9 @@ const clickButton = (label) =>
 // 저장하기는 packages/game-data/data/characters.json을 실제로 바꾼다. 끝나면 (실패해도) 원래 내용으로 되돌린다.
 const CHARACTERS_FILE = resolve('packages/game-data/data/characters.json');
 const original = readFileSync(CHARACTERS_FILE, 'utf-8');
+const PRESETS_FILE = resolve('packages/game-data/data/presets.json');
+const originalPresets = readFileSync(PRESETS_FILE, 'utf-8');
+const readPresets = () => JSON.parse(readFileSync(PRESETS_FILE, 'utf-8'));
 const setValue = (selector, value) =>
   evalJs(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return 'missing'; const proto = el.tagName === 'SELECT' ? HTMLSelectElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, ${JSON.stringify(String(value))}); el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); return 'ok'; })()`);
 const readFile = () => JSON.parse(readFileSync(CHARACTERS_FILE, 'utf-8'));
@@ -171,14 +174,56 @@ try {
   const delDisabled = await evalJs(`document.querySelector('tr[data-id="guanYu"] button.danger').disabled`);
   check('기본 편성에서 쓰는 장수(관우)는 삭제 버튼이 막혀 있다', delDisabled === true);
 
+  // 6. 기본 편성 탭: 칸을 고치고 저장하면 presets.json이 바뀐다
+  await send('Page.navigate', { url: BASE });
+  await waitFor(`document.querySelectorAll('tbody tr').length > 0`, 30000, '장수 표');
+  await clickButton('기본 편성');
+  await sleep(300);
+  const presetCount = await evalJs(`document.querySelectorAll('section.preset').length`);
+  check('기본 편성 탭에 편성 카드가 나온다', presetCount === JSON.parse(originalPresets).length, `${presetCount}개`);
+  const startSummary = await evalJs(`document.querySelector('section[data-preset="shuStart"] .preset-summary').textContent`);
+  check('편성 카드에 구성이 나온다 (유관장: 방패병 · 보병 · 기병)', String(startSummary).includes('방패병 · 보병 · 기병'), String(startSummary));
+  await shot('chars-presets');
+
+  // 후열 첫 칸에 황충(궁병)을 넣는다
+  const slotSet = await setValue('select[aria-label="shuStart 후열 1"]', 'huangZhong');
+  await sleep(300);
+  const after = await evalJs(`document.querySelector('section[data-preset="shuStart"] .preset-summary').textContent`);
+  check('칸을 고르면 구성과 병력이 바뀌고 카드가 노랗게 표시된다', slotSet === 'ok' && String(after).includes('궁병') && (await evalJs(`document.querySelector('section[data-preset="shuStart"]').className`)).includes('changed'), String(after));
+  check('저장 안 됨 요약에 편성 수정이 나온다', (await text('.badge.dirty')).includes('편성 수정 1'));
+
+  await clickButton('저장하기');
+  await waitFor(`!!document.querySelector('.message.ok')`, 8000, '저장 성공').catch(() => {});
+  const saved = readPresets().find((p) => p.id === 'shuStart');
+  check('저장하면 presets.json에 새 편성이 기록된다', saved.lineup.some((e) => e.characterId === 'huangZhong' && e.row === 'back'), JSON.stringify(saved.lineup.map((e) => e.characterId)));
+  check('저장 메시지에 편성이 들어 있다', (await text('.message')).includes('편성 7개'));
+
+  // 사거리 1 병종을 후열에 두면 경고, 책사를 전열에 두면 오류 (저장 불가)
+  await setValue('select[aria-label="shuStart 후열 2"]', 'weiYan');
+  await sleep(200);
+  check('사거리 1 병종을 후열에 두면 경고가 나온다', (await text('section[data-preset="shuStart"] .preset-summary')).includes('후열에서는 공격할 수 없습니다'));
+  await setValue('select[aria-label="shuStart 전열 3"]', 'zhugeLiang');
+  await sleep(200);
+  check('후열 전용 병종을 전열에 두면 오류로 표시된다', (await evalJs(`document.querySelector('section[data-preset="shuStart"]').className`)).includes('invalid'));
+  const beforeBad = JSON.stringify(readPresets());
+  await clickButton('저장하기');
+  await sleep(400);
+  check('오류가 있으면 편성이 저장되지 않는다', JSON.stringify(readPresets()) === beforeBad);
+  const requiredDisabled = await evalJs(`document.querySelector('section[data-preset="shu"] button.danger').disabled`);
+  check('기본 대결용 편성(shu)은 삭제할 수 없다', requiredDisabled === true);
+  await clickButton('+ 새 편성');
+  await sleep(200);
+  check('새 편성을 추가하면 카드가 늘어난다', (await evalJs(`document.querySelectorAll('section.preset').length`)) === presetCount + 1);
+
   check('브라우저 콘솔에 오류가 없다', errors.length === 0, errors.join(' | '));
 } catch (e) {
   console.log('ERROR', e.message);
   results.push({ name: '시나리오 실행', ok: false });
 } finally {
   writeFileSync(CHARACTERS_FILE, original); // 시험 값을 남기지 않는다
+  writeFileSync(PRESETS_FILE, originalPresets);
   proc.kill();
   const bad = results.filter((r) => !r.ok).length;
-  console.log(`${results.length - bad}/${results.length} 통과 (스크린샷: ${OUT}) — characters.json은 원래 내용으로 되돌렸습니다`);
+  console.log(`${results.length - bad}/${results.length} 통과 (스크린샷: ${OUT}) — characters.json과 presets.json은 원래 내용으로 되돌렸습니다`);
   process.exit(bad ? 1 : 0);
 }
