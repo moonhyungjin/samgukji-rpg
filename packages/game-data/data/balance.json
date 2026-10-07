@@ -23,7 +23,7 @@
     "defenseScale": 0.1,
     "resistScale": 0.1,
     "minDamage": 1,
-    "formula": "additive",
+    "formula": "gap",
     "additive": {
       "attackMul": 10,
       "defenseMul": 8,
@@ -31,6 +31,13 @@
       "resistMul": 7,
       "min": 10,
       "scale": 10
+    },
+    "gap": {
+      "perPoint": 0.1,
+      "min": 0.3,
+      "baseMode": "stat",
+      "flat": 300,
+      "bonusDiv": 0
     }
   },
   "heal": {
@@ -67,6 +74,10 @@
   },
   "counter": {
     "rate": 0.5
+  },
+  "critical": {
+    "chance": 10,
+    "multiplier": 1.5
   },
   "morale": {
     "defenderStart": 50,

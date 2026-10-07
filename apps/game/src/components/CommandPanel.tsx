@@ -15,6 +15,7 @@ export function previewText(preview: CommandPreview): string {
   const parts = [preview.targetBarrier ? '결계로 피해 무시' : `피해 ${preview.damage}`];
   if (preview.targetTroopsAfter === 0) parts.push('격파');
   if (preview.counter > 0) parts.push(`반격 ${preview.counter}`);
+  if (preview.criticalChance) parts.push(`치명타 ${preview.criticalChance}% (${preview.criticalDamage})`);
   // 같은 열 가드 유닛이 대신 맞을 수 있으면 알려 준다 (피해와 반격은 가드가 없을 때의 값이다)
   if (preview.interceptChance > 0) parts.push(`가드가 막을 확률 ${Math.round(preview.interceptChance * 100)}%`);
   return parts.join(' · ');

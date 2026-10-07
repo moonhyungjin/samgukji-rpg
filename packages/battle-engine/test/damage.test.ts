@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DamageCalculator, DEFAULT_ADDITIVE, DEFAULT_TIERED } from '../src';
+import { DamageCalculator, DEFAULT_ADDITIVE, DEFAULT_GAP, DEFAULT_TIERED } from '../src';
+import type { GapDamage } from '../src';
 import { makeUnit, testBalance, testData } from './fixtures';
 
 const calc = new DamageCalculator(testBalance, testData);
@@ -320,6 +321,37 @@ describe('원작식 피해 공식 (damage.formula = additive)', () => {
   it('방어 무시는 방어에서 뺀 뒤 × 8 한다', () => {
     const pierce = { ...hit, ignoreDefense: 2 };
     expect(c.damage(makeUnit({ unitType: 'cav' }), makeUnit({ unitType: 'str' }), pierce, 50)).toBe(800 + 2 * 8 * 10);
+  });
+});
+
+describe('격차식 피해 공식 (damage.formula = gap)', () => {
+  const gapBalance = (gap: Partial<GapDamage>) => ({ ...testBalance, damage: { ...testBalance.damage, formula: 'gap' as const, gap: { ...DEFAULT_GAP, ...gap } } });
+  const atk = (a: number) => makeUnit({ stats: stats(a, 5, 5) });
+  const def = (d: number) => makeUnit({ stats: stats(5, d, 5) });
+
+  it('격차 1점마다 피해가 perPoint씩 늘거나 준다 (기준 스탯 × 공격 계수가 기본 피해)', () => {
+    const c = new DamageCalculator(gapBalance({}), testData);
+    const even = c.damage(atk(5), def(5), hit, 50);
+    expect(c.damage(atk(8), def(5), hit, 50)).toBe(Math.round((8 * testBalance.damage.attackScale * 1.3)));
+    expect(even).toBe(Math.round(5 * testBalance.damage.attackScale));
+    expect(c.damage(atk(5), def(8), hit, 50)).toBe(Math.round(5 * testBalance.damage.attackScale * 0.7));
+  });
+
+  it('고정 기본 피해에서는 공격 스탯이 아니라 격차만 본다', () => {
+    const c = new DamageCalculator(gapBalance({ baseMode: 'flat', flat: 300 }), testData);
+    expect(c.damage(atk(9), def(8), hit, 50)).toBe(c.damage(atk(5), def(4), hit, 50));
+    expect(c.damage(atk(5), def(5), hit, 50)).toBe(300);
+  });
+
+  it('배율은 하한 아래로 내려가지 않는다', () => {
+    const c = new DamageCalculator(gapBalance({ baseMode: 'flat', flat: 300, min: 0.3 }), testData);
+    expect(c.damage(atk(1), def(15), hit, 50)).toBe(90);
+  });
+
+  it('bonusDiv가 있으면 병종 보정(typeBonus + vulnerability)을 격차 점수로 더한다', () => {
+    const data = { ...testData, unitTypes: { ...testData.unitTypes, cav: { ...testData.unitTypes.cav, typeBonus: { physical: 20, magic: 0 } } } };
+    const c = new DamageCalculator(gapBalance({ baseMode: 'flat', flat: 300, bonusDiv: 10 }), data);
+    expect(c.damage(makeUnit({ unitType: 'cav', stats: stats(5, 5, 5) }), def(5), hit, 50)).toBe(360);
   });
 });
 

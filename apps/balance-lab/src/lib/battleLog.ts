@@ -31,7 +31,7 @@ export function formatBattleLog(result: BattleResult, data: GameData): string[] 
         lines.push(e.reason === 'reset' ? `    ${name(e.unit)} 가드 해제 (공격)` : `    ${name(e.unit)} 가드 확률 ${e.rate}%`);
         break;
       case 'damage':
-        lines.push(`    ${e.kind === 'counter' ? '반격' : '피해'} ${e.amount} → ${name(e.target)} 병력 ${e.troopsAfter}`);
+        lines.push(`    ${e.critical ? '치명타! ' : ''}${e.kind === 'counter' ? '반격' : '피해'} ${e.amount} → ${name(e.target)} 병력 ${e.troopsAfter}`);
         break;
       case 'heal':
         lines.push(`    회복 ${e.amount} → ${name(e.target)} 병력 ${e.troopsAfter}`);

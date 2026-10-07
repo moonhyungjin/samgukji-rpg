@@ -140,7 +140,7 @@ export class BattleScene implements SceneLike {
         if (ranged) {
           await playRangedEffect(this.effectsLayer, this.clock, ranged, source.center, target.center);
           if (this.destroyed) return;
-          void this.floatText(target, `-${event.amount}`, event.amount === 0 ? 0x9be7ff : 0xff5a5a, 28, 600);
+          void this.floatText(target, event.critical ? `치명타! -${event.amount}` : `-${event.amount}`, event.amount === 0 ? 0x9be7ff : event.critical ? 0xffd166 : 0xff5a5a, event.critical ? 34 : 28, event.critical ? 800 : 600);
           await Promise.all([
             rangedImpact(this.effectsLayer, this.clock, ranged, target.center, event.amount === 0),
             event.amount > 0 ? target.flash() : Promise.resolve(),
@@ -152,7 +152,7 @@ export class BattleScene implements SceneLike {
         let impact: Promise<unknown> = Promise.resolve();
         await source.lunge(target.center, counter ? 16 : 26, () => {
           void this.slash(target.center, counter);
-          void this.floatText(target, counter ? `반격 -${event.amount}` : `-${event.amount}`, counter ? 0xffa94d : 0xff5a5a, counter ? 22 : 28, 600);
+          void this.floatText(target, counter ? `반격 -${event.amount}` : event.critical ? `치명타! -${event.amount}` : `-${event.amount}`, counter ? 0xffa94d : event.critical ? 0xffd166 : 0xff5a5a, counter ? 22 : event.critical ? 34 : 28, event.critical ? 800 : 600);
           impact = Promise.all([target.flash(), target.animateTroops(event.troopsAfter)]);
         });
         await impact;

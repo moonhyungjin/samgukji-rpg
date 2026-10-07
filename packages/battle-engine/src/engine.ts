@@ -53,6 +53,9 @@ export type CommandPreview =
       interceptChance: number;
       /** 원래 대상에게 피해 무시(결계)가 남아 있는가. true면 이 공격은 피해가 0이 된다 */
       targetBarrier: boolean;
+      /** 크리티컬이 켜져 있을 때만: 확률(%)과 크리티컬이 났을 때의 피해 (남은 병력으로 잘린 값) */
+      criticalChance?: number;
+      criticalDamage?: number;
     }
   | { kind: 'heal'; amount: number }
   | { kind: 'buff'; effect: BuffEffect }
@@ -242,6 +245,7 @@ export class BattleEngine {
       actorTroopsAfter: actor.troops - counter,
       interceptChance: 1 - noIntercept,
       targetBarrier: target.barrier > 0,
+      ...(this.criticalOn() && damage > 0 ? { criticalChance: balance.critical!.chance, criticalDamage: Math.min(this.criticalAmount(this.calc.damage(actor, target, skill, this.moraleShare(actor.side))), target.troops) } : {}),
     };
   }
 
@@ -327,11 +331,14 @@ export class BattleEngine {
     }
 
     // 피해는 가드 상태(받는 피해 감소)로 먼저 계산하고, 가드 중에 맞으면 확률이 준다 (대신 맞든 직접 맞든, 원작 규칙).
-    const amount = this.calc.damage(actor, target, skill, this.moraleShare(actor.side));
+    let amount = this.calc.damage(actor, target, skill, this.moraleShare(actor.side));
+    // 크리티컬: 확률이 켜져 있고 맞을 때만 난수를 쓴다 (꺼져 있으면 기존 시드 결과가 그대로다)
+    const critical = this.criticalOn() && amount > 0 && this.rng() * 100 < this.input.balance.critical!.chance;
+    if (critical) amount = this.criticalAmount(amount);
     const guard = this.input.data.unitTypes[target.unitType].guard;
     if (guard && target.guardRate > 0 && target.barrier === 0) this.setGuardRate(target, Math.max(0, target.guardRate - guard.decay), 'block');
     const troopsBeforeHit = target.troops;
-    this.skillStat(skill.id).damage += this.inflict(actor, target, amount, 'attack');
+    this.skillStat(skill.id).damage += this.inflict(actor, target, amount, 'attack', critical);
 
     // 상호 피해: 근접 공격을 받은 대상이 살아 있으면 반격한다. 반격의 세기는 맞기 전 병력으로 계산한다 (원작 규칙).
     const { data } = this.input;
@@ -423,8 +430,17 @@ export class BattleEngine {
     });
   }
 
+  private criticalOn(): boolean {
+    const c = this.input.balance.critical;
+    return !!c && c.chance > 0;
+  }
+
+  private criticalAmount(amount: number): number {
+    return Math.round(amount * this.input.balance.critical!.multiplier);
+  }
+
   /** 피해를 적용하고 실제로 깎인 병력을 돌려준다. 사망/사기 변동도 여기서 처리한다. */
-  private inflict(source: CharacterState, target: CharacterState, amount: number, kind: 'attack' | 'counter'): number {
+  private inflict(source: CharacterState, target: CharacterState, amount: number, kind: 'attack' | 'counter', critical = false): number {
     // 피해 무시(결계): 피해 한 번을 통째로 0으로 만든다 (반격 피해도 마찬가지)
     if (amount > 0 && target.barrier > 0) {
       target.barrier--;
@@ -443,6 +459,7 @@ export class BattleEngine {
       target: target.uid,
       amount: applied,
       troopsAfter: target.troops,
+      ...(critical && applied > 0 ? { critical: true as const } : {}),
     });
 
     const { morale } = this.input.balance;

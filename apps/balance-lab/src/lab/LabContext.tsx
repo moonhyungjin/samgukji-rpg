@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { DEFAULT_ADDITIVE, DEFAULT_TIERED } from '@samgukji/battle-engine';
+import { DEFAULT_ADDITIVE, DEFAULT_GAP, DEFAULT_TIERED } from '@samgukji/battle-engine';
 import { setIn } from '../lib/path';
 import { filesSnapshot, syncWithFiles } from '../lib/fileSync';
 import type { DataFiles } from '../lib/fileSync';
@@ -57,7 +57,9 @@ export function normalizeState(saved: LabState): LabState {
         ...saved.balance.damage,
         formula: saved.balance.damage.formula ?? 'divide',
         additive: saved.balance.damage.additive ?? { ...DEFAULT_ADDITIVE },
+        gap: saved.balance.damage.gap ?? { ...DEFAULT_GAP },
       },
+      critical: saved.balance.critical ?? { chance: 10, multiplier: 1.5 },
       heal: saved.balance.heal.useTroopFactor === undefined ? { ...saved.balance.heal, useTroopFactor: false } : saved.balance.heal,
       action: saved.balance.action ?? { perAp: 2, cap: 10 },
       troopFactor: {

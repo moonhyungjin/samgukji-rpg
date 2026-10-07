@@ -1,7 +1,8 @@
 import { effectiveStat, moraleMultiplier, relativeTroopFactor, selfTroopFactor, tieredTroopFactor, troopFactor } from './stats';
-import type { AdditiveDamage, BalanceConfig, CharacterState, GameData, SkillData, TraitData } from './types';
+import type { AdditiveDamage, BalanceConfig, GapDamage, CharacterState, GameData, SkillData, TraitData } from './types';
 
 export const DEFAULT_ADDITIVE: AdditiveDamage = { attackMul: 10, defenseMul: 8, intellectMul: 10, resistMul: 7, min: 10, scale: 10 };
+export const DEFAULT_GAP: GapDamage = { perPoint: 0.1, min: 0.3, baseMode: 'stat', flat: 300, bonusDiv: 0 };
 
 function traitApplies(trait: TraitData, other: CharacterState): boolean {
   // versus가 없거나 조건 목록이 비어 있으면 모든 상대에게 적용된다.
@@ -102,6 +103,15 @@ export class DamageCalculator {
       const vulnerability = this.data.unitTypes[defender.unitType]?.vulnerability?.[key] ?? 0;
       const statPart = effectiveStat(b, attackStat) * (physical ? a.attackMul : a.intellectMul) - effectiveStat(b, defenseStat) * (physical ? a.defenseMul : a.resistMul);
       return { base: Math.max(a.min, typeBonus + vulnerability + statPart) * a.scale * skill.power, mitigation: 1 };
+    }
+
+    if (b.damage.formula === 'gap') {
+      const g = b.damage.gap ?? DEFAULT_GAP;
+      const key = physical ? 'physical' : 'magic';
+      const bonus = g.bonusDiv > 0 ? ((this.data.unitTypes[attacker.unitType]?.typeBonus?.[key] ?? 0) + (this.data.unitTypes[defender.unitType]?.vulnerability?.[key] ?? 0)) / g.bonusDiv : 0;
+      const gap = effectiveStat(b, attackStat) - effectiveStat(b, defenseStat) + bonus;
+      const base = (g.baseMode === 'flat' ? g.flat : effectiveStat(b, attackStat) * b.damage.attackScale) * skill.power;
+      return { base, mitigation: Math.max(g.min, 1 + gap * g.perPoint) };
     }
 
     // divide: 곱하는 순서를 예전과 같게 두려고 경감(mitigation)은 따로 돌려주고 마지막에 곱한다 (반올림 결과 보존)

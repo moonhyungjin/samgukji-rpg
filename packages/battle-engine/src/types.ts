@@ -163,7 +163,7 @@ export interface GameData {
 
 export type TroopFactorMode = 'absolute' | 'relative' | 'tiered';
 
-export type DamageFormula = 'divide' | 'additive';
+export type DamageFormula = 'divide' | 'additive' | 'gap';
 
 /**
  * 원작(전국란스) 방식의 피해 공식.
@@ -178,6 +178,20 @@ export interface AdditiveDamage {
   resistMul: number;
   min: number;
   scale: number;
+}
+
+/**
+ * gap 방식: 공격 − 방어 스탯 격차 1점당 피해가 perPoint(0.1 = 10%)씩 늘거나 준다.
+ * 피해 = 기본 피해 × clamp(1 + (공격 − 방어 + 병종 보정 점수) × perPoint, min) × 병력 보정 × 나머지 배수
+ * 기본 피해: baseMode 'stat'이면 기준 스탯 × attackScale, 'flat'이면 flat 고정값 (둘 다 × 스킬 계수).
+ * 병종 보정 점수 = (공격 병종 typeBonus + 대상 vulnerability) ÷ bonusDiv. bonusDiv가 0이면 병종 보정을 쓰지 않는다.
+ */
+export interface GapDamage {
+  perPoint: number;
+  min: number;
+  baseMode: 'stat' | 'flat';
+  flat: number;
+  bonusDiv: number;
 }
 
 /**
@@ -213,6 +227,7 @@ export interface BalanceConfig {
     /** divide(생략 시): 기준 스탯 × attackScale ÷ (1 + 방어 × scale). additive: 원작(전국란스) 방식의 더하기/빼기 공식 (AdditiveDamage) */
     formula?: DamageFormula;
     additive?: AdditiveDamage;
+    gap?: GapDamage;
   };
   heal: {
     scale: number;
@@ -246,6 +261,8 @@ export interface BalanceConfig {
   };
   /** 기술에 counterRate가 없을 때의 반격 비율 */
   counter: { rate: number };
+  /** 크리티컬(치명타): 일반공격/책략 공격이 chance(%)의 확률로 피해 × multiplier. 반격과 치유는 제외. 생략하거나 chance가 0이면 꺼진다 */
+  critical?: { chance: number; multiplier: number };
   morale: {
     /** 방어측 사기 시작값 (공격측 = 100 - 값). 제로섬 단일 막대 */
     defenderStart: number;
@@ -317,7 +334,7 @@ export type MoraleJudgement = 'tiebreak' | 'before-troops';
 export type BattleEvent =
   | { type: 'roundStart'; round: number }
   | { type: 'action'; round: number; actor: string; skillId: string; target?: string; apAfter: number }
-  | { type: 'damage'; round: number; kind: 'attack' | 'counter'; source: string; target: string; amount: number; troopsAfter: number }
+  | { type: 'damage'; round: number; kind: 'attack' | 'counter'; source: string; target: string; amount: number; troopsAfter: number; critical?: true }
   | { type: 'heal'; round: number; source: string; target: string; amount: number; troopsAfter: number }
   | { type: 'unitDestroyed'; round: number; unit: string; by: string }
   | { type: 'rowAdvance'; round: number; side: Side; units: string[] }

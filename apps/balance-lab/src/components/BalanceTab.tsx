@@ -13,6 +13,7 @@ export function BalanceTab() {
           options={[
             { value: 'additive', label: '원작식: (병종 보정 + 대상 취약 + 공격×10 − 방어×8) × 10 × 병력 보정' },
             { value: 'divide', label: '기존: 공격 × 공격 계수 ÷ (1 + 방어 × 방어 계수)' },
+            { value: 'gap', label: '격차식: 기본 피해 × (1 + (공격 − 방어) × 격차 1점당 비율)' },
           ]}
         />
         <p className="note">원작식은 병종 차이를 더하기로 줍니다. 병종 보정과 취약 보정은 병종 카드에서 고칩니다. 기본값 × 배율 × 병력 보정(구간식 ÷ 1000)이라, 배율 10이면 "기본값 × 병력 ÷ 100"(원작과 같은 꼴)입니다. 아래 [기존] 계수는 기존 공식에서만 씁니다.</p>
@@ -22,10 +23,26 @@ export function BalanceTab() {
         <NumberField label="[원작식] 대상 지력 1당 빼기 (책략)" path="balance.damage.additive.resistMul" step={1} min={0} />
         <NumberField label="[원작식] 기본값 하한" path="balance.damage.additive.min" step={1} min={0} />
         <NumberField label="[원작식] 배율" path="balance.damage.additive.scale" step={0.5} min={0} />
+        <p className="note">격차식은 공격 − 방어 스탯 격차 1점마다 피해가 일정 비율(기본 10%)씩 늘거나 줍니다. 기본 피해는 "기준 스탯 × [기존] 공격 계수" 또는 고정값입니다.</p>
+        <NumberField label="[격차식] 격차 1점당 비율" path="balance.damage.gap.perPoint" step={0.01} min={0} />
+        <NumberField label="[격차식] 배율 하한" path="balance.damage.gap.min" step={0.05} min={0} />
+        <SelectField
+          label="[격차식] 기본 피해"
+          path="balance.damage.gap.baseMode"
+          options={[
+            { value: 'stat', label: '기준 스탯 × 공격 계수' },
+            { value: 'flat', label: '고정값' },
+          ]}
+        />
+        <NumberField label="[격차식] 고정 기본 피해" path="balance.damage.gap.flat" step={10} min={0} />
+        <NumberField label="[격차식] 병종 보정 나누기 (0이면 안 씀)" path="balance.damage.gap.bonusDiv" step={1} min={0} />
         <NumberField label="[기존] 공격 계수 (attackScale)" path="balance.damage.attackScale" step={1} min={0} />
         <NumberField label="[기존] 방어 계수 (defenseScale)" path="balance.damage.defenseScale" step={0.01} min={0} />
         <NumberField label="[기존] 지력 저항 계수 (resistScale)" path="balance.damage.resistScale" step={0.01} min={0} />
         <NumberField label="최소 피해" path="balance.damage.minDamage" min={0} />
+        <NumberField label="치명타 확률 % (0이면 꺼짐)" path="balance.critical.chance" step={1} min={0} max={100} />
+        <NumberField label="치명타 피해 배율" path="balance.critical.multiplier" step={0.1} min={1} />
+        <p className="note">일반공격과 책략 공격이 확률로 피해를 키웁니다. 반격과 치유에는 적용되지 않습니다.</p>
         <NumberField label="회복 계수 (heal.scale)" path="balance.heal.scale" step={1} min={0} />
         <CheckField label="치유량에도 시전자의 병력 보정 적용" path="balance.heal.useTroopFactor" />
       </section>
