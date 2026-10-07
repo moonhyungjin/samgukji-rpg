@@ -4,6 +4,8 @@ import { BalanceTab } from './components/BalanceTab';
 import { BattleTab } from './components/BattleTab';
 import { CharactersTab } from './components/CharactersTab';
 import { DataTab } from './components/DataTab';
+import { PresetsTab } from './components/PresetsTab';
+import { SaveBar } from './components/SaveBar';
 import { SettingsTab } from './components/SettingsTab';
 import { SimulationTab } from './components/SimulationTab';
 import { LabProvider, useLab } from './lab/LabContext';
@@ -14,7 +16,8 @@ const TABS = [
   { id: 'battle', label: '전투 1회' },
   { id: 'balance', label: '밸런스 수치' },
   { id: 'data', label: '병종 · 특성 · 스킬' },
-  { id: 'characters', label: '캐릭터' },
+  { id: 'characters', label: '장수' },
+  { id: 'presets', label: '기본 편성' },
   { id: 'settings', label: '목표 · 가져오기' },
 ] as const;
 
@@ -48,12 +51,14 @@ function Shell() {
           ))}
         </nav>
       </header>
+      <SaveBar />
       <main>
         {tab === 'sim' && <SimulationTab sim={sim} pinned={pinned} setPinned={setPinned} />}
         {tab === 'battle' && <BattleTab />}
         {tab === 'balance' && <BalanceTab />}
         {tab === 'data' && <DataTab />}
         {tab === 'characters' && <CharactersTab />}
+        {tab === 'presets' && <PresetsTab />}
         {tab === 'settings' && <SettingsTab />}
       </main>
     </div>

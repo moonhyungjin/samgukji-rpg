@@ -43,9 +43,9 @@ describe('시뮬레이션 워커', () => {
   });
 
   it('잘못된 편성은 오류 메시지로 돌려주고 죽지 않는다', () => {
-    fakeSelf.onmessage!({ data: request({ id: 9, teamA: [{ characterId: 'zhugeLiang', row: 'front' }] }) });
+    fakeSelf.onmessage!({ data: request({ id: 9, teamA: [{ characterId: 'nobody', row: 'front' }] }) });
     expect(posted.at(-1)?.id).toBe(9);
     expect(posted.at(-1)?.report).toBeUndefined();
-    expect(posted.at(-1)?.error).toMatch(/cannot be placed/);
+    expect(posted.at(-1)?.error).toMatch(/Unknown character/);
   });
 });

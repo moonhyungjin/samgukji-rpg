@@ -1,65 +1,93 @@
-import { totalAp } from '@samgukji/battle-engine';
+import { useMemo, useState } from 'react';
+import type { CharacterData, CharacterRank } from '@samgukji/battle-engine';
 import { useLab } from '../lab/LabContext';
-import { NumberField, SelectField, TextField } from './Fields';
+import { CharacterTable } from '../editor/components/CharacterTable';
+import { RANK_LABEL, changedIds, duplicateCharacter, newCharacter, validate } from '../editor/lib/editor';
+import { presetMap } from '../editor/lib/presets';
+import { withCharacters } from '../lib/editorState';
 
-const STATS: { key: string; label: string }[] = [
-  { key: 'attack', label: '공격' },
-  { key: 'defense', label: '방어' },
-  { key: 'intellect', label: '지력' },
-  { key: 'speed', label: '속도' },
-  { key: 'action', label: '행동력' },
-  { key: 'diplomacy', label: '외교' },
-  { key: 'politics', label: '내정' },
-  { key: 'charm', label: '매력' },
-];
-
-/** 캐릭터 스탯(0~10, 아이템으로 초과 가능), 병종 기본 AP + 행동력(2마다 AP 1), 군단 레벨, 병종을 편집한다. 외교·내정·매력은 아직 전투에서 쓰이지 않는다. */
+/** 장수 표: 이름, 병종, 등급, 레벨, 스탯 8종을 칸에서 바로 고치고, 병종 보정을 반영한 계산값을 본다. */
 export function CharactersTab() {
-  const { state } = useLab();
-  const unitTypeOptions = Object.values(state.data.unitTypes).map((u) => ({ value: u.id, label: u.name }));
+  const { state, update, baseline } = useLab();
+  const [search, setSearch] = useState('');
+  const [rank, setRank] = useState<CharacterRank | 'all'>('all');
+  const [unitType, setUnitType] = useState('all');
+
+  const list = useMemo(() => Object.values(state.data.characters) as CharacterData[], [state.data.characters]);
+  const saved = useMemo(() => Object.values(baseline.data.characters) as CharacterData[], [baseline.data.characters]);
+  const issues = useMemo(() => validate(list, state.data, state.balance), [list, state.data, state.balance]);
+  const diff = useMemo(() => changedIds(saved, list), [saved, list]);
+  const savedIds = useMemo(() => new Set(saved.map((c) => c.id)), [saved]);
+  const changed = useMemo(() => new Set(diff.changed), [diff]);
+  const draftPresets = useMemo(() => presetMap(state.presets), [state.presets]);
+
+  const visibleIds = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return new Set(
+      list
+        .filter((c) => (rank === 'all' || (c.rank ?? 'elite') === rank) && (unitType === 'all' || c.unitType === unitType))
+        .filter((c) => !q || c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q))
+        .map((c) => c.id),
+    );
+  }, [list, search, rank, unitType]);
+
+  const setList = (fn: (prev: CharacterData[]) => CharacterData[]) => update((s) => withCharacters(s, fn(Object.values(s.data.characters) as CharacterData[])));
 
   return (
-    <section className="panel">
-      <h3>캐릭터</h3>
-      <table className="characters">
-        <thead>
-          <tr>
-            <th>이름</th>
-            <th>병종</th>
-            {STATS.map((s) => (
-              <th key={s.key}>{s.label}</th>
-            ))}
-            <th>AP</th>
-            <th>레벨</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.values(state.data.characters).map((c) => (
-            <tr key={c.id}>
-              <td>
-                <TextField path={`data.characters.${c.id}.name`} />
-              </td>
-              <td>
-                <SelectField path={`data.characters.${c.id}.unitType`} options={unitTypeOptions} />
-              </td>
-              {STATS.map((s) => (
-                <td key={s.key}>
-                  <NumberField path={`data.characters.${c.id}.stats.${s.key}`} step={0.5} min={0} max={state.balance.statCap} />
-                </td>
-              ))}
-              <td>{totalAp(state.balance, state.data.unitTypes[c.unitType]?.baseAp, c.stats.action + (state.data.unitTypes[c.unitType]?.statMods?.action ?? 0))}</td>
-              <td>
-                <NumberField path={`data.characters.${c.id}.level`} min={1} />
-              </td>
-            </tr>
+    <section className="panel ed">
+      <h3>장수</h3>
+      <div className="filters">
+        <input type="search" placeholder="이름/id 검색" aria-label="검색" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <select aria-label="등급 필터" value={rank} onChange={(e) => setRank(e.target.value as CharacterRank | 'all')}>
+          <option value="all">등급 전체</option>
+          {(Object.keys(RANK_LABEL) as CharacterRank[]).map((r) => (
+            <option key={r} value={r}>
+              {RANK_LABEL[r]}
+            </option>
           ))}
-        </tbody>
-      </table>
+        </select>
+        <select aria-label="병종 필터" value={unitType} onChange={(e) => setUnitType(e.target.value)}>
+          <option value="all">병종 전체</option>
+          {Object.values(state.data.unitTypes).map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
+            </option>
+          ))}
+        </select>
+        <span className="badge">
+          {visibleIds.size} / {list.length}명
+        </span>
+        <span className="spacer" />
+        <button type="button" onClick={() => setList((prev) => [...prev, newCharacter(prev, Object.keys(state.data.unitTypes)[0] ?? 'infantry')])}>
+          + 새 장수
+        </button>
+      </div>
+
+      <CharacterTable
+        list={list}
+        visibleIds={visibleIds}
+        savedIds={savedIds}
+        changed={changed}
+        issues={issues}
+        data={state.data}
+        balance={state.balance}
+        presets={draftPresets}
+        onEdit={(id, patch) => setList((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch, stats: { ...c.stats, ...patch.stats } } : c)))}
+        onDuplicate={(id) => {
+          const source = list.find((c) => c.id === id);
+          if (source) setList((prev) => [...prev, duplicateCharacter(prev, source)]);
+        }}
+        onRevert={(id) => {
+          const original = saved.find((c) => c.id === id);
+          if (original) setList((prev) => prev.map((c) => (c.id === id ? original : c)));
+        }}
+        onRemove={(id) => setList((prev) => prev.filter((c) => c.id !== id))}
+      />
+
       <p className="note">
-        장수 데이터의 원본은 <code>packages/game-data/data/characters.json</code>이고, 장수 편집기(<code>npm run chars</code>)에서 저장하면 이 화면을 새로고침할 때 자동으로 반영됩니다.
-        여기서 고친 값은 이 브라우저의 Lab 실험용이며, 편집기에서 다시 저장하면 파일 값으로 덮어써집니다.
+        노란 줄은 파일 값에서 수정한 장수, 초록 줄은 새 장수, 빨간 줄은 오류입니다. 오른쪽 회색 칸(실제 공/방/지/속, 총 AP, 병력, 1회 피해)은 병종 보정과 밸런스 수치까지 반영한 계산값이며 직접 고치는 값이
+        아닙니다. 위의 "파일에 저장"을 누르면 <code>packages/game-data/data/characters.json</code>이 바뀌어 게임과 시뮬레이터에 반영됩니다. 기본 편성에서 쓰는 장수는 삭제할 수 없습니다.
       </p>
-      <p className="note">병종을 바꿨는데 편성에서 그 열에 둘 수 없게 되면 실행 시 오류가 표시됩니다. 편성 탭에서 위치를 바꿔 주세요.</p>
     </section>
   );
 }

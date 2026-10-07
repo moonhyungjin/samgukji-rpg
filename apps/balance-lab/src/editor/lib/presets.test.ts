@@ -87,8 +87,9 @@ describe('편성 검사', () => {
   it('없는 장수, 둘 수 없는 열, 열당 3군단 초과, 6군단 초과를 오류로 잡는다', () => {
     const base = list;
     expect(errors([...base, { ...ok(), lineup: [{ characterId: 'nobody', row: 'front' }] }]).some((i) => /없는 장수/.test(i.message))).toBe(true);
-    // 책사는 후열 전용
-    expect(errors([...base, { ...ok(), lineup: [{ characterId: 'zhugeLiang', row: 'front' }] }]).some((i) => /전열에 둘 수 없습니다/.test(i.message))).toBe(true);
+    // 후열 전용 병종은 전열에 둘 수 없다 (시험용 데이터: 책사를 후열 전용으로 둔다)
+    const backOnly = { ...gameData, unitTypes: { ...gameData.unitTypes, strategist: { ...gameData.unitTypes.strategist, allowedRows: ['back' as const] } } };
+    expect(validatePresets([...base, { ...ok(), lineup: [{ characterId: 'zhugeLiang', row: 'front' }] }], backOnly).some((i) => /전열에 둘 수 없습니다/.test(i.message))).toBe(true);
     const four = ['zhangFei', 'guanYu', 'zhaoYun', 'weiYan'].map((characterId) => ({ characterId, row: 'front' as const }));
     expect(errors([...base, { ...ok(), lineup: four }]).some((i) => /전열은 3군단까지/.test(i.message))).toBe(true);
     const seven = [...four.slice(0, 3), ...['huangZhong', 'xiahouYuan', 'zhugeLiang', 'pangTong'].map((characterId) => ({ characterId, row: 'back' as const }))];

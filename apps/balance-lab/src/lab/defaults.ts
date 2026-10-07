@@ -1,24 +1,22 @@
 import { FAMILIES } from '@samgukji/battle-engine';
 import type { Family } from '@samgukji/battle-engine';
-import { defaultBalance, gameData, presets } from '@samgukji/game-data';
-import { charactersSignature } from '../lib/charactersSync';
+import { presets } from '@samgukji/game-data';
+import { filesSignature, filesSnapshot } from '../lib/fileSync';
 import { slotsFromLineup } from '../lib/slots';
 import type { FamilySurvivalTarget, LabState } from './types';
 
-function clone<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
-
 export function createDefaultState(): LabState {
+  const files = filesSnapshot();
   const familySurvival = Object.fromEntries(
     // 궁병 생존율 40%가 첫 목표 지표다. 나머지 병종은 필요할 때 켠다.
     FAMILIES.map((f): [Family, FamilySurvivalTarget] => [f, { enabled: f === 'archer', target: 0.4, tolerance: 0.1 }]),
   ) as Record<Family, FamilySurvivalTarget>;
 
   return {
-    charactersSignature: charactersSignature(gameData.characters),
-    data: clone(gameData),
-    balance: clone(defaultBalance),
+    filesSignature: filesSignature(files),
+    data: files.data,
+    balance: files.balance,
+    presets: files.presets,
     teamA: slotsFromLineup(presets.shu),
     teamB: slotsFromLineup(presets.wei),
     sim: {

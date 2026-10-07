@@ -3,6 +3,7 @@ import { useLab } from '../lab/LabContext';
 import { FAMILY_LABEL } from '../lib/format';
 import { CheckField, CheckGroup, NumberField, SelectField, TextField } from './Fields';
 import type { Option } from './Fields';
+import { UnitTypesSection } from './UnitTypesSection';
 
 const ROW_OPTIONS: Option[] = [
   { value: 'front', label: '전열' },
@@ -27,22 +28,6 @@ export function DataTab() {
         ...s,
         data: { ...s.data, traits: { ...s.data.traits, [id]: { id, name: '새 특성', kind: 'damage-dealt' as const, multiplier: 1.2 } } },
       };
-    });
-
-  /** 병종의 가드를 켜고 끈다. 켜면 가드 스킬(kind: guard)도 병종의 스킬 목록에 넣는다. */
-  const toggleGuard = (typeId: string, on: boolean) =>
-    update((s) => {
-      const guardSkill = Object.values(s.data.skills).find((k) => k.kind === 'guard');
-      const type = s.data.unitTypes[typeId];
-      const extra = type.extraSkillIds.filter((id) => s.data.skills[id]?.kind !== 'guard');
-      let next;
-      if (on) {
-        next = { ...type, guard: type.guard ?? { start: 50, gain: 70, decay: 40, damageTaken: 1 }, extraSkillIds: guardSkill ? [...extra, guardSkill.id] : extra };
-      } else {
-        const { guard: _removed, ...rest } = type;
-        next = { ...rest, extraSkillIds: extra };
-      }
-      return { ...s, data: { ...s.data, unitTypes: { ...s.data.unitTypes, [typeId]: next } } };
     });
 
   const removeTrait = (id: string) =>
@@ -111,98 +96,7 @@ export function DataTab() {
         </button>
       </section>
 
-      <section className="panel">
-        <h3>병종</h3>
-        <p className="note">
-          병력 배율: 같은 징병 비용으로 모이는 병력의 비율입니다. 군단 레벨로 정해진 최대 병력에 곱해집니다. 예: 보병 1, 풍수사 0.5 → 같은 레벨에서 풍수사의 병력은 절반이고,
-          병력이 적으면 공격도 약해지고(병력 보정) 더 빨리 쓰러집니다.
-        </p>
-        <table>
-          <thead>
-            <tr>
-              <th>병종</th>
-              <th>병력 배율</th>
-              <th>기본 AP</th>
-              <th>받는 피해 배수 (물리 / 책략)</th>
-              <th>스탯 보정 (공 / 방 / 지 / 속)</th>
-              <th>시작 배치 가능 열</th>
-              <th>사거리</th>
-              <th>반격</th>
-              <th>반격 비율</th>
-              <th>일반공격</th>
-              <th>특성</th>
-              <th>가드 (시작 / 상승 / 감소 %p / 가드 중 받는 피해 배수)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.values(data.unitTypes).map((u) => (
-              <tr key={u.id}>
-                <td>
-                  {u.name} <small>({FAMILY_LABEL[u.family]})</small>
-                </td>
-                <td>
-                  <NumberField path={`data.unitTypes.${u.id}.troopScale`} step={0.05} min={0.05} />
-                </td>
-                <td>
-                  <NumberField path={`data.unitTypes.${u.id}.baseAp`} min={0} />
-                </td>
-                <td>
-                  <span className="check-group">
-                    <NumberField label="물리" path={`data.unitTypes.${u.id}.damageTakenByType.physical`} step={0.05} min={0} />
-                    <NumberField label="책략" path={`data.unitTypes.${u.id}.damageTakenByType.magic`} step={0.05} min={0} />
-                  </span>
-                </td>
-                <td>
-                  <span className="check-group">
-                    {(
-                      [
-                        ['attack', '공'],
-                        ['defense', '방'],
-                        ['intellect', '지'],
-                        ['speed', '속'],
-                      ] as const
-                    ).map(([k, label]) => (
-                      <NumberField key={k} label={label} path={`data.unitTypes.${u.id}.statMods.${k}`} step={1} />
-                    ))}
-                  </span>
-                </td>
-                <td>
-                  <CheckGroup path={`data.unitTypes.${u.id}.allowedRows`} options={ROW_OPTIONS} />
-                </td>
-                <td>
-                  <NumberField path={`data.unitTypes.${u.id}.range`} step={1} min={1} />
-                </td>
-                <td>
-                  <CheckField label="반격함" path={`data.unitTypes.${u.id}.canCounter`} />
-                </td>
-                <td>
-                  <NumberField path={`data.unitTypes.${u.id}.counterRate`} step={0.05} min={0} />
-                </td>
-                <td>
-                  <SelectField path={`data.unitTypes.${u.id}.basicSkillId`} options={skillOptions} />
-                </td>
-                <td>
-                  <CheckGroup path={`data.unitTypes.${u.id}.traitIds`} options={traitOptions} />
-                </td>
-                <td>
-                  <label className="check">
-                    <input type="checkbox" checked={u.guard !== undefined} onChange={(e) => toggleGuard(u.id, e.target.checked)} />
-                    <span>사용</span>
-                  </label>
-                  {u.guard && (
-                    <span className="check-group">
-                      <NumberField path={`data.unitTypes.${u.id}.guard.start`} step={5} min={0} />
-                      <NumberField path={`data.unitTypes.${u.id}.guard.gain`} step={5} min={0} />
-                      <NumberField path={`data.unitTypes.${u.id}.guard.decay`} step={5} min={0} />
-                      <NumberField path={`data.unitTypes.${u.id}.guard.damageTaken`} step={0.05} min={0} />
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+      <UnitTypesSection />
 
       <section className="panel">
         <h3>스킬 (커맨드)</h3>

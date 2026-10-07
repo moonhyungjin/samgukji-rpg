@@ -1,0 +1,230 @@
+[
+  {
+    "id": "infantry",
+    "name": "보병",
+    "family": "infantry",
+    "tier": 1,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "counterRate": 0.5,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 1,
+    "baseAp": 2,
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1.1
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    }
+  },
+  {
+    "id": "shield",
+    "name": "방패병",
+    "family": "shield",
+    "tier": 1,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "counterRate": 0.5,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [
+      "guard"
+    ],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 1,
+    "baseAp": 3,
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1.1
+    },
+    "statMods": {
+      "attack": -1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": -1,
+      "action": 0
+    },
+    "guard": {
+      "start": 50,
+      "gain": 70,
+      "decay": 40,
+      "damageTaken": 0.75
+    }
+  },
+  {
+    "id": "cavalry",
+    "name": "기병",
+    "family": "cavalry",
+    "tier": 1,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "counterRate": 0.6,
+    "basicSkillId": "cavalry-charge",
+    "extraSkillIds": [],
+    "promotesTo": [],
+    "traitIds": [
+      "cavalry-tough"
+    ],
+    "troopScale": 0.8,
+    "baseAp": 2,
+    "damageTakenByType": {
+      "physical": 0.95,
+      "magic": 1.1
+    },
+    "statMods": {
+      "attack": 1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    }
+  },
+  {
+    "id": "archer",
+    "name": "궁병",
+    "family": "archer",
+    "tier": 1,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 3,
+    "canCounter": true,
+    "counterRate": 0.25,
+    "basicSkillId": "archer-shot",
+    "extraSkillIds": [],
+    "promotesTo": [],
+    "traitIds": [
+      "archer-vs-front"
+    ],
+    "troopScale": 0.85,
+    "baseAp": 2,
+    "damageTakenByType": {
+      "physical": 1.1,
+      "magic": 1.1
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": -1,
+      "intellect": 0,
+      "speed": -1,
+      "action": 0
+    }
+  },
+  {
+    "id": "strategist",
+    "name": "책사",
+    "family": "strategist",
+    "tier": 1,
+    "allowedRows": [
+      "back",
+      "front"
+    ],
+    "range": 3,
+    "canCounter": false,
+    "counterRate": 0.5,
+    "basicSkillId": "stratagem",
+    "extraSkillIds": [
+      "inspire"
+    ],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 0.8,
+    "baseAp": 2,
+    "damageTakenByType": {
+      "physical": 1.1,
+      "magic": 0.8
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 1,
+      "speed": 0,
+      "action": 0
+    }
+  },
+  {
+    "id": "taoist",
+    "name": "도사",
+    "family": "taoist",
+    "tier": 1,
+    "allowedRows": [
+      "back",
+      "front"
+    ],
+    "range": 3,
+    "canCounter": false,
+    "counterRate": 0.5,
+    "basicSkillId": "poison-smoke",
+    "extraSkillIds": [
+      "ward"
+    ],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 0.8,
+    "baseAp": 2,
+    "damageTakenByType": {
+      "physical": 1.1,
+      "magic": 0.8
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    }
+  },
+  {
+    "id": "geomancer",
+    "name": "풍수사",
+    "family": "geomancer",
+    "tier": 1,
+    "allowedRows": [
+      "back",
+      "front"
+    ],
+    "range": 3,
+    "canCounter": false,
+    "counterRate": 0.5,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [
+      "heal"
+    ],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 0.6,
+    "baseAp": 2,
+    "damageTakenByType": {
+      "physical": 1.1,
+      "magic": 0.8
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": -1,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    }
+  }
+]

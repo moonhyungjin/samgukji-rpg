@@ -1,6 +1,8 @@
-// Balance Lab을 실제 브라우저로 조작해 확인하는 스크립트. 계수/스탯/행동력 입력란이 보이고, 값을 바꾸면 저장되는지 본다.
+// Balance Lab을 실제 브라우저로 조작해 확인하는 스크립트.
+// 계수/스탯/행동력 입력, 장수/병종/기본 편성 편집, "파일에 저장"으로 packages/game-data/data/*.json이 실제로 바뀌는 것, 오류가 저장을 막는 것,
+// 파일이 바뀌면 Lab 초안이 파일 값으로 갱신되는 것을 본다. 시험 중에 바뀐 데이터 파일은 끝나면(실패해도) 원래대로 되돌린다.
 //
-//   npm run lab           # 다른 터미널에서 개발 서버를 켜 둔다 (http://localhost:5173)
+//   npm run lab           # 다른 터미널에서 개발 서버를 켜 둔다 (http://localhost:5173). 저장 API가 있는 개발 서버여야 한다
 //   npm run e2e:lab       # 이 스크립트 실행. 스크린샷은 out/lab-e2e/ 에 저장된다
 // 환경 변수: LAB_URL, BROWSER, E2E_OUT. 게임 화면용 game-e2e.mjs와 같은 방식(DevTools Protocol)이다.
 
@@ -93,8 +95,26 @@ const clickButton = (label) =>
   evalJs(`(() => { const b = [...document.querySelectorAll('button')].find(b => b.textContent.includes(${JSON.stringify(label)})); if (!b) return false; b.click(); return true; })()`);
 
 
-const tabs = async (label) => evalJs(`(() => { const b = [...document.querySelectorAll('button.tab')].find(b => b.textContent.includes(${JSON.stringify(label)})); if (!b) return false; b.click(); return true; })()`);
-const inputsIn = (sel) => evalJs(`document.querySelectorAll(${JSON.stringify(sel)} + ' input').length`);
+const tabs = async (label) => evalJs(`(() => { const b = [...document.querySelectorAll('button.tab')].find(b => b.textContent.trim() === ${JSON.stringify(label)}); if (!b) return false; b.click(); return true; })()`);
+const setValue = (selector, value) =>
+  evalJs(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return 'missing'; const proto = el.tagName === 'SELECT' ? HTMLSelectElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, ${JSON.stringify(String(value))}); el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); return 'ok'; })()`);
+
+// 데이터 파일(packages/game-data/data/*.json)을 시험 전에 보관하고, 끝나면 (실패해도) 원래 내용으로 되돌린다.
+const DATA_DIR = resolve('packages/game-data/data');
+const DATA_NAMES = ['skills', 'traits', 'unitTypes', 'characters', 'presets', 'balance'];
+const originals = Object.fromEntries(DATA_NAMES.map((n) => [n, readFileSync(join(DATA_DIR, `${n}.json`), 'utf-8')]));
+const readData = (name) => JSON.parse(readFileSync(join(DATA_DIR, `${name}.json`), 'utf-8'));
+const writeData = (name, value) => writeFileSync(join(DATA_DIR, `${name}.json`), JSON.stringify(value, null, 2) + '\n');
+const restoreAll = () => DATA_NAMES.forEach((n) => writeFileSync(join(DATA_DIR, `${n}.json`), originals[n]));
+const filesEqualOriginal = () => DATA_NAMES.every((n) => readFileSync(join(DATA_DIR, `${n}.json`), 'utf-8') === originals[n]);
+const load = async () => {
+  await send('Page.navigate', { url: BASE });
+  // 개발 서버가 처음 요청을 컴파일하는 동안 기다린다
+  await waitFor(`document.querySelectorAll('button.tab').length > 0`, 30000, 'Lab 로드');
+  await sleep(500);
+};
+const clearStorage = () => evalJs(`(() => { localStorage.clear(); sessionStorage.clear(); return true; })()`);
+
 try {
   const targets = await (async () => { for (let i = 0; i < 50; i++) { try { return await getJson('/json'); } catch { await sleep(200); } } throw new Error('no browser'); })();
   const page = targets.find((t) => t.type === 'page');
@@ -102,65 +122,174 @@ try {
   await new Promise((r) => (ws.onopen = r));
   ws.onmessage = (e) => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); } else if (m.method === 'Runtime.exceptionThrown') errors.push(JSON.stringify(m.params.exceptionDetails.exception?.description ?? m.params.exceptionDetails.text).slice(0, 300)); };
   await send('Runtime.enable'); await send('Page.enable');
-  await send('Page.navigate', { url: BASE }); await sleep(1500);
-  await evalJs(`localStorage.clear()`);
-  await send('Page.navigate', { url: BASE }); await sleep(1500);
+  await send('Page.navigate', { url: BASE });
+  await waitFor(`document.querySelectorAll('button.tab').length > 0`, 30000, 'Lab 로드');
+  await clearStorage();
+  await load();
 
-  await sleep(300);
-  await tabs('밸런스');
+  // ---- 1. 기존 화면 ----
+  await tabs('밸런스 수치');
   await sleep(300);
   const bal = await text('main');
   check('밸런스 탭: 행동력 → AP 설정', bal.includes('행동력 몇 마다 AP 1') && bal.includes('공격 계수'));
-  await shot('lab-balance');
 
-  await tabs('병종');
+  await tabs('병종 · 특성 · 스킬');
   await sleep(300);
   const data = await text('main');
-  check('병종 탭: 기본 AP, 스탯 보정, 계수, 방어 무시, 버프', ['기본 AP', '스탯 보정', '계수', '방어 무시', '피해 무시 횟수', '무작위 가짓수'].every((k) => data.includes(k)), '');
-  const nanData = await evalJs(`[...document.querySelectorAll('main input')].some(i => i.value === 'NaN' || i.value === '')`);
-  check('병종 탭: 비어 있거나 NaN인 입력란이 없다', !nanData);
-  // 계수를 실제로 바꿔 본다: 첫 번째 스킬 계수 입력란
+  check('병종 탭: 병종 카드, 스킬 표(계수, 방어 무시, 버프)', ['기본 AP', '사거리', '받는 피해 배수', '반격 비율', '가드로 막힘', '방어 무시', '피해 무시 횟수', '무작위 가짓수'].every((k) => data.includes(k)));
+  check('병종 탭: 비어 있거나 NaN인 입력란이 없다', !(await evalJs(`[...document.querySelectorAll('main input[type=number]')].some(i => i.value === 'NaN' || i.value === '')`)));
+  await shot('lab-unittypes');
+
+  // 스킬 계수 입력란
   const changed = await evalJs(`(() => { const row = [...document.querySelectorAll('tr')].find(r => r.querySelector('td') && r.querySelector('td').textContent.trim() === '돌격'); if (!row) return 'no row'; const inp = [...row.querySelectorAll('input[type=number]')].find(i => i.value === '1.2'); if (!inp) return 'no 1.2 input: ' + [...row.querySelectorAll('input[type=number]')].map(i=>i.value).join(','); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(inp, '1.5'); inp.dispatchEvent(new Event('input', { bubbles: true })); return 'ok'; })()`);
   check('돌격 계수 입력란을 찾아 1.5로 바꾼다', changed === 'ok', String(changed));
   await sleep(300);
-  const saved = await evalJs(`JSON.stringify(Object.keys(localStorage))`);
-  const val = await evalJs(`(() => { const k = Object.keys(localStorage)[0]; return JSON.parse(localStorage.getItem(k)).data.skills['cavalry-charge'].power; })()`);
-  check('바꾼 값이 저장된다', val === 1.5, `power ${val}`);
-  await shot('lab-data');
+  check('저장 줄에 "저장 안 됨 (스킬)"이 뜬다', (await text('.savebar .badge')).includes('저장 안 됨 (스킬)'), (await text('.savebar .badge')).trim());
 
-  await tabs('캐릭터');
+  // ---- 2. 파일에 저장: 스킬 ----
+  const skillBefore = readData('skills').find((s) => s.id === 'cavalry-charge').power;
+  await clickButton('파일에 저장');
+  await waitFor(`!!document.querySelector('.savemsg.ok') || document.querySelectorAll('button.tab').length === 0`, 8000, '저장').catch(() => {});
+  await sleep(1500); // 저장하면 개발 서버가 페이지를 새로고침한다
+  await waitFor(`document.querySelectorAll('button.tab').length > 0`, 30000, '새로고침 뒤 Lab');
+  check('스킬 계수를 저장하면 skills.json이 바뀐다', readData('skills').find((s) => s.id === 'cavalry-charge').power === 1.5, `${skillBefore} → ${readData('skills').find((s) => s.id === 'cavalry-charge').power}`);
+  check('저장 뒤 페이지가 새로고침되고 안내 문구가 남는다', (await text('.savemsg')).includes('스킬'), (await text('.savemsg')).trim().slice(0, 50));
+  check('새로고침 뒤 "프로젝트 파일과 같음"이다', (await text('.savebar .badge')).includes('프로젝트 파일과 같음'));
+  writeData('skills', JSON.parse(originals.skills)); // 스킬 변경은 여기서 되돌린다
+  await sleep(1500);
+  await load();
+
+  // ---- 3. 장수 탭: 계산값, 수정, 저장 ----
+  await tabs('장수');
   await sleep(300);
-  const chars = await text('main');
-  check('캐릭터 탭: 행동력과 AP 열', chars.includes('행동력') && chars.includes('AP') && chars.includes('레벨'));
-  const apCell = await evalJs(`(() => { const row = [...document.querySelectorAll('tr')].find(r => r.querySelector('input[value=\"장비\"]')); return row ? row.textContent : 'none'; })()`);
-  check('장비의 총 AP가 표시된다', /5/.test(String(apCell)), String(apCell));
+  const rows = await evalJs(`document.querySelectorAll('section.ed tbody tr').length`);
+  check('장수 탭에 장수 표가 나온다', rows === JSON.parse(originals.characters).length, `${rows}줄`);
+  check('병종 보정을 반영한 실제 스탯과 총 AP가 나온다 (장비: 7 / 9 / 4 / 4, AP 5)', /7 \/ 9 \/ 4 \/ 4/.test(await evalJs(`document.querySelector('tr[data-id="zhangFei"]').textContent`)));
   await shot('lab-characters');
-  // 장수 편집기에서 장수 파일이 바뀌면 Lab이 다음에 열 때 그 값을 쓰는지 확인한다 (끝나면 파일을 원래대로 되돌린다).
-  const FILE = resolve('packages/game-data/data/characters.json');
-  const originalFile = readFileSync(FILE, 'utf-8');
-  try {
-    const list = JSON.parse(originalFile);
-    const guan = list.find((c) => c.id === 'guanYu');
-    const oldAttack = guan.stats.attack;
-    guan.stats.attack = oldAttack + 1;
-    writeFileSync(FILE, JSON.stringify(list, null, 2) + '\n');
-    await sleep(1200); // 개발 서버가 파일 변경을 읽을 시간
-    await send('Page.navigate', { url: BASE });
-    await waitFor(`document.querySelectorAll('button.tab').length > 0`, 30000, 'Lab 로드');
-    await sleep(500);
-    await tabs('캐릭터');
-    await sleep(300);
-    const synced = await evalJs(`(() => { const row = [...document.querySelectorAll('tr')].find(r => r.querySelector('input[value="관우"]')); if (!row) return 'no row'; const nums = [...row.querySelectorAll('input[type=number]')].map(i => i.value); return nums[0]; })()`);
-    check('장수 파일의 변경이 Lab 캐릭터 탭에 반영된다', Number(synced) === oldAttack + 1, `관우 공격 ${oldAttack} → ${synced}`);
-  } finally {
-    writeFileSync(FILE, originalFile);
-  }
-  check('콘솔 오류가 없다', errors.length === 0, errors.join(' | '));
+
+  const guanBefore = readData('characters').find((c) => c.id === 'guanYu').stats.attack;
+  await setValue('input[aria-label="guanYu 공격"]', guanBefore + 1);
+  await sleep(300);
+  const rowClass = await evalJs(`document.querySelector('tr[data-id="guanYu"]').className`);
+  const badgeText = (await text('.savebar .badge')).trim();
+  check('장수를 고치면 줄이 노랗게 표시되고 저장 줄이 "장수"를 알려 준다', rowClass === 'changed' && badgeText.includes('저장 안 됨 (장수)'), `줄 "${rowClass}", 표시 "${badgeText}"`);
+
+  // 범위 밖 값은 저장할 수 없다
+  await setValue('input[aria-label="guanYu 공격"]', 99);
+  await sleep(300);
+  check('범위 밖 스탯은 오류로 표시된다', (await text('.saveissues')).includes('범위'));
+  await clickButton('파일에 저장');
+  await sleep(500);
+  check('오류가 있으면 저장되지 않고 파일은 그대로다', readData('characters').find((c) => c.id === 'guanYu').stats.attack === guanBefore && (await text('.savemsg')).includes('고쳐야 저장'));
+
+  await setValue('input[aria-label="guanYu 공격"]', guanBefore + 1);
+  await sleep(300);
+  await clickButton('파일에 저장');
+  await sleep(2500);
+  await waitFor(`document.querySelectorAll('button.tab').length > 0`, 30000, '새로고침 뒤 Lab');
+  check('장수를 저장하면 characters.json에 기록된다', readData('characters').find((c) => c.id === 'guanYu').stats.attack === guanBefore + 1, `${guanBefore} → ${readData('characters').find((c) => c.id === 'guanYu').stats.attack}`);
+  await tabs('장수');
+  await sleep(300);
+  check('새로고침 뒤에도 저장된 값이 보인다', (await evalJs(`document.querySelector('input[aria-label="guanYu 공격"]').value`)) === String(guanBefore + 1));
+  check('기본 편성에서 쓰는 장수(관우)는 삭제할 수 없다', (await evalJs(`document.querySelector('tr[data-id="guanYu"] button.danger').disabled`)) === true);
+
+  // 검색, 새 장수, 파일 값으로 되돌리기
+  await setValue('input[aria-label="검색"]', '관우');
+  await sleep(200);
+  check('검색으로 줄을 걸러낸다', (await evalJs(`document.querySelectorAll('section.ed tbody tr').length`)) === 1);
+  await setValue('input[aria-label="검색"]', '');
+  await clickButton('+ 새 장수');
+  await sleep(200);
+  check('새 장수를 추가하면 줄이 늘고 초록으로 표시된다', (await evalJs(`document.querySelectorAll('tr.added').length`)) === 1);
+  await clickButton('파일 값으로 되돌리기');
+  await sleep(300);
+  check('"파일 값으로 되돌리기"가 초안을 지운다', (await evalJs(`document.querySelectorAll('tr.added').length`)) === 0 && (await text('.savebar .badge')).includes('프로젝트 파일과 같음'));
+  writeData('characters', JSON.parse(originals.characters));
+  await sleep(1500);
+  await load();
+
+  // ---- 4. 병종 카드: 수정 → 저장 → 장수 탭의 계산값이 따라 바뀐다 ----
+  await tabs('병종 · 특성 · 스킬');
+  await sleep(300);
+  const cavBefore = readData('unitTypes').find((u) => u.id === 'cavalry').troopScale;
+  await setValue('input[aria-label="cavalry 병력 배율"]', 0.9);
+  await sleep(300);
+  check('병력 배율을 고치면 카드의 병력 요약이 바뀐다 (800 → 900)', (await text('section[data-unittype="cavalry"] .badge')).includes('병력 900'));
+  await tabs('장수');
+  await sleep(300);
+  check('장수 탭의 관우 병력이 새 배율을 바로 반영한다 (저장 전, 900)', String(await evalJs(`document.querySelector('tr[data-id="guanYu"]').textContent`)).includes('900'));
+  await tabs('병종 · 특성 · 스킬');
+  await sleep(200);
+  await setValue('input[aria-label="cavalry 사거리"]', 0);
+  await sleep(300);
+  check('사거리 0은 오류로 표시되고 저장되지 않는다', (await text('.saveissues')).includes('사거리'));
+  await setValue('input[aria-label="cavalry 사거리"]', 1);
+  await sleep(300);
+  check('장수가 쓰는 병종(기병)은 삭제할 수 없다', (await evalJs(`document.querySelector('section[data-unittype="cavalry"] button.danger').disabled`)) === true);
+  await clickButton('파일에 저장');
+  await sleep(2500);
+  await waitFor(`document.querySelectorAll('button.tab').length > 0`, 30000, '새로고침 뒤 Lab');
+  check('병종을 저장하면 unitTypes.json에 기록된다', readData('unitTypes').find((u) => u.id === 'cavalry').troopScale === 0.9, `${cavBefore} → ${readData('unitTypes').find((u) => u.id === 'cavalry').troopScale}`);
+  writeData('unitTypes', JSON.parse(originals.unitTypes));
+  await sleep(1500);
+  await load();
+
+  // ---- 5. 기본 편성 탭 ----
+  await tabs('기본 편성');
+  await sleep(300);
+  check('기본 편성 탭에 편성 카드가 나온다', (await evalJs(`document.querySelectorAll('section.preset').length`)) === JSON.parse(originals.presets).length);
+  check('편성 카드에 구성이 나온다 (유관장: 방패병 · 보병 · 기병)', (await text('section[data-preset="shuStart"] .preset-summary')).includes('방패병 · 보병 · 기병'));
+  await shot('lab-presets');
+  await setValue('select[aria-label="shuStart 후열 1"]', 'huangZhong');
+  await sleep(300);
+  check('칸을 고르면 구성이 바뀌고 카드가 노랗게 표시된다', (await text('section[data-preset="shuStart"] .preset-summary')).includes('궁병') && (await evalJs(`document.querySelector('section[data-preset="shuStart"]').className`)).includes('changed'));
+  check('기본 대결용 편성(shu)은 삭제할 수 없다', (await evalJs(`document.querySelector('section[data-preset="shu"] button.danger').disabled`)) === true);
+  // 시뮬레이션 탭의 편성 버튼도 같은 목록을 따른다
+  await clickButton('+ 새 편성');
+  await sleep(200);
+  check('빈 새 편성은 오류로 표시되고 저장되지 않는다', (await text('.saveissues')).includes('군단이 하나도 없습니다'));
+  await setValue('select[aria-label="preset1 전열 1"]', 'weiYan');
+  await sleep(300);
+  check('새 편성에 장수를 넣으면 오류가 사라진다', !(await text('.saveissues')).includes('군단이 하나도 없습니다'));
+  await tabs('전투 1회');
+  await sleep(300);
+  check('전투 1회 탭의 편성 버튼이 작업 중인 편성 목록을 따른다 (새 편성 포함)', (await evalJs(`[...document.querySelectorAll('.presets button')].some(b => b.textContent.includes('새 편성'))`)) === true);
+  await tabs('기본 편성');
+  await sleep(200);
+  await clickButton('파일에 저장');
+  await sleep(2500);
+  await waitFor(`document.querySelectorAll('button.tab').length > 0`, 30000, '새로고침 뒤 Lab');
+  const presetsSaved = readData('presets');
+  check('편성을 저장하면 presets.json에 기록된다', presetsSaved.length === JSON.parse(originals.presets).length + 1 && presetsSaved.find((p) => p.id === 'shuStart').lineup.some((e) => e.characterId === 'huangZhong' && e.row === 'back'));
+  writeData('presets', JSON.parse(originals.presets));
+  await sleep(1500);
+  await load();
+
+  // ---- 6. 외부에서 파일이 바뀌면 Lab 초안은 버려지고 파일 값으로 시작한다 ----
+  await tabs('장수');
+  await sleep(200);
+  await setValue('input[aria-label="guanYu 방어"]', 1); // 저장하지 않은 초안
+  await sleep(300);
+  const edited = readData('characters');
+  edited.find((c) => c.id === 'guanYu').stats.attack += 2;
+  writeData('characters', edited); // 다른 곳(git, 직접 수정)에서 파일이 바뀐 상황
+  await sleep(1500);
+  await load();
+  await tabs('장수');
+  await sleep(300);
+  check('파일이 바뀌면 저장하지 않은 초안은 버리고 파일 값으로 시작한다', (await evalJs(`document.querySelector('input[aria-label="guanYu 방어"]').value`)) === String(JSON.parse(originals.characters).find((c) => c.id === 'guanYu').stats.defense), '방어는 원래 값');
+  check('바뀐 파일의 값이 화면에 반영된다', (await evalJs(`document.querySelector('input[aria-label="guanYu 공격"]').value`)) === String(edited.find((c) => c.id === 'guanYu').stats.attack));
+  restoreAll();
+  await sleep(1500);
+
+  check('브라우저 콘솔에 오류가 없다', errors.length === 0, errors.join(' | '));
 } catch (e) {
   console.log('ERROR', e.message);
+  results.push({ name: '시나리오 실행', ok: false });
 } finally {
+  restoreAll(); // 시험 값을 남기지 않는다
   proc.kill();
   const bad = results.filter((r) => !r.ok).length;
-  console.log(`${results.length - bad}/${results.length} 통과`);
+  console.log(`${results.length - bad}/${results.length} 통과 (스크린샷: ${OUT}) — 데이터 파일은 원래 내용으로 되돌렸습니다 (${filesEqualOriginal() ? '확인됨' : '확인 실패'})`);
   process.exit(bad ? 1 : 0);
 }

@@ -1,0 +1,107 @@
+[
+  {
+    "id": "infantry-attack",
+    "name": "공격",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 1,
+    "apCost": 1,
+    "counterable": true,
+    "guardable": true,
+    "ignoreDefense": 0
+  },
+  {
+    "id": "cavalry-charge",
+    "name": "돌격",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 1.2,
+    "apCost": 1,
+    "counterable": true,
+    "guardable": true,
+    "ignoreDefense": 1
+  },
+  {
+    "id": "archer-shot",
+    "name": "화살 공격",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 0.95,
+    "apCost": 1,
+    "counterable": false,
+    "guardable": true,
+    "ignoreDefense": 0
+  },
+  {
+    "id": "stratagem",
+    "name": "책략",
+    "kind": "attack",
+    "scalesWith": "intellect",
+    "power": 0.8,
+    "apCost": 1,
+    "counterable": false
+  },
+  {
+    "id": "poison-smoke",
+    "name": "독연",
+    "kind": "attack",
+    "scalesWith": "intellect",
+    "power": 0.8,
+    "apCost": 1,
+    "counterable": false
+  },
+  {
+    "id": "heal",
+    "name": "치유",
+    "kind": "heal",
+    "scalesWith": "intellect",
+    "power": 0.8,
+    "apCost": 1,
+    "counterable": false
+  },
+  {
+    "id": "inspire",
+    "name": "독려",
+    "kind": "buff",
+    "scalesWith": "intellect",
+    "power": 0,
+    "apCost": 1,
+    "counterable": false,
+    "buff": {
+      "type": "stats",
+      "pool": [
+        "attack",
+        "defense",
+        "intellect",
+        "speed"
+      ],
+      "minCount": 1,
+      "maxCount": 3,
+      "amount": 1,
+      "maxStacks": 1
+    }
+  },
+  {
+    "id": "ward",
+    "name": "결계",
+    "kind": "buff",
+    "scalesWith": "intellect",
+    "power": 0,
+    "apCost": 1,
+    "counterable": false,
+    "buff": {
+      "type": "barrier",
+      "charges": 1,
+      "maxStacks": 1
+    }
+  },
+  {
+    "id": "guard",
+    "name": "가드",
+    "kind": "guard",
+    "scalesWith": "attack",
+    "power": 0,
+    "apCost": 1,
+    "counterable": false
+  }
+]

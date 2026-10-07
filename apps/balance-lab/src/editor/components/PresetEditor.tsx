@@ -24,7 +24,7 @@ export function PresetEditor({ presets, savedIds, changed, issues, characters, d
   const typeName = (c: CharacterData) => data.unitTypes[c.unitType]?.name ?? c.unitType;
 
   return (
-    <div className="presets">
+    <div className="preset-list">
       {presets.map((p) => {
         const slots = slotsFromLineup(p.lineup);
         const summary = summarizeLineup(p.lineup, data, balance);

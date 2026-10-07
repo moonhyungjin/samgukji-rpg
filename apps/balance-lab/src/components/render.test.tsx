@@ -10,6 +10,8 @@ import { BattleTab } from './BattleTab';
 import { CharactersTab } from './CharactersTab';
 import { DataTab } from './DataTab';
 import { LineupEditor } from './LineupEditor';
+import { PresetsTab } from './PresetsTab';
+import { SaveBar } from './SaveBar';
 import { SettingsTab } from './SettingsTab';
 import { SimulationTab } from './SimulationTab';
 
@@ -42,15 +44,11 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(html).toContain('대기병');
     expect(html).toContain('근접에 취약');
     expect(html).toContain('책략');
-    // 가드: 병종 표의 가드 열, 스킬 표의 가드 스킬과 "가드로 막힘" 열
-    expect(html).toContain('가드 (시작 / 상승 / 감소');
+    // 병종 카드: 기본 AP, 사거리, 반격 비율, 받는 피해 배수, 스탯 보정, 가드 설정
+    for (const label of ['기본 AP', '사거리', '반격 비율', '받는 피해 배수', '스탯 보정', '가드 (같은 열 아군을 대신 맞을 확률)', '추가 스킬']) expect(html).toContain(label);
+    for (const id of Object.keys(state.data.unitTypes)) expect(html).toContain(`data-unittype="${id}"`);
+    // 스킬 표: 가드로 막힘, 방어 무시, 버프 설정
     expect(html).toContain('가드로 막힘');
-    // 병종 기본 AP, 스탯 보정, 방어 무시, 버프 설정
-    expect(html).toContain('기본 AP');
-    expect(html).toContain('사거리');
-    expect(html).toContain('반격 비율');
-    expect(html).toContain('받는 피해 배수 (물리 / 책략)');
-    expect(html).toContain('스탯 보정');
     expect(html).toContain('방어 무시');
     expect(html).toContain('피해 무시 횟수');
     expect(html).toContain('>가드<');
@@ -59,7 +57,27 @@ describe('Balance Lab 화면 렌더링', () => {
   it('캐릭터 탭에 모든 캐릭터가 보인다', () => {
     const html = render(<CharactersTab />);
     expectClean(html);
-    for (const c of Object.values(state.data.characters)) expect(html).toContain(c.name);
+    for (const c of Object.values(state.data.characters)) expect(html).toContain(`value="${c.name}"`);
+    // 계산값(실제 공/방/지/속, 총 AP, 병력, 1회 피해)과 편집 도구
+    for (const label of ['실제 공/방/지/속', '총 AP', '병력', '1회 피해', '+ 새 장수', '이름/id 검색']) expect(html).toContain(label);
+    // 서버 렌더링은 인접한 텍스트 사이에 <!-- --> 를 끼워 넣으므로 지우고 비교한다
+    const plain = html.replace(/<!-- -->/g, '');
+    expect(plain).toContain(`${Object.keys(state.data.characters).length} / ${Object.keys(state.data.characters).length}명`);
+  });
+
+  it('기본 편성 탭에 편성 카드가 모두 나온다', () => {
+    const html = render(<PresetsTab />);
+    expectClean(html);
+    for (const p of state.presets) expect(html).toContain(`data-preset="${p.id}"`);
+    for (const label of ['전열', '후열', '+ 새 편성', '(비움)']) expect(html).toContain(label);
+  });
+
+  it('파일 저장 줄: 처음에는 프로젝트 파일과 같고 저장 버튼이 꺼져 있다', () => {
+    const html = render(<SaveBar />);
+    expectClean(html);
+    expect(html).toContain('프로젝트 파일과 같음');
+    expect(html).toMatch(/<button[^>]*class="primary"[^>]*disabled=""[^>]*>파일에 저장<\/button>/);
+    expect(html).toContain('파일 값으로 되돌리기');
   });
 
   it('목표 · 가져오기 탭', () => {

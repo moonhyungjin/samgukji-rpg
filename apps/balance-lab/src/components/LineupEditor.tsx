@@ -1,4 +1,3 @@
-import { presetList } from '@samgukji/game-data';
 import { useLab } from '../lab/LabContext';
 import type { SlotEntry } from '../lab/types';
 import { FRONT_SLOTS, SLOT_COUNT, slotRow, slotsFromLineup } from '../lib/slots';
@@ -56,7 +55,7 @@ export function LineupEditor({ teamKey, title }: Props) {
       <header className="lineup-head">
         <h3>{title}</h3>
         <span className="presets">
-          {presetList.map((p) => (
+          {state.presets.map((p) => (
             <button key={p.id} type="button" title={p.id} onClick={() => set(teamKey, slotsFromLineup(p.lineup))}>
               {p.label}
             </button>

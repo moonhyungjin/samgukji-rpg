@@ -1,14 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { setIn } from '../lib/path';
-import { gameData } from '@samgukji/game-data';
-import { syncCharacters } from '../lib/charactersSync';
+import { filesSnapshot, syncWithFiles } from '../lib/fileSync';
+import type { DataFiles } from '../lib/fileSync';
 import { createDefaultState } from './defaults';
 import type { LabState } from './types';
 
 // 기본 데이터가 바뀌면 저장 키를 올린다. 이전 저장값이 새 기본값을 가리지 않도록 이전 저장값은 쓰지 않는다.
 // v2: 사기 5:5·피해 영향 없음 / v3: 병력 배율(풍수사 0.6, 책사·기병 0.8), 곽가 도사, 보병 가드, 기병 전열 공격
-const STORAGE_KEY = 'samgukji-balance-lab-v24';
+const STORAGE_KEY = 'samgukji-balance-lab-v26';
 
 const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 
@@ -49,7 +49,12 @@ export function normalizeState(saved: LabState): LabState {
   return {
     ...saved,
     data: { ...saved.data, unitTypes, characters },
-    balance: { ...saved.balance, heal: { useTroopFactor: false, ...saved.balance.heal }, action: { perAp: 2, cap: 10, ...saved.balance.action } },
+    // 값의 순서를 바꾸지 않도록 빠진 값만 채운다 (순서가 바뀌면 파일과 달라 보여 "저장 안 됨"이 된다)
+    balance: {
+      ...saved.balance,
+      heal: saved.balance.heal.useTroopFactor === undefined ? { ...saved.balance.heal, useTroopFactor: false } : saved.balance.heal,
+      action: saved.balance.action ?? { perAp: 2, cap: 10 },
+    },
     sim: { ...defaults.sim, ...saved.sim },
     targets: {
       ...defaults.targets,
@@ -64,8 +69,8 @@ function loadState(): LabState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed: unknown = JSON.parse(raw);
-      // 장수 편집기에서 장수 파일이 바뀌었으면 저장된 장수를 새 값으로 바꾼다 (가져오기에는 적용하지 않는다)
-      if (isLabState(parsed)) return syncCharacters(normalizeState(parsed), gameData);
+      // 데이터 파일이 바뀌었으면(저장했거나 git으로 받았으면) 작업 중이던 초안을 버리고 파일 값으로 시작한다 (가져오기에는 적용하지 않는다)
+      if (isLabState(parsed)) return syncWithFiles(normalizeState(parsed), filesSnapshot());
     }
   } catch {
     // 저장소를 쓸 수 없는 환경이면 기본값으로 시작한다.
@@ -80,12 +85,17 @@ interface LabApi {
   update: (fn: (state: LabState) => LabState) => void;
   replace: (state: LabState) => void;
   reset: () => void;
+  /** 프로젝트 파일에 저장돼 있는 값 ("저장 안 됨" 표시와 되돌리기의 기준) */
+  baseline: DataFiles;
+  /** 저장에 성공했을 때 기준을 바꾼다 */
+  setBaseline: (files: DataFiles) => void;
 }
 
 const LabContext = createContext<LabApi | null>(null);
 
 export function LabProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<LabState>(loadState);
+  const [baseline, setBaseline] = useState<DataFiles>(filesSnapshot);
 
   useEffect(() => {
     try {
@@ -100,7 +110,7 @@ export function LabProvider({ children }: { children: ReactNode }) {
   const replace = useCallback((next: LabState) => setState(next), []);
   const reset = useCallback(() => setState(createDefaultState()), []);
 
-  const api = useMemo(() => ({ state, set, update, replace, reset }), [state, set, update, replace, reset]);
+  const api = useMemo(() => ({ state, set, update, replace, reset, baseline, setBaseline }), [state, set, update, replace, reset, baseline]);
   return <LabContext.Provider value={api}>{children}</LabContext.Provider>;
 }
 

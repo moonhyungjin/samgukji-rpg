@@ -66,54 +66,29 @@ describe('게임 데이터 무결성', () => {
     }
   });
 
-  it('확정한 병종 설정: 병력 배율, 보병의 가드, 기병은 전열만 공격, 곽가는 도사', () => {
-    const { unitTypes, characters } = gameData;
-    expect(unitTypes.geomancer.troopScale).toBe(0.6);
-    expect(unitTypes.strategist.troopScale).toBe(0.8);
-    expect(unitTypes.taoist.troopScale).toBe(0.8);
-    expect(unitTypes.cavalry.troopScale).toBe(0.8);
-    expect(unitTypes.infantry.troopScale).toBe(1);
-    expect(unitTypes.shield.guard).toEqual({ start: 50, gain: 70, decay: 40, damageTaken: 0.75 });
-    // 기병 돌격은 방어를 1 무시하고, AP는 병종 기준(방패병 4, 보병/기병/궁병 3, 책사/도사 2)
-    expect(gameData.skills['cavalry-charge'].ignoreDefense).toBe(1);
-    // 병종 기본 AP: 방패병 3, 보병/기병/궁병 2, 책사/도사/풍수사 2
-    expect(Object.fromEntries(Object.entries(unitTypes).map(([id, u]) => [id, u.baseAp]))).toEqual({ infantry: 2, shield: 3, cavalry: 2, archer: 2, strategist: 2, taoist: 2, geomancer: 2 });
-    // 공격 종류별 받는 피해: 방패병/보병/기병/궁병 물리 ×1 책략 ×1.1, 책사/도사/풍수사 물리 ×1.1 책략 ×0.8
-    for (const id of ['infantry', 'shield', 'cavalry', 'archer']) expect(unitTypes[id].damageTakenByType, id).toEqual({ physical: 1, magic: 1.1 });
-    for (const id of ['strategist', 'taoist', 'geomancer']) expect(unitTypes[id].damageTakenByType, id).toEqual({ physical: 1.1, magic: 0.8 });
-    // 병종별 반격 비율: 방패병 0.5, 보병 0.5, 기병 0.6, 궁병 0.25 (기본 balance.counter.rate는 0.5)
-    expect(Object.fromEntries(['shield', 'infantry', 'cavalry', 'archer'].map((id) => [id, unitTypes[id].counterRate]))).toEqual({ shield: 0.5, infantry: 0.5, cavalry: 0.6, archer: 0.25 });
-    // 병종 스탯 보정 (공/방/지/속)
-    const mods = (id: string) => ({ attack: 0, defense: 0, intellect: 0, speed: 0, ...unitTypes[id].statMods });
-    expect(mods('shield')).toEqual({ attack: -1, defense: 0, intellect: 0, speed: -1 });
-    expect(mods('infantry')).toEqual({ attack: 0, defense: 0, intellect: 0, speed: 0 });
-    expect(mods('cavalry')).toEqual({ attack: 1, defense: 1, intellect: 0, speed: 1 });
-    expect(mods('archer')).toEqual({ attack: 0, defense: -1, intellect: 0, speed: -1 });
-    expect(mods('strategist')).toEqual({ attack: 0, defense: 0, intellect: 1, speed: 0 });
-    expect(mods('taoist')).toEqual({ attack: 0, defense: 0, intellect: 0, speed: 1 });
-    expect(mods('geomancer')).toEqual({ attack: 0, defense: 0, intellect: 0, speed: 0 });
-    const apOf = (id: string) => Object.values(characters).filter((c) => c.unitType === id).map(maxApOf);
-    expect(new Set(apOf('shield'))).toEqual(new Set([5]));
-    for (const [id, ap] of [['infantry', 4], ['cavalry', 4], ['archer', 4], ['strategist', 3], ['taoist', 3]] as const) {
-      expect(new Set(apOf(id)), id).toEqual(new Set([ap]));
+  // 병종/스킬/특성/밸런스 수치는 Balance Lab에서 계속 조정하므로 값을 고정하지 않고, 데이터가 지켜야 하는 구조 규칙만 확인한다.
+  it('병종 데이터의 구조 규칙: 가드/버프 스킬과 설정의 짝, 사거리, 병력 배율, 총 AP', () => {
+    const { unitTypes, characters, skills } = gameData;
+    for (const u of Object.values(unitTypes)) {
+      const hasGuardSkill = u.extraSkillIds.some((id) => skills[id].kind === 'guard');
+      expect(u.guard !== undefined, `${u.id}: 가드 설정과 가드 스킬은 짝이다`).toBe(hasGuardSkill);
+      expect(u.range, `${u.id} 사거리`).toBeGreaterThanOrEqual(1);
+      expect(u.troopScale ?? 1, `${u.id} 병력 배율`).toBeGreaterThan(0);
+      expect(u.allowedRows.length, `${u.id} 배치 열`).toBeGreaterThan(0);
+      // 후열에만 둘 수 있는 병종이 사거리 1이면 공격할 수 없다
+      if (!u.allowedRows.includes('front')) expect(u.range, `${u.id}: 후열 전용인데 사거리 1`).toBeGreaterThanOrEqual(2);
     }
-    // 보병은 가드를 쓰지 않는다 (방패병만 쓴다)
+    // 설계 결정: 가드는 방패병이 쓰고 보병은 쓰지 않는다. 책사는 스탯 버프(독려), 도사는 피해 무시(결계)를 쓴다.
+    expect(unitTypes.shield.guard).toBeDefined();
     expect(unitTypes.infantry.guard).toBeUndefined();
-    expect(unitTypes.infantry.extraSkillIds).not.toContain('guard');
-    expect(unitTypes.archer.troopScale).toBe(0.85);
-    // 궁병이 전열을 때리면 ×0.8, 후열을 때리면 ×1
-    expect(unitTypes.archer.traitIds).toContain('archer-vs-front');
-    expect(gameData.traits['archer-vs-front']).toMatchObject({ kind: 'damage-dealt', multiplier: 0.8, versus: { rows: ['front'] } });
-    expect(unitTypes.shield.extraSkillIds).toContain('guard');
-    // 사거리: 방패병/보병/기병 1, 궁병/책사/도사/풍수사 3. 방/보/기/궁은 전열과 후열 모두 배치 가능, 지력 계열은 후열 전용
-    expect(Object.fromEntries(Object.entries(unitTypes).map(([id, u]) => [id, u.range]))).toEqual({ infantry: 1, shield: 1, cavalry: 1, archer: 3, strategist: 3, taoist: 3, geomancer: 3 });
-    for (const id of ['infantry', 'shield', 'cavalry', 'archer']) expect(unitTypes[id].allowedRows, id).toEqual(['front', 'back']);
-    for (const id of ['strategist', 'taoist', 'geomancer']) expect(unitTypes[id].allowedRows, id).toEqual(['back']);
+    const buffOf = (typeId: string) => unitTypes[typeId].extraSkillIds.map((id) => skills[id].buff).find(Boolean);
+    expect(buffOf('strategist')?.type).toBe('stats');
+    expect(buffOf('taoist')?.type).toBe('barrier');
     expect(characters.guoJia.unitType).toBe('taoist');
-    expect(maxApOf(characters.guoJia)).toBe(3);
-    // 책사는 공격 버프(독려), 도사는 방어 버프(결계)를 쓴다
-    expect(gameData.skills[unitTypes.strategist.extraSkillIds[0]].buff).toMatchObject({ type: 'stats', minCount: 1, maxCount: 3, amount: 1 });
-    expect(gameData.skills[unitTypes.taoist.extraSkillIds[0]].buff).toMatchObject({ type: 'barrier', charges: 1 });
+    for (const c of Object.values(characters)) {
+      expect(maxApOf(c), `${c.name} 총 AP`).toBeGreaterThanOrEqual(1);
+      expect(maxApOf(c), `${c.name} 총 AP`).toBeLessThanOrEqual(8);
+    }
   });
 
   it('6 vs 6 기본 편성(촉, 위, 황건적)은 전열 3 + 후열 3이다', () => {

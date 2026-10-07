@@ -1,3 +1,4 @@
+import type { PresetDef } from '@samgukji/game-data';
 import type { BalanceConfig, BuffMode, CharacterPool, Family, GameData, GuardMode, LineupMode, RoleMode, TargetPolicy } from '@samgukji/battle-engine';
 
 export interface SlotEntry {
@@ -49,6 +50,8 @@ export interface LabState {
   teamB: Slots;
   sim: SimSettings;
   targets: TargetSettings;
-  /** 이 상태의 장수가 어느 장수 파일(characters.json) 내용에서 왔는지 나타내는 지문 */
-  charactersSignature?: string;
+  /** 기본 편성 (작업 중인 초안). 저장하면 data/presets.json이 된다 */
+  presets: PresetDef[];
+  /** 이 초안이 어느 데이터 파일 내용에서 시작했는지 나타내는 지문. 파일이 바뀌면 초안을 버리고 파일 값으로 시작한다 */
+  filesSignature?: string;
 }

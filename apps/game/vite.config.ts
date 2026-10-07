@@ -9,7 +9,7 @@ import type { Plugin } from 'vite';
 const reloadOnCharacters = (): Plugin => ({
   name: 'reload-on-characters',
   handleHotUpdate({ file, server }) {
-    if (file.includes('game-data') && (file.endsWith('characters.json') || file.endsWith('presets.json'))) {
+    if (file.includes('game-data') && file.endsWith('.json')) {
       server.ws.send({ type: 'full-reload' });
       return [];
     }

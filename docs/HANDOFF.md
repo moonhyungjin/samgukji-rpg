@@ -17,14 +17,12 @@
 
 ```bash
 npm install
-npm test                 # 276개 (엔진, 통합, Lab, 게임 로직/패널)
+npm test                 # 302개 (엔진, 통합, Lab, 게임 로직/패널)
 npm run typecheck        # 5개 패키지를 각각 tsc -p 로 검사
 
 npm run game             # 게임 화면 http://localhost:5174  (설정 → 관전 / 수동 플레이)
 npm run lab              # Balance Lab (터미널에 나오는 주소)
-npm run e2e:lab          # Lab을 실제 브라우저로 조작 확인 8개 (먼저 npm run lab, Edge/Chrome 필요)
-npm run chars            # 장수 편집기 (http://localhost:5175). 장수와 기본 편성을 고쳐 저장하면 packages/game-data/data/characters.json, presets.json이 바뀌고 Lab/게임/시뮬레이터에 반영
-npm run e2e:chars        # 장수 편집기 브라우저 확인 27개 (장수 + 기본 편성) (먼저 npm run chars)
+npm run e2e:lab          # Lab 브라우저 확인 35개 (먼저 npm run lab. 장수/병종/기본 편성 편집, 파일에 저장, 검사, 파일 변경 감지. 끝나면 데이터 파일을 원래대로 되돌린다)
 npm run e2e              # 게임 화면을 실제 브라우저로 조작해 확인 23개 (먼저 npm run game, Edge/Chrome 필요)
 npm run sim -- --iterations 10000 --lineups random     # CLI 시뮬레이션, 옵션은 README 참고
 ```
@@ -33,9 +31,9 @@ npm run sim -- --iterations 10000 --lineups random     # CLI 시뮬레이션, �
 
 ```text
 apps/game/           React + PixiJS 전투 화면
-apps/balance-lab/    React + Vite. 시뮬레이션은 Web Worker에서 실행
+apps/balance-lab/    React + Vite. 밸런스 도구 겸 데이터 편집기. 시뮬레이션은 Web Worker에서 실행, 고친 값은 "파일에 저장" (개발 서버의 /api/data)
 packages/battle-engine/   순수 TypeScript. React/PixiJS/DOM에 의존하지 않는다 (tsconfig에서 DOM 타입도 막아 둠)
-packages/game-data/       병종, 특성, 스킬, 캐릭터, 밸런스 수치, 기본 편성. 엔진의 "타입"만 가져온다
+packages/game-data/       게임 데이터: data/*.json (skills, traits, unitTypes, characters, presets, balance) + 로더. 엔진의 "타입"만 가져온다
 tools/sim/                시뮬레이션 CLI
 tools/e2e/                게임 화면 종단 간 검증 스크립트 (DevTools Protocol)
 docs/                     HANDOFF.md, design/(설계 문서 01, 02), spec/(원본 기획서 v0.1)
@@ -108,17 +106,17 @@ const result = engine.result();
 |---|---|
 | 일반공격, 치유, 대기, **가드(방패병)와 대신 맞기, 버프(책사 무작위 스탯 +1 / 도사 피해 1회 무시)**, 반격, 병력 비례 피해, 병종 특성 체계, 제로섬 사기, 전열 전멸 시 후열 이동, 승패 판정, 교착 종료, 진영당 1~6군단 가변 편성, 무작위 편성 모드, 병종별 병력 배율(`troopScale`), 치유 병력 보정 옵션, **엔진 단계별 API, 커맨드 미리보기, PixiJS 전투 화면(관전/수동 플레이/건너뛰기/속도), 브라우저 종단 간 검증** | 필살기, 상태이상(화상/독/젖음), 책략의 날씨·지형 변환, 승급 병종, AP 회복, 아이템, 군단 경험치, 일기토/개별 레벨/토벌, 특수 병종 |
 
-책략/독연은 지금 피해만 준다. 장수 27명(네임드 15명 + 평범한 장수 12명)과 수치는 전부 임시값이고 이름만 삼국지다. **장수 데이터의 원본은 `packages/game-data/data/characters.json`** 이고 장수 편집기(`npm run chars`)가 이 파일을 고친다. 병종/스킬/특성은 `packages/game-data/src/data.ts`. **풍수사 병종은 있지만 캐릭터가 없다** (곽가를 도사로 바꿨다). 
+책략/독연은 지금 피해만 준다. 장수 27명(네임드 15명 + 평범한 장수 12명)과 수치는 전부 임시값이고 이름만 삼국지다. **모든 게임 데이터의 원본은 `packages/game-data/data/*.json`** (skills, traits, unitTypes, characters, presets, balance)이고, Balance Lab에서 고치고 "파일에 저장"한다. **풍수사 병종은 있지만 캐릭터가 없다** (곽가를 도사로 바꿨다). 
 
 ## 6. 검증 방법과 주의점
 
 - **단위/통합 테스트**(`npm test`)로 로직을 보장한다. PixiJS 캔버스는 Node에서 테스트할 수 없어서, 컨트롤러가 화면을 `SceneLike`로만 알도록 분리해 로직은 가짜 화면으로 테스트한다.
 - **캔버스와 클릭은 `npm run e2e`로 확인한다.** 설치된 Edge/Chrome을 헤드리스로 띄워 DevTools Protocol로 조작한다 (23개 확인: 버프 로그, 스킬 선택, 가드 확률 표시, 캔버스 카드 클릭, 목록 버튼, 보병 가드, 대기, AI 위임, 애니메이션, 건너뛰기, 다시 하기, 콘솔 오류). Playwright는 쓰지 않는다. 화면을 바꾸면 이걸 다시 돌린다. 스크린샷은 `out/e2e/`에 저장되니 눈으로도 확인한다.
-- 같은 방식으로 Balance Lab의 모든 탭도 실제 브라우저에서 확인했다 (워커 자동 실행, 수치 수정 → 결과 갱신, 오류 없음). 이 스크립트는 저장소에 두지 않았다.
-- **Lab에서 고친 값은 `game-data` 코드에 자동 반영되지 않는다.** 브라우저 localStorage에만 저장된다 (키 `samgukji-balance-lab-v24`). 채택할 값은 "밸런스만 내보내기"(CLI `--balance`로 검증 가능)나 "전체 상태 내보내기"로 꺼내 코드에 옮긴다.
-- 기본 수치를 바꾸면 Lab 저장 키 버전을 올린다 (옛 저장값이 새 기본값을 가리는 문제를 이미 겪었다). 새 필드를 추가하면 `LabContext.tsx`의 `normalizeState`에서 기본값을 채운다.
+- 같은 방식으로 Balance Lab을 `npm run e2e:lab`(35개)으로 확인한다: 모든 탭, 계수/스탯 입력, 장수/병종/기본 편성 편집, "파일에 저장"이 `data/*.json`을 실제로 바꾸는 것, 오류가 저장을 막는 것, 파일이 바뀌면 초안이 파일 값으로 갱신되는 것. 이 스크립트는 데이터 파일을 건드리므로 끝나면(실패해도) 원래 내용으로 되돌린다. 저장 API가 있는 개발 서버(`npm run lab`)가 켜져 있어야 한다. 이미 켜 둔 서버가 옛 설정이면 껐다 켜거나 `LAB_URL`로 다른 포트를 쓴다.
+- **Lab에서 고친 값은 "파일에 저장"을 눌러야 `packages/game-data/data/*.json`에 반영되고, 그래야 게임과 시뮬레이터가 쓴다.** 저장 전의 초안은 브라우저 localStorage에 있다 (키 `samgukji-balance-lab-v26`). 데이터 파일이 바뀌면(저장했거나 git으로 받았으면) Lab은 초안을 버리고 파일 값으로 시작한다 (`lib/fileSync.ts`의 `syncWithFiles`). 파일 없이 값을 옮기는 방법은 "밸런스만 내보내기"(CLI `--balance`로 검증 가능)와 "전체 상태 내보내기"다.
+- 저장 형식(Lab 상태의 모양)이 바뀌면 Lab 저장 키 버전을 올린다. 새 필드를 추가하면 `LabContext.tsx`의 `normalizeState`에서 빠진 값만 채운다 (**기존 값의 순서를 바꾸지 않아야 한다.** 순서가 바뀌면 파일과 달라 보여 저장하지 않았는데 "저장 안 됨"이 뜬다. `fileSync.test.ts`가 이를 확인한다).
 - 병종/캐릭터별 승률은 **무작위 편성** 모드에서만 의미가 있다 (고정 편성은 편성 편향이 섞인다).
-- 게임 화면은 Lab의 수정값을 쓰지 않고 `game-data`의 기본값을 쓴다. Lab에서 내보낸 상태를 불러오는 기능은 아직 없다.
+- 게임 화면은 Lab의 초안이 아니라 저장된 `data/*.json`을 쓴다. 데이터 파일이 바뀌면 게임 개발 서버가 페이지를 새로고침한다.
 - 새 이벤트 종류를 엔진에 추가하면 `viewState.ts`(상태), `eventText.ts`(로그), `BattleScene.ts`(연출)와 Lab의 `battleLog.ts`에 모두 반영한다. `viewState`는 TypeScript의 exhaustive 검사가 누락을 잡아 주고, 엔진 최종 상태와 같은지 테스트가 확인한다. (가드 이벤트를 추가했을 때 `viewState`를 빠뜨려 테스트 15개가 한꺼번에 깨진 적이 있다. `npm run typecheck`를 먼저 돌리면 바로 보인다.)
 - 가드 이벤트는 순서가 중요하다: 행동 → `intercept`(대신 맞음) → `guardChange`(확률 감소) → `damage`. 엔진 테스트가 순서를 확인한다.
 

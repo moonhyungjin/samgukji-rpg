@@ -390,3 +390,430 @@ tr.dead td {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- 장수/병종/기본 편성 편집 화면 (.ed 안에서만 적용) ---- */
+.ed .bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.ed .spacer {
+  flex: 1;
+}
+
+.ed .badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.ed .badge.dirty,
+.savebar .badge.dirty {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.ed .badge.clean,
+.savebar .badge.clean {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.ed .message {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+.ed .message.ok {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.ed .message.error {
+  border-color: var(--err);
+  color: var(--err);
+}
+
+.ed .issues {
+  margin: 8px 0 0;
+  padding: 8px 12px 8px 28px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.ed .issues .error {
+  color: var(--err);
+}
+
+.ed .issues .warning {
+  color: var(--warn);
+}
+
+.ed .filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 14px 0 8px;
+}
+
+.ed .filters input[type='search'] {
+  width: 200px;
+}
+
+.ed .tablewrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.ed table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 1180px;
+}
+
+.ed th,
+.ed td {
+  padding: 4px 3px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ed th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-2);
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.ed th[title] {
+  cursor: help;
+}
+
+.ed td.name,
+.ed th.name {
+  text-align: left;
+}
+
+.ed td input[type='number'] {
+  width: 46px;
+  text-align: center;
+  padding: 4px 2px;
+}
+
+.ed td input.name-input {
+  width: 112px;
+}
+
+.ed td input.level-input {
+  width: 50px;
+}
+
+.ed tr.changed td {
+  background: rgba(240, 169, 59, 0.08);
+}
+
+.ed tr.added td {
+  background: rgba(70, 194, 129, 0.1);
+}
+
+.ed tr.invalid td {
+  background: rgba(239, 91, 91, 0.12);
+}
+
+.ed td.derived {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ed td.derived strong {
+  color: var(--text);
+}
+
+.ed td.id {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: left;
+}
+
+.ed td.id input {
+  width: 96px;
+  font-size: 12px;
+}
+
+.ed td.actions {
+  text-align: right;
+}
+
+.ed td.actions button {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.ed .note {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ed .note code {
+  background: var(--panel-2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.ed .preset-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.ed .preset {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.ed .preset.changed {
+  border-color: var(--warn);
+}
+
+.ed .preset.added {
+  border-color: var(--ok);
+}
+
+.ed .preset.invalid {
+  border-color: var(--err);
+}
+
+.ed .preset-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ed .preset-head .label-input {
+  width: 190px;
+  font-weight: 600;
+}
+
+.ed .preset-head .id-input {
+  width: 110px;
+  font-size: 12px;
+}
+
+.ed .preset-id {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ed .slot-grid {
+  display: grid;
+  gap: 6px;
+}
+
+.ed .slot-row {
+  display: grid;
+  grid-template-columns: 38px repeat(3, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.ed .row-name {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ed .slot-row select {
+  width: 100%;
+  min-width: 0;
+}
+
+.ed .preset-summary {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ed .preset-summary .error {
+  color: var(--err);
+}
+
+.ed .preset-summary .warning {
+  color: var(--warn);
+}
+
+.ed .unittypes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.ed .unittype {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.ed .unittype.changed {
+  border-color: var(--warn);
+}
+
+.ed .unittype.added {
+  border-color: var(--ok);
+}
+
+.ed .unittype.invalid {
+  border-color: var(--err);
+}
+
+.ed .usection {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.ed .ugrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 6px 10px;
+}
+
+.ed .ugrid.wide {
+  grid-template-columns: 1fr;
+}
+
+.ed .ufield {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.ed .ufield input[type='number'],
+.ed .ufield select {
+  width: 100%;
+  min-width: 0;
+}
+
+.ed .ufield.rows {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  grid-column: span 2;
+}
+
+.ed .check-field input {
+  align-self: flex-start;
+}
+
+.ed .checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.ed .check-title {
+  color: var(--muted);
+  font-size: 12px;
+  min-width: 56px;
+}
+
+.ed .check {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.ed .check input {
+  padding: 0;
+}
+
+
+/* ---- 파일 저장 줄 (모든 탭 위) ---- */
+.savebar {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.savebar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.savebar .badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.savebar-hint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.savemsg {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.savemsg.ok {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.savemsg.error {
+  border-color: var(--err);
+  color: var(--err);
+}
+
+.saveissues {
+  margin: 8px 0 0;
+  padding: 6px 12px 6px 28px;
+  font-size: 13px;
+  background: var(--panel-2);
+  border-radius: 6px;
+}
+
+.saveissues .error {
+  color: var(--err);
+}
+
+.saveissues .warning {
+  color: var(--warn);
+}

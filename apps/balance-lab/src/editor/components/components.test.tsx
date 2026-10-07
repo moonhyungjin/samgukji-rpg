@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
 import { defaultBalance, gameData, presets } from '@samgukji/game-data';
 import type { CharacterData } from '@samgukji/battle-engine';
-import App from '../App';
 import { newCharacter, validate } from '../lib/editor';
+import { UnitTypeEditor } from './UnitTypeEditor';
 import { CharacterTable } from './CharacterTable';
 
 const noop = () => {};
@@ -65,10 +65,58 @@ describe('장수 편집기 화면', () => {
     expect(out).not.toContain('data-id="zhangFei"');
   });
 
-  it('앱 전체: 저장하기 버튼, 내보내기/가져오기, 필터가 나온다', () => {
-    const out = html(<App />);
-    for (const text of ['장수 편집기', '저장하기', '저장된 상태', '+ 새 장수', '내보내기', '가져오기', '이름/id 검색', 'characters.json']) expect(out).toContain(text);
-    expect(out).toContain(`${characters.length} / ${characters.length}명`);
-    expect(out).toMatch(/<button[^>]*disabled=""[^>]*>저장하기<\/button>|<button[^>]*class="primary"[^>]*disabled=""/);
+});
+
+describe('병종 편집 화면', () => {
+  const unitTypes = Object.values(gameData.unitTypes);
+  const editor = (list = unitTypes, extra: Partial<React.ComponentProps<typeof UnitTypeEditor>> = {}) =>
+    html(
+      <UnitTypeEditor
+        unitTypes={list}
+        savedIds={new Set(unitTypes.map((u) => u.id))}
+        changed={new Set()}
+        issues={[]}
+        characters={gameData.characters}
+        data={gameData}
+        balance={defaultBalance}
+        onEdit={noop}
+        onDuplicate={noop}
+        onRevert={noop}
+        onRemove={noop}
+        {...extra}
+      />,
+    );
+
+  it('모든 병종이 카드로 나오고 값이 비어 있거나 NaN이 아니다', () => {
+    const out = editor();
+    expect(out).not.toContain('NaN');
+    expect(out).not.toContain('undefined');
+    for (const u of unitTypes) expect(out).toContain(`data-unittype="${u.id}"`);
+    for (const label of ['사거리', '병력 배율', '기본 AP', '배치 가능 열', '스탯 보정', '받는 피해 배수', '반격 비율', '일반공격', '추가 스킬', '특성', '가드']) expect(out).toContain(label);
   });
+
+  it('방패병 카드에는 가드 설정(시작/상승/감소/피해 배수)이 있고 보병 카드에는 없다', () => {
+    const out = editor();
+    const card = (id: string, next: string) => out.slice(out.indexOf(`data-unittype="${id}"`), out.indexOf(`data-unittype="${next}"`));
+    expect(card('shield', 'cavalry')).toContain('가드 시작');
+    expect(card('shield', 'cavalry')).toContain('value="0.75"');
+    expect(card('infantry', 'shield')).not.toContain('가드 시작');
+  });
+
+  it('장수가 쓰는 병종은 삭제 버튼이 막혀 있고, 쓰는 장수가 없으면 삭제할 수 있다', () => {
+    const out = editor();
+    const card = (id: string, next: string) => out.slice(out.indexOf(`data-unittype="${id}"`), out.indexOf(`data-unittype="${next}"`));
+    expect(card('infantry', 'shield')).toMatch(/class="danger" disabled=""/);
+    const last = out.slice(out.indexOf('data-unittype="geomancer"'));
+    expect(last).not.toMatch(/class="danger" disabled=""/);
+  });
+
+  it('수정/새 병종/오류 카드를 구분해 칠하고, 병력과 열 요약을 보여 준다', () => {
+    const fresh = { ...unitTypes[0], id: 'unit1', name: '새 병종' };
+    const out = editor([...unitTypes, fresh], { changed: new Set(['cavalry']), issues: [{ level: 'error', id: 'unit1', message: '병종 새 병종: 오류' }] });
+    expect(out).toMatch(/class="unittype changed" data-unittype="cavalry"/);
+    expect(out).toMatch(/class="unittype added invalid" data-unittype="unit1"/);
+    expect(out).toContain('병력 800 · 전열/후열'); // 기병
+  });
+
 });
