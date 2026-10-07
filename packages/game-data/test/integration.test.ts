@@ -150,15 +150,14 @@ describe('숫자를 바꾸면 결과가 달라진다', () => {
   const sim = (balance: BalanceConfig, data = gameData) =>
     BattleSimulator.run({ data, balance, teamA: presets.shu, teamB: presets.wei, iterations: 400, seed: 3, roles: 'alternate' });
 
-  it('방패병에 대기병 특성을 붙이면 기병의 생존율이 떨어진다', () => {
+  it('기병이 전열에 주는 피해 배수를 낮추면 기병이 주는 피해가 줄어든다', () => {
     const before = sim(defaultBalance);
-    const withTrait = {
+    const weakened = {
       ...gameData,
-      unitTypes: { ...gameData.unitTypes, shield: { ...gameData.unitTypes.shield, traitIds: ['anti-cavalry'] } },
+      unitTypes: { ...gameData.unitTypes, cavalry: { ...gameData.unitTypes.cavalry, damageDealtByRow: { front: 0.2, back: 1 } } },
     };
-    const after = sim(defaultBalance, withTrait);
-    // 받은 피해량은 병력(1,000)에서 막히므로 지표로 쓸 수 없다. 더 빨리 쓰러지는지를 본다.
-    expect(after.familyStats.cavalry!.survivalRate).toBeLessThan(before.familyStats.cavalry!.survivalRate);
+    const after = sim(defaultBalance, weakened);
+    expect(after.familyStats.cavalry!.averageDamageDealt).toBeLessThan(before.familyStats.cavalry!.averageDamageDealt);
   });
 
   it('반격 비율을 0으로 하면 평균 전투 진행이 달라진다', () => {

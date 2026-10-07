@@ -37,15 +37,16 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(html).toContain('행동력 몇 마다 AP 1');
   });
 
-  it('병종 · 특성 · 스킬 탭에 기본 병종과 예시 특성이 보인다', () => {
+  it('병종 · 스킬 탭에 병종 카드와 스킬 표가 보인다', () => {
     const html = render(<DataTab />);
     expectClean(html);
     expect(html).toContain('보병');
-    expect(html).toContain('대기병');
-    expect(html).toContain('근접에 취약');
+    // 특성은 나중에 추가하기로 해서 화면에서 뺐다
+    expect(html).not.toContain('병종 특성');
+    expect(html).not.toContain('근접에 취약');
     expect(html).toContain('책략');
     // 병종 카드: 기본 AP, 사거리, 반격 비율, 받는 피해 배수, 스탯 보정, 가드 설정
-    for (const label of ['기본 AP', '사거리', '반격 비율', '받는 피해 배수', '스탯 보정', '가드 (같은 열 아군을 대신 맞을 확률)', '추가 스킬']) expect(html).toContain(label);
+    for (const label of ['기본 AP', '사거리', '반격 비율', '받는 피해 배수', '스탯 보정', '줄 때 전열', '줄 때 후열', '가드 (같은 열 아군을 대신 맞을 확률)', '추가 스킬']) expect(html).toContain(label);
     for (const id of Object.keys(state.data.unitTypes)) expect(html).toContain(`data-unittype="${id}"`);
     // 스킬 표: 가드로 막힘, 방어 무시, 버프 설정
     expect(html).toContain('가드로 막힘');

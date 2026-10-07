@@ -110,6 +110,11 @@ export interface UnitTypeData {
    * 예: 지력 계열은 책략에 ×0.8, 물리에 ×1.2 — 궁병 같은 물리 공격수가 책사/도사를 잡는 전문가가 된다. 생략하면 둘 다 1
    */
   damageTakenByType?: { physical: number; magic: number };
+  /**
+   * 대상이 있는 열에 따라 이 병종이 주는 피해에 곱하는 값. front: 대상이 전열, back: 대상이 후열.
+   * 예: 궁병은 전열을 쏘면 ×0.8, 후열을 쏘면 ×1. 생략하면 둘 다 1
+   */
+  damageDealtByRow?: { front: number; back: number };
   statMods?: Partial<Pick<Stats, 'attack' | 'defense' | 'intellect' | 'speed' | 'action'>>;
   /** 가드를 쓸 수 있는 병종 (스킬 목록에 kind: 'guard' 스킬도 있어야 한다) */
   guard?: GuardConfig;

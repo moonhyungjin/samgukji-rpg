@@ -3,9 +3,10 @@ import type { BalanceConfig, Family, GameData, Row, UnitTypeData } from '@samguk
 import type { Issue } from '../lib/editor';
 import { DEFAULT_GUARD, FAMILY_LABEL, MOD_FIELDS, charactersUsing, unitTypeSummary } from '../lib/unitTypes';
 
-type Patch = Partial<Omit<UnitTypeData, 'statMods' | 'damageTakenByType' | 'guard'>> & {
+type Patch = Partial<Omit<UnitTypeData, 'statMods' | 'damageTakenByType' | 'damageDealtByRow' | 'guard'>> & {
   statMods?: Partial<NonNullable<UnitTypeData['statMods']>>;
   damageTakenByType?: Partial<NonNullable<UnitTypeData['damageTakenByType']>>;
+  damageDealtByRow?: Partial<NonNullable<UnitTypeData['damageDealtByRow']>>;
   /** null이면 가드를 끈다 */
   guard?: Partial<NonNullable<UnitTypeData['guard']>> | null;
 };
@@ -32,7 +33,6 @@ const num = (value: string) => (value === '' ? 0 : Number(value));
 export function UnitTypeEditor({ unitTypes, savedIds, changed, issues, characters, data, balance, onEdit, onDuplicate, onRevert, onRemove }: Props) {
   const bad = new Set(issues.filter((i) => i.level === 'error' && i.id !== undefined).map((i) => i.id));
   const skills = Object.values(data.skills);
-  const traits = Object.values(data.traits);
   const toggle = (list: readonly string[], id: string, on: boolean) => (on ? [...list, id] : list.filter((x) => x !== id));
 
   return (
@@ -45,6 +45,7 @@ export function UnitTypeEditor({ unitTypes, savedIds, changed, issues, character
         const own = issues.filter((i) => i.id === u.id);
         const mods = { attack: 0, defense: 0, intellect: 0, speed: 0, action: 0, ...u.statMods };
         const taken = { physical: 1, magic: 1, ...u.damageTakenByType };
+        const dealt = { front: 1, back: 1, ...u.damageDealtByRow };
         const field = (label: string, input: React.ReactNode, hint?: string) => (
           <label className="ufield" title={hint}>
             <span>{label}</span>
@@ -136,17 +137,27 @@ export function UnitTypeEditor({ unitTypes, savedIds, changed, issues, character
               )}
             </div>
 
-            <div className="usection">받는 피해 배수 · 반격</div>
+            <div className="usection">피해 배수 · 반격</div>
             <div className="ugrid">
               {field(
-                '물리',
+                '받는 물리',
                 <input type="number" min={0.05} step={0.05} aria-label={`${u.id} 받는 피해 물리`} value={taken.physical} onChange={(e) => onEdit(u.id, { damageTakenByType: { physical: num(e.target.value) } })} />,
                 '일반공격/돌격/화살로 맞을 때',
               )}
               {field(
-                '책략',
+                '받는 책략',
                 <input type="number" min={0.05} step={0.05} aria-label={`${u.id} 받는 피해 책략`} value={taken.magic} onChange={(e) => onEdit(u.id, { damageTakenByType: { magic: num(e.target.value) } })} />,
                 '책략/독연으로 맞을 때',
+              )}
+              {field(
+                '줄 때 전열',
+                <input type="number" min={0.05} step={0.05} aria-label={`${u.id} 주는 피해 대상 전열`} value={dealt.front} onChange={(e) => onEdit(u.id, { damageDealtByRow: { front: num(e.target.value) } })} />,
+                '대상이 전열일 때 이 병종이 주는 피해에 곱함',
+              )}
+              {field(
+                '줄 때 후열',
+                <input type="number" min={0.05} step={0.05} aria-label={`${u.id} 주는 피해 대상 후열`} value={dealt.back} onChange={(e) => onEdit(u.id, { damageDealtByRow: { back: num(e.target.value) } })} />,
+                '대상이 후열일 때 이 병종이 주는 피해에 곱함',
               )}
               <label className="ufield check-field">
                 <span>반격</span>
@@ -159,7 +170,7 @@ export function UnitTypeEditor({ unitTypes, savedIds, changed, issues, character
               )}
             </div>
 
-            <div className="usection">스킬 · 특성</div>
+            <div className="usection">스킬</div>
             <div className="ugrid wide">
               {field(
                 '일반공격',
@@ -184,20 +195,6 @@ export function UnitTypeEditor({ unitTypes, savedIds, changed, issues, character
                     onChange={(e) => onEdit(u.id, { extraSkillIds: toggle(u.extraSkillIds, s.id, e.target.checked) })}
                   />
                   {s.name}
-                </label>
-              ))}
-            </div>
-            <div className="checks" role="group" aria-label={`${u.id} 특성`}>
-              <span className="check-title">특성</span>
-              {traits.map((t) => (
-                <label key={t.id} className="check">
-                  <input
-                    type="checkbox"
-                    aria-label={`${u.id} 특성 ${t.name}`}
-                    checked={u.traitIds.includes(t.id)}
-                    onChange={(e) => onEdit(u.id, { traitIds: toggle(u.traitIds, t.id, e.target.checked) })}
-                  />
-                  {t.name}
                 </label>
               ))}
             </div>

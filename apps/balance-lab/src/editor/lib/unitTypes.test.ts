@@ -36,6 +36,12 @@ describe('병종 데이터 (unitTypes.json)', () => {
     expect(() => parseUnitTypes('[{"id":"a"}]')).toThrow(/1번째/);
   });
 
+  it('줄 때 전열/후열 배수는 병종 데이터에 들어 있고(궁병: 전열 0.8), 특성은 쓰지 않는다', () => {
+    expect(gameData.unitTypes.archer.damageDealtByRow).toEqual({ front: 0.8, back: 1 });
+    for (const u of list) expect(u.traitIds, `${u.id} 특성`).toEqual([]);
+    expect(errors([{ ...archer(), damageDealtByRow: { front: 0, back: 1 } }]).some((i) => /주는 피해 배수/.test(i.message))).toBe(true);
+  });
+
   it('값이 빠져도 기본값으로 채워 일관된 모양이 된다', () => {
     const u = normalizeUnitType({ ...archer(), baseAp: undefined, troopScale: undefined, statMods: undefined, damageTakenByType: undefined, counterRate: undefined });
     expect(u).toMatchObject({ baseAp: 0, troopScale: 1, counterRate: 0.5, damageTakenByType: { physical: 1, magic: 1 }, statMods: { attack: 0, defense: 0, intellect: 0, speed: 0, action: 0 } });

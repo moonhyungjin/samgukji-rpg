@@ -16,85 +16,10 @@ export function DataTab() {
   const { state, update } = useLab();
   const { data } = state;
 
-  const traitOptions: Option[] = Object.values(data.traits).map((t) => ({ value: t.id, label: t.name }));
   const skillOptions: Option[] = Object.values(data.skills).map((s) => ({ value: s.id, label: s.name }));
-
-  const addTrait = () =>
-    update((s) => {
-      let n = 1;
-      while (s.data.traits[`trait-${n}`]) n++;
-      const id = `trait-${n}`;
-      return {
-        ...s,
-        data: { ...s.data, traits: { ...s.data.traits, [id]: { id, name: '새 특성', kind: 'damage-dealt' as const, multiplier: 1.2 } } },
-      };
-    });
-
-  const removeTrait = (id: string) =>
-    update((s) => {
-      const { [id]: _removed, ...traits } = s.data.traits;
-      const unitTypes = Object.fromEntries(
-        Object.entries(s.data.unitTypes).map(([key, u]) => [key, { ...u, traitIds: u.traitIds.filter((t) => t !== id) }]),
-      );
-      return { ...s, data: { ...s.data, traits, unitTypes } };
-    });
 
   return (
     <div>
-      <section className="panel">
-        <h3>병종 특성</h3>
-        <p className="note">
-          상성표를 대신해 병종 차이를 만드는 장치입니다. "주는 피해"는 내가 공격할 때 상대 조건에 맞으면, "받는 피해"는 상대가 나를 공격할 때 상대 조건에 맞으면 배율이 곱해집니다.
-          조건을 비워 두면 모든 상대에게 적용됩니다. 예: 창병 → 기병 ×1.25 (주는 피해), 궁병이 근접에게 맞을 때 ×1.3 (받는 피해).
-        </p>
-        <table>
-          <thead>
-            <tr>
-              <th>이름</th>
-              <th>종류</th>
-              <th>상대 계열</th>
-              <th>상대 열</th>
-              <th>배율</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {Object.values(data.traits).map((t) => (
-              <tr key={t.id}>
-                <td>
-                  <TextField path={`data.traits.${t.id}.name`} />
-                </td>
-                <td>
-                  <SelectField
-                    path={`data.traits.${t.id}.kind`}
-                    options={[
-                      { value: 'damage-dealt', label: '주는 피해' },
-                      { value: 'damage-taken', label: '받는 피해' },
-                    ]}
-                  />
-                </td>
-                <td>
-                  <CheckGroup path={`data.traits.${t.id}.versus.families`} options={FAMILY_OPTIONS} />
-                </td>
-                <td>
-                  <CheckGroup path={`data.traits.${t.id}.versus.rows`} options={ROW_OPTIONS} />
-                </td>
-                <td>
-                  <NumberField path={`data.traits.${t.id}.multiplier`} step={0.05} min={0} />
-                </td>
-                <td>
-                  <button type="button" onClick={() => removeTrait(t.id)}>
-                    삭제
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <button type="button" onClick={addTrait}>
-          특성 추가
-        </button>
-      </section>
 
       <UnitTypesSection />
 

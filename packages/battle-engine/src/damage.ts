@@ -39,6 +39,12 @@ export class DamageCalculator {
     return multiplier;
   }
 
+  /** 공격자 병종의 "대상 열에 따른 주는 피해" 보정 */
+  rowMultiplier(attacker: CharacterState, defender: CharacterState): number {
+    const by = this.data.unitTypes[attacker.unitType]?.damageDealtByRow;
+    return by ? by[defender.row] : 1;
+  }
+
   /** 공격 종류(물리/책략)에 따른 병종의 받는 피해 보정 */
   typeMultiplier(defender: CharacterState, physical: boolean): number {
     const by = this.data.unitTypes[defender.unitType]?.damageTakenByType;
@@ -68,6 +74,7 @@ export class DamageCalculator {
     const raw =
       base *
       this.traitMultiplier(attacker, defender) *
+      this.rowMultiplier(attacker, defender) *
       troopFactor(b, attacker.troops) *
       this.guardMultiplier(defender) *
       this.typeMultiplier(defender, physical) *

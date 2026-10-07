@@ -213,3 +213,29 @@ describe('병종별 반격 비율 (counterRate)', () => {
     expect(counter).toBe(calc.damage(makeUnit(), makeUnit(), hitPlain, 50));
   });
 });
+
+describe('대상 열에 따른 주는 피해 배수 (damageDealtByRow)', () => {
+  const data = {
+    ...testData,
+    unitTypes: { ...testData.unitTypes, arc: { ...testData.unitTypes.arc, damageDealtByRow: { front: 0.8, back: 1 } } },
+  };
+  const rowed = new DamageCalculator(testBalance, data);
+  const archer = makeUnit({ unitType: 'arc', family: 'archer' });
+  const front = makeUnit({ side: 'defender', row: 'front' });
+  const back = makeUnit({ side: 'defender', row: 'back' });
+
+  it('대상이 전열이면 배수를 곱하고 후열이면 그대로다', () => {
+    expect(rowed.damage(archer, front, hit, 50)).toBe(27); // 33.33 × 0.8
+    expect(rowed.damage(archer, back, hit, 50)).toBe(33);
+  });
+
+  it('배수를 생략하면 열과 상관없이 피해가 같다', () => {
+    expect(calc.damage(archer, front, hit, 50)).toBe(33);
+    expect(calc.damage(archer, back, hit, 50)).toBe(33);
+  });
+
+  it('공격하는 쪽 병종의 배수만 쓴다 (맞는 쪽 병종은 영향이 없다)', () => {
+    expect(rowed.damage(makeUnit({ unitType: 'inf' }), front, hit, 50)).toBe(33);
+    expect(rowed.damage(makeUnit({ unitType: 'inf' }), makeUnit({ unitType: 'arc', row: 'front' }), hit, 50)).toBe(33);
+  });
+});

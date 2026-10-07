@@ -42,6 +42,7 @@ export function normalizeUnitType(u: UnitTypeData): UnitTypeData {
     troopScale: Number(u.troopScale ?? 1),
     baseAp: Number(u.baseAp ?? 0),
     damageTakenByType: { physical: Number(u.damageTakenByType?.physical ?? 1), magic: Number(u.damageTakenByType?.magic ?? 1) },
+    damageDealtByRow: { front: Number(u.damageDealtByRow?.front ?? 1), back: Number(u.damageDealtByRow?.back ?? 1) },
     statMods: { attack: Number(mods.attack), defense: Number(mods.defense), intellect: Number(mods.intellect), speed: Number(mods.speed), action: Number(mods.action) },
     ...(u.guard ? { guard: { start: Number(u.guard.start), gain: Number(u.guard.gain), decay: Number(u.guard.decay), damageTaken: Number(u.guard.damageTaken ?? 1) } } : {}),
   };
@@ -106,6 +107,10 @@ export function validateUnitTypes(list: readonly UnitTypeData[], data: GameData)
       const v = u.damageTakenByType?.[key] ?? 1;
       if (!Number.isFinite(v) || v <= 0) err(`받는 피해 배수(${key === 'physical' ? '물리' : '책략'})는 0보다 커야 합니다.`);
     }
+    for (const key of ['front', 'back'] as const) {
+      const v = u.damageDealtByRow?.[key] ?? 1;
+      if (!Number.isFinite(v) || v <= 0) err(`주는 피해 배수(대상이 ${key === 'front' ? '전열' : '후열'})는 0보다 커야 합니다.`);
+    }
     if (!data.skills[u.basicSkillId]) err(`없는 일반공격 스킬입니다 (${u.basicSkillId}).`);
     for (const id of u.extraSkillIds) if (!data.skills[id]) err(`없는 추가 스킬입니다 (${id}).`);
     for (const id of u.traitIds) if (!data.traits[id]) err(`없는 특성입니다 (${id}).`);
@@ -154,7 +159,7 @@ export function applyUnitTypePatch(u: UnitTypeData, patch: Record<string, unknow
     if (key === 'guard') {
       if (value === null) delete next.guard;
       else next.guard = { ...(u.guard ?? {}), ...(value as object) };
-    } else if (key === 'statMods' || key === 'damageTakenByType') {
+    } else if (key === 'statMods' || key === 'damageTakenByType' || key === 'damageDealtByRow') {
       next[key] = { ...((u as unknown as Record<string, object>)[key] ?? {}), ...(value as object) };
     } else {
       next[key] = value;

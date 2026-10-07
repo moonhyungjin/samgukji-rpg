@@ -133,7 +133,7 @@ try {
   const bal = await text('main');
   check('밸런스 탭: 행동력 → AP 설정', bal.includes('행동력 몇 마다 AP 1') && bal.includes('공격 계수'));
 
-  await tabs('병종 · 특성 · 스킬');
+  await tabs('병종 · 스킬');
   await sleep(300);
   const data = await text('main');
   check('병종 탭: 병종 카드, 스킬 표(계수, 방어 무시, 버프)', ['기본 AP', '사거리', '받는 피해 배수', '반격 비율', '가드로 막힘', '방어 무시', '피해 무시 횟수', '무작위 가짓수'].every((k) => data.includes(k)));
@@ -209,7 +209,7 @@ try {
   await load();
 
   // ---- 4. 병종 카드: 수정 → 저장 → 장수 탭의 계산값이 따라 바뀐다 ----
-  await tabs('병종 · 특성 · 스킬');
+  await tabs('병종 · 스킬');
   await sleep(300);
   const cavBefore = readData('unitTypes').find((u) => u.id === 'cavalry').troopScale;
   await setValue('input[aria-label="cavalry 병력 배율"]', 0.9);
@@ -218,7 +218,7 @@ try {
   await tabs('장수');
   await sleep(300);
   check('장수 탭의 관우 병력이 새 배율을 바로 반영한다 (저장 전, 900)', String(await evalJs(`document.querySelector('tr[data-id="guanYu"]').textContent`)).includes('900'));
-  await tabs('병종 · 특성 · 스킬');
+  await tabs('병종 · 스킬');
   await sleep(200);
   await setValue('input[aria-label="cavalry 사거리"]', 0);
   await sleep(300);

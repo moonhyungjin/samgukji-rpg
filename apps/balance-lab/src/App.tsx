@@ -15,7 +15,7 @@ const TABS = [
   { id: 'sim', label: '시뮬레이션' },
   { id: 'battle', label: '전투 1회' },
   { id: 'balance', label: '밸런스 수치' },
-  { id: 'data', label: '병종 · 특성 · 스킬' },
+  { id: 'data', label: '병종 · 스킬' },
   { id: 'characters', label: '장수' },
   { id: 'presets', label: '기본 편성' },
   { id: 'settings', label: '목표 · 가져오기' },

@@ -21,6 +21,10 @@
       "physical": 1,
       "magic": 1.1
     },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
     "statMods": {
       "attack": 0,
       "defense": 0,
@@ -53,6 +57,10 @@
       "physical": 1,
       "magic": 1.1
     },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
     "statMods": {
       "attack": -1,
       "defense": 0,
@@ -82,14 +90,16 @@
     "basicSkillId": "cavalry-charge",
     "extraSkillIds": [],
     "promotesTo": [],
-    "traitIds": [
-      "cavalry-tough"
-    ],
+    "traitIds": [],
     "troopScale": 0.8,
     "baseAp": 2,
     "damageTakenByType": {
-      "physical": 0.95,
-      "magic": 1.1
+      "physical": 0.855,
+      "magic": 0.99
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
     },
     "statMods": {
       "attack": 1,
@@ -114,14 +124,16 @@
     "basicSkillId": "archer-shot",
     "extraSkillIds": [],
     "promotesTo": [],
-    "traitIds": [
-      "archer-vs-front"
-    ],
+    "traitIds": [],
     "troopScale": 0.85,
     "baseAp": 2,
     "damageTakenByType": {
       "physical": 1.1,
       "magic": 1.1
+    },
+    "damageDealtByRow": {
+      "front": 0.8,
+      "back": 1
     },
     "statMods": {
       "attack": 0,
@@ -155,6 +167,10 @@
       "physical": 1.1,
       "magic": 0.8
     },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
     "statMods": {
       "attack": 0,
       "defense": 0,
@@ -187,6 +203,10 @@
       "physical": 1.1,
       "magic": 0.8
     },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
     "statMods": {
       "attack": 0,
       "defense": 0,
@@ -218,6 +238,10 @@
     "damageTakenByType": {
       "physical": 1.1,
       "magic": 0.8
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
     },
     "statMods": {
       "attack": 0,
