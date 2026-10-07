@@ -10,6 +10,7 @@ import { LogPanel } from './LogPanel';
 
 interface Props {
   config: BattleConfig;
+  artTrial?: boolean;
   onExit: () => void;
 }
 
@@ -22,7 +23,7 @@ const SPEEDS = [
 ];
 
 /** PixiJS 전투 화면과 커맨드/로그 패널. 설정이 바뀌거나 다시 하기를 누르면 전투를 처음부터 새로 만든다. */
-export function BattleView({ config, onExit }: Props) {
+export function BattleView({ config, onExit, artTrial = false }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<BattleController | null>(null);
   const [snapshot, setSnapshot] = useState<ControllerSnapshot | null>(null);
@@ -54,8 +55,10 @@ export function BattleView({ config, onExit }: Props) {
         const session = new PlaySession({
           data: gameData,
           balance: defaultBalance,
-          attacker: presets[config.attackerPreset],
-          defender: presets[config.defenderPreset],
+          attacker: artTrial
+            ? [{ characterId: 'liuBei', row: 'front' }] : presets[config.attackerPreset],
+          defender: artTrial
+            ? [{ characterId: 'ytInfantryA', row: 'front' }] : presets[config.defenderPreset],
           seed: config.seed,
           playerSide: config.control === 'watch' ? null : config.control,
         });
@@ -74,7 +77,7 @@ export function BattleView({ config, onExit }: Props) {
       controllerRef.current = null;
       scene?.destroy();
     };
-  }, [config, runId]);
+  }, [config, runId, artTrial]);
 
   useEffect(() => {
     controllerRef.current?.setSpeed(speed);
@@ -84,6 +87,7 @@ export function BattleView({ config, onExit }: Props) {
 
   return (
     <div className="battle">
+      {artTrial && <p className="note">아트 시험 전투 · 유비 대 황건 보병 · 기본 편성 데이터와 별도로 실행</p>}
       <div className="toolbar">
         <span className="speed-label">속도</span>
         {SPEEDS.map((s) => (

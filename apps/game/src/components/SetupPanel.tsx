@@ -30,6 +30,7 @@ export function SetupPanel({ config, presetNames, onChange, onStart }: Props) {
   return (
     <section className="panel setup">
       <h2>전투 설정</h2>
+      <p><a href="?artTrial=1&control=attacker&speed=1&autostart=1">유비 대 황건 보병 · 아트 시험 전투</a></p>
       <div className="grid">
         <label className="field">
           <span>공격측 편성</span>

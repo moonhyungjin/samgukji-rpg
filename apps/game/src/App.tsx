@@ -10,15 +10,16 @@ export default function App() {
   const initial = useMemo(() => parseConfig(window.location.search, presetNames), [presetNames]);
   const [config, setConfig] = useState(initial.config);
   const [started, setStarted] = useState(initial.autostart);
+  const [artTrial, setArtTrial] = useState(() => new URLSearchParams(window.location.search).get('artTrial') === '1');
 
   return (
     <div className="app">
       <header className="top">
         <h1>삼국지 전투</h1>
-        <span className="sub">전투 프로토타입 · 임시 도형과 임시 수치</span>
+        <span className="sub">전투 프로토타입 · 첫 전장 아트 / 미제작 병종은 표식 표시</span>
       </header>
       {started ? (
-        <BattleView config={config} onExit={() => setStarted(false)} />
+        <BattleView config={config} artTrial={artTrial} onExit={() => { setStarted(false); setArtTrial(false); }} />
       ) : (
         <SetupPanel config={config} presetNames={presetNames} onChange={setConfig} onStart={() => setStarted(true)} />
       )}

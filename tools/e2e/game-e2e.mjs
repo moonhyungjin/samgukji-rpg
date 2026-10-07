@@ -46,7 +46,7 @@ const proc = spawn(
   [
     '--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`,
     '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist',
-    '--hide-scrollbars', '--window-size=1400,1000', '--no-first-run', 'about:blank',
+    '--hide-scrollbars', '--window-size=1400,1400', '--no-first-run', 'about:blank',
   ],
   { stdio: 'ignore' },
 );
@@ -96,9 +96,9 @@ const clickButton = (label) =>
   evalJs(`(() => { const b = [...document.querySelectorAll('button')].find(b => b.textContent.includes(${JSON.stringify(label)})); if (!b) return false; b.click(); return true; })()`);
 
 // 방어측(위) 카드의 월드 좌표. apps/game/src/render/theme.ts의 열/행 좌표와 같은 값이다.
-const WEI_POS = { 허저: [810, 100], 하후돈: [810, 240], 장료: [810, 380], 하후연: [1040, 100], 순욱: [1040, 240], 곽가: [1040, 380] };
+const WEI_POS = { 허저: [810, 510], 하후돈: [810, 636], 장료: [810, 762], 하후연: [1040, 510], 순욱: [1040, 636], 곽가: [1040, 762] };
 const canvasPoint = (wx, wy) =>
-  evalJs(`(() => { const c = document.querySelector('.stage canvas'); const r = c.getBoundingClientRect(); const s = Math.min(r.width / 1280, r.height / 600); const ox = (r.width - 1280 * s) / 2, oy = (r.height - 600 * s) / 2; return { x: r.left + ox + (${wx} + 100) * s, y: r.top + oy + (${wy} + 56) * s }; })()`);
+  evalJs(`(() => { const c = document.querySelector('.stage canvas'); const r = c.getBoundingClientRect(); const s = Math.min(r.width / 1280, r.height / 900); const ox = (r.width - 1280 * s) / 2, oy = (r.height - 900 * s) / 2; return { x: r.left + ox + (${wx} + 100) * s, y: r.top + oy + (${wy} + 56) * s }; })()`);
 
 try {
   for (let i = 0; i < 100; i++) {
@@ -226,6 +226,20 @@ try {
   await clickButton('설정으로');
   await waitFor(`!!document.querySelector('.setup')`, 5000);
   check('설정으로 돌아가면 설정 화면이 나온다', true);
+
+  // 6. First art scene: same engine, real texture loads, battlefield hit target.
+  await goto('?artTrial=1&control=attacker&speed=0&autostart=1');
+  await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('유비')`, 20000, '유비 시험 전투');
+  await clickSkill();
+  await waitFor(`document.querySelectorAll('.targets button').length > 0`, 5000);
+  await shot('art-trial-targets');
+  const artLoads = await evalJs(`document.querySelector('.stage').dataset.artLoaded.split(',')`);
+  check('전투 배경과 캐릭터 텍스처를 읽는다', ['field', 'liuBei', 'yellowSoldier', 'yellowCaptain', 'liuPortrait', 'yellowPortrait'].every(n => artLoads.includes(n)));
+  const fieldPoint = await evalJs(`(() => { const r = document.querySelector('.stage canvas').getBoundingClientRect(); const s = Math.min(r.width / 1280, r.height / 900); return {x:r.left+(r.width-1280*s)/2+870*s,y:r.top+(r.height-900*s)/2+254*s}; })()`);
+  await mouse(fieldPoint.x, fieldPoint.y);
+  const armyClick = await waitFor(`!!document.querySelector('.log')?.textContent.includes('→ 방:황건 보병A')`, 8000).catch(() => false);
+  check('전장의 황건 군단을 클릭해 공격한다', !!armyClick);
+  await shot('art-trial-after-hit');
 } catch (e) {
   check('스크립트 실행', false, String(e.message ?? e));
 } finally {

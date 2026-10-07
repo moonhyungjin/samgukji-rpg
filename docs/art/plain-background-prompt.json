@@ -1,0 +1,5 @@
+{
+  "tool": "image_gen built-in",
+  "output": "apps/game/public/art/battle/plain-v1.png",
+  "prompt": "Create one production BACKGROUND ONLY for a 2D Three Kingdoms army battle PC game, landscape wide 16:9. Hand-painted early-2000s Japanese strategy RPG scenery, subdued earthy colors, clean lightly textured illustration, NOT photorealistic, not 3D. A broad open flat dirt-and-short-grass battlefield in Chinese countryside, viewed from slightly elevated shallow side view for opposing sprite armies. Lower 75% is unobstructed walkable ground, sparse low grass, no boulders, fences or objects blocking units. Upper 25% has distant muted forested Chinese hills, hazy blue mountains, pale sky; tiny wooden camp/watchtower silhouettes at extreme upper left and upper right only. No characters, soldiers, horses, creatures, weapons, flags with writing, UI, text, bars, logos, arrows, borders, selection marks or dramatic lighting. Mild daylight upper left, muted sage green and warm tan palette, low contrast background so cel-shaded outlined sprites remain clear. Empty central ground for effects. Full-bleed single illustration."
+}

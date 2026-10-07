@@ -2,7 +2,7 @@ import type { Family, Row, Side } from '@samgukji/battle-engine';
 
 /** 화면의 논리 좌표계. 실제 크기에 맞춰 통째로 확대/축소한다. */
 export const WORLD_W = 1280;
-export const WORLD_H = 600;
+export const WORLD_H = 900;
 
 export const CARD_W = 200;
 export const CARD_H = 112;
@@ -36,7 +36,7 @@ const COLUMN_X: Record<Side, Record<Row, number>> = {
   attacker: { back: 40, front: 270 },
   defender: { front: 810, back: 1040 },
 };
-const ROW_Y = [100, 240, 380];
+const ROW_Y = [510, 636, 762];
 
 /** 카드의 왼쪽 위 좌표. 슬롯이 3칸을 넘으면 마지막 칸에 겹친다 (9대9 확장 시 다시 설계해야 한다). */
 export function slotPosition(side: Side, row: Row, slot: number): { x: number; y: number } {

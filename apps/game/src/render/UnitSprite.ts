@@ -1,4 +1,7 @@
-import { Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics, Sprite, Text } from 'pixi.js';
+import { ArmySprite } from './ArmySprite';
+import { unitArt } from './battleArt';
+import type { BattleTextures } from './battleArt';
 import type { BuffStat, Row } from '@samgukji/battle-engine';
 import type { ViewUnit } from '../battle/viewState';
 import { FAMILY_LABEL, STAT_SHORT } from '../lib/labels';
@@ -11,6 +14,7 @@ const DEAD_ALPHA = 0.32;
 /** 군단 카드 하나. 이름, 병종, 병력 바, AP 칸을 그리고 연출(돌진, 흔들림, 사라짐)을 담당한다. */
 export class UnitSprite {
   readonly root = new Container();
+  readonly army: ArmySprite;
   readonly uid: string;
   readonly side: ViewUnit['side'];
 
@@ -40,7 +44,10 @@ export class UnitSprite {
   constructor(
     unit: ViewUnit,
     private readonly clock: Clock,
+    textures: BattleTextures = {},
+    lanes = 3,
   ) {
+    this.army = new ArmySprite(unit, textures, clock, lanes);
     this.uid = unit.uid;
     this.side = unit.side;
     this.maxTroops = unit.maxTroops;
@@ -48,7 +55,7 @@ export class UnitSprite {
     this.troops = unit.troops;
     this.ap = unit.ap;
 
-    const bg = new Graphics().roundRect(0, 0, CARD_W, CARD_H, 10).fill(0x1c2230).stroke({ width: 2, color: SIDE_COLOR[unit.side] });
+    const bg = new Graphics().roundRect(0, 0, CARD_W, CARD_H, 3).fill(0x152526).stroke({ width: 1.5, color: 0x9b8150 });
     const portrait = new Graphics().roundRect(10, 10, 56, 56, 8).fill(FAMILY_COLOR[unit.family]);
     const glyph = new Text({ text: FAMILY_GLYPH[unit.family], style: { fontFamily: FONT, fontSize: 30, fill: 0xffffff, fontWeight: 'bold' } });
     glyph.anchor.set(0.5);
@@ -89,6 +96,17 @@ export class UnitSprite {
       bg, portrait, glyph, name, subtitle, this.troopsText, this.hpBar, this.pips,
       this.guardBadge, this.guardText, this.buffText, this.flashOverlay, this.ring, this.deadText,
     );
+    const art = unitArt(unit);
+    if (art?.portrait && textures[art.portrait]) {
+      const frame = new Container();
+      const mask = new Graphics().rect(10, 10, 56, 56).fill(0xffffff);
+      const face = new Sprite(textures[art.portrait]!);
+      const crop = art.portrait === 'liuPortrait' ? { x: 287, y: 0, size: 512 } : { x: 310, y: 30, size: 710 };
+      face.scale.set(56 / crop.size);
+      face.position.set(10 - crop.x * face.scale.x, 10 - crop.y * face.scale.y);
+      frame.addChild(face, mask); frame.mask = mask; this.root.addChild(frame);
+      glyph.visible = false;
+    }
     this.root.pivot.set(CARD_W / 2, CARD_H / 2);
     const { x, y } = slotPosition(unit.side, unit.row, unit.slot);
     this.root.position.set(x + CARD_W / 2, y + CARD_H / 2);
@@ -102,7 +120,7 @@ export class UnitSprite {
 
   /** 카드 중심의 월드 좌표 */
   get center(): { x: number; y: number } {
-    return { x: this.root.x, y: this.root.y };
+    return this.army.center;
   }
 
   // ---------- 상태 갱신 ----------
@@ -116,6 +134,7 @@ export class UnitSprite {
   setGuard(rate: number): void {
     this.guardRate = rate;
     if (this.gone) return;
+    this.army.setStatus(rate, this.barrier);
     this.guardBadge.clear();
     if (rate > 0) {
       this.guardText.text = `가드 ${Math.round(rate)}%`;
@@ -134,6 +153,7 @@ export class UnitSprite {
   /** 남은 피해 무시(결계) 횟수 표시를 갱신한다 */
   setBarrier(charges: number): void {
     this.barrier = charges;
+    if (!this.gone) this.army.setStatus(this.guardRate, charges);
     if (!this.gone) this.drawBuffs();
   }
 
@@ -156,11 +176,13 @@ export class UnitSprite {
   }
 
   setDead(dead: boolean): void {
+    this.army.setDead(dead);
     this.root.alpha = dead ? DEAD_ALPHA : 1;
     this.showDeadLabel(dead);
   }
 
   async fadeOut(): Promise<void> {
+    this.army.setDead(true);
     this.showDeadLabel(true);
     await tween(this.clock, 350, (t) => {
       if (!this.gone) this.root.alpha = 1 - (1 - DEAD_ALPHA) * easeOut(t);
@@ -168,6 +190,7 @@ export class UnitSprite {
   }
 
   async moveToSlot(row: Row, slot: number): Promise<void> {
+    const armyMove = this.army.moveToSlot(row, slot);
     const { x, y } = slotPosition(this.side, row, slot);
     const fromX = this.root.x;
     const fromY = this.root.y;
@@ -178,12 +201,14 @@ export class UnitSprite {
       const e = easeOut(t);
       this.root.position.set(fromX + (toX - fromX) * e, fromY + (toY - fromY) * e);
     });
+    await armyMove;
   }
 
   // ---------- 상호작용 표시 ----------
 
   /** 클릭할 수 있는 대상으로 표시한다. null이면 해제 */
   setTargetable(onPick: (() => void) | null): void {
+    this.army.setTargetable(onPick);
     if (this.pickHandler) this.root.off('pointertap', this.pickHandler);
     this.pickHandler = onPick;
     this.targetable = onPick !== null;
@@ -199,6 +224,7 @@ export class UnitSprite {
   }
 
   setActing(on: boolean): void {
+    this.army.setActing(on);
     this.acting = on;
     this.drawRing();
   }
@@ -206,38 +232,26 @@ export class UnitSprite {
   // ---------- 연출 ----------
 
   async flash(): Promise<void> {
+    const armyFlash = this.army.flash();
     await tween(this.clock, 300, (t) => {
       if (!this.gone) this.flashOverlay.alpha = 0.55 * (1 - t);
     });
+    await armyFlash;
   }
 
   async pulse(): Promise<void> {
-    await tween(this.clock, 220, (t) => {
-      if (!this.gone) this.root.scale.set(1 + 0.08 * Math.sin(Math.PI * t));
-    });
+    await this.army.pulse();
   }
 
   /** 상대 쪽으로 짧게 찌르고 돌아온다. 찌르는 순간(가장 앞으로 나온 때)에 onImpact를 부른다. */
   async lunge(toward: { x: number; y: number }, distance = 26, onImpact?: () => void): Promise<void> {
-    const bx = this.root.x;
-    const by = this.root.y;
-    const dx = toward.x - bx;
-    const dy = toward.y - by;
-    const len = Math.hypot(dx, dy) || 1;
-    const ux = (dx / len) * distance;
-    const uy = (dy / len) * distance;
-    await tween(this.clock, 110, (t) => {
-      if (!this.gone) this.root.position.set(bx + ux * easeOut(t), by + uy * easeOut(t));
-    });
-    onImpact?.();
-    await tween(this.clock, 110, (t) => {
-      if (!this.gone) this.root.position.set(bx + ux * (1 - easeOut(t)), by + uy * (1 - easeOut(t)));
-    });
+    await this.army.lunge(toward, distance, onImpact);
   }
 
   destroy(): void {
     this.gone = true;
     this.setTargetable(null);
+    this.army.destroy();
     this.root.destroy({ children: true });
   }
 

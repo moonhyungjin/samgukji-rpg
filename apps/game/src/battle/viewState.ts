@@ -6,6 +6,7 @@ import type { BattleEvent, BuffStat, CharacterState, DecidedBy, EndCause, Family
  */
 export interface ViewUnit {
   uid: string;
+  characterId?: string;
   name: string;
   side: Side;
   family: Family;
@@ -48,6 +49,7 @@ export function createViewState(units: readonly CharacterState[], defenderMorale
     outcome: null,
     units: units.map((u) => ({
       uid: u.uid,
+      characterId: u.characterId,
       name: u.name,
       side: u.side,
       family: u.family,

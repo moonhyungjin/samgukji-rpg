@@ -1,11 +1,11 @@
 :root {
-  --bg: #12151c;
-  --panel: #1a1f29;
-  --panel-2: #222836;
-  --border: #2d3548;
+  --bg: #101b1e;
+  --panel: #152527;
+  --panel-2: #213638;
+  --border: #766441;
   --text: #e4e8f0;
   --muted: #8f99ad;
-  --accent: #5b8cff;
+  --accent: #ad8b48;
   --attacker: #5b8cff;
   --defender: #ff6b6b;
   --err: #ef5b5b;
@@ -136,10 +136,10 @@ button.big {
   flex: 1;
 }
 
-/* PixiJS 캔버스가 들어가는 영역. 논리 좌표(1280x600)의 비율을 유지한다. */
+/* 전장 + 하단 6대6 지휘 카드의 논리 좌표. */
 .stage {
   width: 100%;
-  aspect-ratio: 1280 / 600;
+  aspect-ratio: 1280 / 900;
   background: #12151c;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -149,6 +149,8 @@ button.big {
 .stage canvas {
   display: block;
 }
+
+a { color: #e2bd76; }
 
 .panels {
   display: grid;

@@ -1,4 +1,6 @@
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Application, Container, Graphics, Sprite, Text } from 'pixi.js';
+import { loadBattleArt } from './battleArt';
+import type { BattleTextures } from './battleArt';
 import type { BattleEvent, GameData } from '@samgukji/battle-engine';
 import type { SceneLike } from '../battle/controller';
 import type { BattleOutcome, ViewState } from '../battle/viewState';
@@ -21,6 +23,7 @@ const MORALE_BAR = { x: 390, y: 16, w: 500, h: 18 };
 export class BattleScene implements SceneLike {
   private readonly world = new Container();
   private readonly unitsLayer = new Container();
+  private readonly armyLayer = new Container({ sortableChildren: true });
   private readonly effectsLayer = new Container();
   private readonly overlayLayer = new Container();
   private readonly moraleBar = new Graphics();
@@ -37,6 +40,8 @@ export class BattleScene implements SceneLike {
   private readonly clock: Clock = { scale: () => (this.instant || this.speed <= 0 ? Infinity : this.speed) };
 
   static async create(host: HTMLElement, options: SceneOptions): Promise<BattleScene> {
+    const textures = await loadBattleArt();
+    host.dataset.artLoaded = Object.entries(textures).filter(([, texture]) => !!texture).map(([key]) => key).join(',');
     const app = new Application();
     await app.init({
       background: 0x12151c,
@@ -46,16 +51,17 @@ export class BattleScene implements SceneLike {
       resizeTo: host,
     });
     host.appendChild(app.canvas);
-    return new BattleScene(app, options);
+    return new BattleScene(app, options, textures);
   }
 
   private constructor(
     private readonly app: Application,
     private readonly options: SceneOptions,
+    private readonly textures: BattleTextures,
   ) {
     this.app.stage.addChild(this.world);
 
-    this.world.addChild(this.drawBackground(), this.unitsLayer, this.effectsLayer, this.moraleBar, this.overlayLayer);
+    this.world.addChild(this.drawBackground(), this.armyLayer, this.unitsLayer, this.effectsLayer, this.moraleBar, this.overlayLayer);
 
     this.roundText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 20, fill: 0xe4e8f0, fontWeight: 'bold' } });
     this.roundText.position.set(24, 14);
@@ -82,9 +88,11 @@ export class BattleScene implements SceneLike {
     this.clearLayer(this.overlayLayer);
 
     for (const unit of state.units) {
-      const sprite = new UnitSprite(unit, this.clock);
+      const lanes = Math.max(...state.units.filter(u => u.side === unit.side && u.row === unit.row).map(u => u.slot + 1));
+      const sprite = new UnitSprite(unit, this.clock, this.textures, lanes);
       this.sprites.set(unit.uid, sprite);
       this.unitsLayer.addChild(sprite.root);
+      this.armyLayer.addChild(sprite.army.root);
     }
     this.updateRound(state.round);
     this.morale = state.defenderMorale;
@@ -123,6 +131,7 @@ export class BattleScene implements SceneLike {
         // 찌르는 순간에 피격 연출을 시작해, 돌아오는 동안 병력 바가 줄어들게 한다
         let impact: Promise<unknown> = Promise.resolve();
         await source.lunge(target.center, counter ? 16 : 26, () => {
+          void this.slash(target.center, counter);
           void this.floatText(target, counter ? `반격 -${event.amount}` : `-${event.amount}`, counter ? 0xffa94d : 0xff5a5a, counter ? 22 : 28, 600);
           impact = Promise.all([target.flash(), target.animateTroops(event.troopsAfter)]);
         });
@@ -233,16 +242,29 @@ export class BattleScene implements SceneLike {
   private drawBackground(): Container {
     const layer = new Container();
     const g = new Graphics();
+    if (this.textures.field) {
+      const field = new Sprite(this.textures.field);
+      field.position.set(0, -84);
+      field.scale.set(Math.max(WORLD_W / field.texture.width, 412 / field.texture.height));
+      const mask = new Graphics().rect(0, 46, WORLD_W, 412).fill(0xffffff);
+      const view = new Container(); view.addChild(field, mask); view.mask = mask;
+      layer.addChild(view);
+    } else {
+      layer.addChild(new Graphics().rect(0, 46, WORLD_W, 412).fill(0x626953));
+    }
+    g.rect(0, 0, WORLD_W, 46).fill(0x101e21);
+    g.rect(0, 458, WORLD_W, WORLD_H - 458).fill(0x101d20);
+    g.moveTo(0, 458).lineTo(WORLD_W, 458).stroke({ width: 3, color: 0x9b8150 });
     // 열마다 어두운 바탕을 깔아 구조(전열/후열)를 보여 준다
     for (const side of ['attacker', 'defender'] as const) {
       for (const row of ['front', 'back'] as const) {
-        g.roundRect(columnX(side, row) - 12, 70, CARD_W + 24, 450, 12).fill({ color: 0x171c28 });
+        g.roundRect(columnX(side, row) - 12, 478, CARD_W + 24, 410, 4).fill({ color: 0x182b2c });
         const label = new Text({
           text: row === 'front' ? '전열' : '후열',
           style: { fontFamily: FONT, fontSize: 14, fill: 0x6b7690, fontWeight: 'bold' },
         });
         label.anchor.set(0.5, 0);
-        label.position.set(columnX(side, row) + CARD_W / 2, 76);
+        label.position.set(columnX(side, row) + CARD_W / 2, 484);
         layer.addChild(label);
       }
       const title = new Text({
@@ -250,13 +272,13 @@ export class BattleScene implements SceneLike {
         style: { fontFamily: FONT, fontSize: 16, fill: SIDE_COLOR[side], fontWeight: 'bold' },
       });
       title.anchor.set(0.5, 0);
-      title.position.set(side === 'attacker' ? 270 : 1010, 540);
+      title.position.set(side === 'attacker' ? 270 : 1010, 432);
       layer.addChild(title);
     }
-    const versus = new Text({ text: 'VS', style: { fontFamily: FONT, fontSize: 64, fill: 0x232a3a, fontWeight: 'bold' } });
+    const versus = new Text({ text: '군단 지휘\n\n아래에서 행동 선택', style: { fontFamily: FONT, fontSize: 18, fill: 0xbfa879, align: 'center', fontWeight: 'bold' } });
     versus.anchor.set(0.5);
-    versus.position.set(WORLD_W / 2, 300);
-    layer.addChildAt(g, 0);
+    versus.position.set(WORLD_W / 2, 670);
+    layer.addChildAt(g, 1);
     layer.addChild(versus);
     return layer;
   }
@@ -289,6 +311,14 @@ export class BattleScene implements SceneLike {
   }
 
   // ---------- 연출 ----------
+
+  private async slash(at: { x: number; y: number }, counter: boolean): Promise<void> {
+    const effect = new Graphics().moveTo(-24, 30).lineTo(27, -34).stroke({ width: 7, color: counter ? 0xffbb77 : 0xfff0b5 });
+    effect.moveTo(-19, 32).lineTo(32, -32).stroke({ width: 2, color: 0xffffff });
+    effect.position.set(at.x, at.y); this.effectsLayer.addChild(effect);
+    await tween(this.clock, 200, t => { if (!effect.destroyed) { effect.alpha = 1 - t; effect.scale.set(.7 + t * .6); } });
+    if (!effect.destroyed) effect.destroy();
+  }
 
   private async floatText(sprite: UnitSprite, text: string, color: number, size: number, ms: number): Promise<void> {
     const label = new Text({

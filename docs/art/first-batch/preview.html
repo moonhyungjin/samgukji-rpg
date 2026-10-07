@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>삼국지 전투 아트 · 첫 제작 묶음</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;color:#eee6d4;background:#101719}*{box-sizing:border-box}body{margin:0;padding:28px;max-width:1500px;margin-inline:auto}h1{font-size:25px;margin:0 0 8px}p{color:#bdbbab;line-height:1.6}header{border-bottom:1px solid #8f7547;padding-bottom:18px}.controls{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:22px 0}button,select{padding:9px 14px;border:1px solid #9b8050;background:#202c2e;color:#f2e5c9;border-radius:3px}button{cursor:pointer}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}article{border:1px solid #796644;background:#182326;overflow:hidden}h2{font-size:16px;margin:14px}small{display:block;color:#b7bdba;margin:0 14px 14px}.stage{height:310px;display:flex;align-items:end;justify-content:center;padding:14px;overflow:hidden;background:var(--stage,#56605a)}.stage img{height:var(--size,180px);max-width:100%;object-fit:contain;object-position:bottom}.portraits{display:flex;gap:16px;margin-top:18px}.portraits article{width:240px}.portraits .stage{height:220px}.portraits img{height:200px}.army{height:300px;position:relative;overflow:hidden;background:var(--stage,#56605a);border:1px solid #796644;margin-top:16px}.army img{position:absolute;bottom:38px;width:165px;height:160px;object-fit:contain;object-position:bottom}.army .commander{width:250px;height:195px;z-index:3}.army span{position:absolute;top:15px;left:20px;color:#fff;text-shadow:0 1px 3px #000}.army .enemy-label{left:auto;right:20px}.note{font-size:13px}a{color:#e8c881}output{min-width:50px}@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}body{padding:14px}.army{min-width:760px}.army-wrap{overflow-x:auto}}
+</style>
+<header><h1>삼국지 전투 아트 · 첫 제작 묶음</h1><p>일반 등신대 만화체 / 네임드·일반 장수·병사 구분 / 기본 자세 1장</p></header>
+<div class="controls"><label>배경 <select id="bg"><option value="#56605a">전장 중간색</option><option value="#142024">어두운 UI</option><option value="#e9dfc9">밝은 배경</option><option value="checker">투명도 격자</option></select></label><label>이미지 높이 <input id="size" type="range" min="100" max="280" value="180"></label><output id="value">180px</output></div>
+<main class="grid">
+<article><div class="stage"><img src="sprites/liu-bei-idle-v1.png" alt="쌍검과 녹색·백색 옷을 입은 유비"></div><h2>유비 · 네임드 장수</h2><small>고유 전신 / 오른쪽 방향</small></article>
+<article><div class="stage"><img src="sprites/shu-infantry-idle-v1.png" alt="철제 투구와 녹색 갑옷의 아군 보병"></div><h2>아군 보병 · 공용 병사</h2><small>투구·갑옷 / 오른쪽 방향</small></article>
+<article><div class="stage"><img src="sprites/yellow-turban-captain-idle-v1.png" alt="황색 두건과 갑옷의 황건 보병장"></div><h2>황건 보병장 · 일반 장수</h2><small>두건·갑옷·수염 / 왼쪽 방향</small></article>
+<article><div class="stage"><img src="sprites/yellow-turban-infantry-idle-v1.png" alt="황색 두건과 천옷의 황건 보병"></div><h2>황건 보병 · 전용 병사</h2><small>두건·천옷 / 왼쪽 방향</small></article>
+</main>
+<div class="portraits"><article><div class="stage"><img src="portraits/liu-bei-portrait-v1.png" alt="유비 초상화"></div><h2>유비 초상화</h2></article><article><div class="stage"><img src="portraits/yellow-turban-captain-portrait-v1.png" alt="황건 보병장 초상화"></div><h2>황건 보병장 초상화</h2></article></div>
+<h2>군단 배치 비교</h2><p class="note">병사 이미지를 반복 배치한 크기 검토용 장면. 실제 전투 기능과 연결하지 않았습니다.</p>
+<div class="army-wrap"><div class="army"><span>아군 보병 군단</span><span class="enemy-label">황건 보병 군단</span>
+<img src="sprites/shu-infantry-idle-v1.png" style="left:1%;bottom:95px" alt="아군 병사"><img src="sprites/shu-infantry-idle-v1.png" style="left:7%;bottom:70px" alt="아군 병사"><img src="sprites/shu-infantry-idle-v1.png" style="left:13%;bottom:45px" alt="아군 병사"><img class="commander" src="sprites/liu-bei-idle-v1.png" style="left:20%" alt="유비">
+<img src="sprites/yellow-turban-infantry-idle-v1.png" style="right:1%;bottom:95px" alt="황건 병사"><img src="sprites/yellow-turban-infantry-idle-v1.png" style="right:7%;bottom:70px" alt="황건 병사"><img src="sprites/yellow-turban-infantry-idle-v1.png" style="right:13%;bottom:45px" alt="황건 병사"><img class="commander" src="sprites/yellow-turban-captain-idle-v1.png" style="right:20%" alt="황건 보병장"></div></div>
+<p id="load-status" class="note">이미지 로딩 확인 중…</p><p class="note">제작 기준과 범위: <a href="README.md">README</a> · <a href="prompts.json">생성 프롬프트</a></p>
+<script>
+const bg=document.querySelector('#bg'),size=document.querySelector('#size');
+bg.addEventListener('change',()=>{document.documentElement.style.setProperty('--stage',bg.value==='checker'?'repeating-conic-gradient(#7d8787 0% 25%,#a6adad 0% 50%) 0 / 20px 20px':bg.value)});
+size.addEventListener('input',()=>{document.documentElement.style.setProperty('--size',size.value+'px');document.querySelector('#value').textContent=size.value+'px'});
+Promise.all([...document.images].map(img=>img.decode().then(()=>null,()=>img.getAttribute('src')))).then(results=>{const errors=results.filter(Boolean);document.querySelector('#load-status').textContent=errors.length?'로드 실패: '+[...new Set(errors)].join(', '):'이미지 6종과 군단 배치 이미지 로드 완료.'});
+</script></html>
