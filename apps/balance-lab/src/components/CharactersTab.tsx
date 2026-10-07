@@ -55,6 +55,10 @@ export function CharactersTab() {
           ))}
         </tbody>
       </table>
+      <p className="note">
+        장수 데이터의 원본은 <code>packages/game-data/data/characters.json</code>이고, 장수 편집기(<code>npm run chars</code>)에서 저장하면 이 화면을 새로고침할 때 자동으로 반영됩니다.
+        여기서 고친 값은 이 브라우저의 Lab 실험용이며, 편집기에서 다시 저장하면 파일 값으로 덮어써집니다.
+      </p>
       <p className="note">병종을 바꿨는데 편성에서 그 열에 둘 수 없게 되면 실행 시 오류가 표시됩니다. 편성 탭에서 위치를 바꿔 주세요.</p>
     </section>
   );

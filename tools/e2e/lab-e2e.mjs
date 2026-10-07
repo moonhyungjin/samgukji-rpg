@@ -5,7 +5,7 @@
 // 환경 변수: LAB_URL, BROWSER, E2E_OUT. 게임 화면용 game-e2e.mjs와 같은 방식(DevTools Protocol)이다.
 
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const BASE = process.env.LAB_URL ?? 'http://localhost:5173/';
@@ -100,7 +100,7 @@ try {
   const page = targets.find((t) => t.type === 'page');
   ws = new WebSocket(page.webSocketDebuggerUrl);
   await new Promise((r) => (ws.onopen = r));
-  ws.onmessage = (e) => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); } else if (m.method === 'Runtime.exceptionThrown') errors.push(JSON.stringify(m.params.exceptionDetails.text)); };
+  ws.onmessage = (e) => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); } else if (m.method === 'Runtime.exceptionThrown') errors.push(JSON.stringify(m.params.exceptionDetails.exception?.description ?? m.params.exceptionDetails.text).slice(0, 300)); };
   await send('Runtime.enable'); await send('Page.enable');
   await send('Page.navigate', { url: BASE }); await sleep(1500);
   await evalJs(`localStorage.clear()`);
@@ -135,6 +135,26 @@ try {
   const apCell = await evalJs(`(() => { const row = [...document.querySelectorAll('tr')].find(r => r.querySelector('input[value=\"장비\"]')); return row ? row.textContent : 'none'; })()`);
   check('장비의 총 AP가 표시된다', /5/.test(String(apCell)), String(apCell));
   await shot('lab-characters');
+  // 장수 편집기에서 장수 파일이 바뀌면 Lab이 다음에 열 때 그 값을 쓰는지 확인한다 (끝나면 파일을 원래대로 되돌린다).
+  const FILE = resolve('packages/game-data/data/characters.json');
+  const originalFile = readFileSync(FILE, 'utf-8');
+  try {
+    const list = JSON.parse(originalFile);
+    const guan = list.find((c) => c.id === 'guanYu');
+    const oldAttack = guan.stats.attack;
+    guan.stats.attack = oldAttack + 1;
+    writeFileSync(FILE, JSON.stringify(list, null, 2) + '\n');
+    await sleep(1200); // 개발 서버가 파일 변경을 읽을 시간
+    await send('Page.navigate', { url: BASE });
+    await waitFor(`document.querySelectorAll('button.tab').length > 0`, 30000, 'Lab 로드');
+    await sleep(500);
+    await tabs('캐릭터');
+    await sleep(300);
+    const synced = await evalJs(`(() => { const row = [...document.querySelectorAll('tr')].find(r => r.querySelector('input[value="관우"]')); if (!row) return 'no row'; const nums = [...row.querySelectorAll('input[type=number]')].map(i => i.value); return nums[0]; })()`);
+    check('장수 파일의 변경이 Lab 캐릭터 탭에 반영된다', Number(synced) === oldAttack + 1, `관우 공격 ${oldAttack} → ${synced}`);
+  } finally {
+    writeFileSync(FILE, originalFile);
+  }
   check('콘솔 오류가 없다', errors.length === 0, errors.join(' | '));
 } catch (e) {
   console.log('ERROR', e.message);

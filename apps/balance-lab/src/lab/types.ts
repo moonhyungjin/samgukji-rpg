@@ -49,4 +49,6 @@ export interface LabState {
   teamB: Slots;
   sim: SimSettings;
   targets: TargetSettings;
+  /** 이 상태의 장수가 어느 장수 파일(characters.json) 내용에서 왔는지 나타내는 지문 */
+  charactersSignature?: string;
 }

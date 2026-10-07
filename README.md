@@ -7,11 +7,12 @@
 
 ```text
 apps/
+  character-editor/ 장수 편집기 (표에서 스탯을 고치고 저장하면 전투 테스트기에 반영)
   game/            React + PixiJS 전투 화면 (관전, 수동 플레이)
   balance-lab/     React + Vite 밸런스 도구 (시뮬레이션은 Web Worker에서 실행)
 packages/
   battle-engine/   순수 TypeScript 전투 엔진 (React/PixiJS/DOM 의존 없음)
-  game-data/       병종, 특성, 스킬, 캐릭터, 밸런스 수치, 기본 편성
+  game-data/       병종, 특성, 스킬, 밸런스 수치, 기본 편성 (장수는 data/characters.json)
 tools/
   sim/             시뮬레이션 CLI
   e2e/             게임 화면을 실제 브라우저로 조작해 확인하는 스크립트
@@ -27,6 +28,8 @@ npm install
 npm test                 # vitest (엔진, 통합, Lab, 게임 로직/패널)
 npm run typecheck
 
+npm run chars            # 장수 편집기 개발 서버 (http://localhost:5175)
+npm run e2e:chars        # 장수 편집기를 실제 브라우저로 조작해 확인 (먼저 npm run chars 실행)
 npm run game             # 게임 화면 개발 서버 (http://localhost:5174)
 npm run game:build       # 게임 프로덕션 빌드 (apps/game/dist)
 npm run e2e              # 게임 화면을 실제 브라우저로 조작해 확인 (먼저 npm run game 실행, Edge/Chrome 필요)
@@ -57,6 +60,16 @@ npm run sim -- --team-a shu --team-b wei --roles alternate   # alternate | A-att
 - 화면은 임시 도형이다. 공격측은 왼쪽, 방어측은 오른쪽이고 안쪽 열이 전열이다. 상단에 라운드와 사기 바, 카드마다 병력 바와 AP 칸이 보인다.
 - 주소 쿼리로 바로 시작할 수 있다: `?control=attacker|defender|watch&a=shu&d=wei&seed=7&speed=0&autostart=1` (속도 0은 즉시)
 
+## 장수 편집기 (`apps/character-editor`)
+
+`npm run chars`로 열면(http://localhost:5175) 모든 장수가 표로 나온다. 이름, 병종, 등급(네임드/평범), 레벨, 스탯 8종(공격/방어/지력/속도/행동력/외교/내정/매력)을 칸에서 바로 고치고 **저장하기**를 누른다.
+
+- **저장하면 `packages/game-data/data/characters.json`이 바뀐다.** 이 파일이 장수 데이터의 원본이라 시뮬레이터(`npm run sim`)와 게임 화면은 바로(새로고침하면), Balance Lab은 새로고침할 때 자동으로 새 장수 값을 가져간다. (Lab은 브라우저에 상태를 저장하므로 지문이 달라졌을 때만 장수를 덮어쓴다. Lab 캐릭터 탭에서 고친 값은 편집기에서 다시 저장하면 파일 값으로 덮어써진다.)
+- 오른쪽 회색 칸은 계산값이다: 병종 보정까지 반영한 **실제 공/방/지/속**, **총 AP**, 최대 **병력**, 기준 상대(방어/지력 5, 병력 1000)에게 주는 **1회 피해**. 스탯을 바꾸면 바로 갱신된다.
+- 새 장수 추가, 복제, 줄별 되돌리기, 전부 되돌리기, 검색과 등급/병종 필터, 가져오기/내보내기(JSON). 수정은 노란 줄, 새 장수는 초록 줄, 오류는 빨간 줄.
+- 저장 전에 검사한다: id 중복/형식, 이름, 없는 병종, 스탯 범위(0~15, 10 초과는 경고), 레벨. 오류가 있으면 저장하지 않는다. 기본 편성에서 쓰는 장수는 삭제할 수 없다.
+- 저장하기는 개발 서버(`npm run chars`)에서만 파일에 쓴다. 서버 없이 쓸 때는 내보내기로 받은 파일을 `characters.json`에 덮어쓴다. 병종/스킬/밸런스 수치는 Balance Lab에서 고친다.
+
 ## Balance Lab
 
 | 탭 | 기능 |
@@ -68,7 +81,7 @@ npm run sim -- --team-a shu --team-b wei --roles alternate   # alternate | A-att
 | 캐릭터 | 스탯(**행동력 포함**), 계산된 총 AP, 레벨, 병종 |
 | 목표 · 가져오기 | 목표 지표 범위(기본: 궁병 생존율 40% ±10%p), JSON 가져오기/내보내기, 초기화 |
 
-- 상태는 브라우저 localStorage에 자동 저장된다 (키 `samgukji-balance-lab-v23`. 기본 데이터가 바뀌면 키를 올려 옛 저장값을 버린다).
+- 상태는 브라우저 localStorage에 자동 저장된다 (키 `samgukji-balance-lab-v24`. 기본 데이터가 바뀌면 키를 올려 옛 저장값을 버린다).
 - **Lab에서 고친 값은 `packages/game-data`의 코드에 자동 반영되지 않는다.** 채택할 값은 "밸런스만 내보내기"(CLI `--balance`로 검증 가능)나 "전체 상태 내보내기"로 꺼내서 옮겨야 한다.
 - 실제 브라우저(Edge 헤드리스)에서 확인했다 (가드 열 추가 전): 워커 자동 실행, 수치를 고치면 결과와 변화량이 갱신되는 것, 모든 탭 렌더링, 전투 1회 로그, 콘솔 오류 없음. (가드/버프 관련 열과 입력란이 생긴 뒤에는 서버 렌더링 테스트로만 확인했고 브라우저에서 다시 열어 보지는 않았다.)
 
@@ -85,6 +98,7 @@ npm run sim -- --team-a shu --team-b wei --roles alternate   # alternate | A-att
 - **공격 종류별 받는 피해 배수** (`damageTakenByType`): 물리(일반공격/돌격/화살)와 책략(책략/독연)을 구분한다. 방패병/보병/기병/궁병은 물리 ×1, 책략 ×1.1, 책사/도사/풍수사는 물리 ×1.1, 책략 ×0.8. 물리 공격수(특히 궁병)가 지력 계열을 잡는 전문가가 되고, 지력 계열끼리는 서로 덜 아프다
 - **병종별 반격 비율** (`counterRate`, 반격 피해 = 반격자 일반공격 피해 × 비율): 방패병 0.5, 보병 0.5, 기병 0.6, 궁병 0.25. 기병의 반격에는 방어 무시가 붙지 않는다. 생략하면 `balance.counter.rate`(0.5). 나중에 방패병 승급에서 반격을 더 세게 하는 방향
 - **평범한 장수(황건적)**: `rank: 'normal'` 캐릭터 12명(병종마다 2명, 스탯이 네임드의 절반 안팎)과 기본 편성 `yellow`. 무작위 편성은 기본으로 네임드 장수만 쓰고 `--pool normal|all`(Lab: "무작위 편성 후보")로 바꾼다
+- **초반 시나리오(3 vs 3~4)**: 촉은 유관장(유비 보병, 관우 기병, 장비 방패병, 편성 `shuStart`)으로 시작해 황건적과 싸운다. 황건적은 쉬움 `yellowEasy`(보,보,방), 보통 `yellowNormal`(보,방,궁), 어려움 `yellowHard`(보,보,방 + 궁 후열)로 나눈다. `npm run sim -- --team-a shuStart --team-b yellowHard`. Lab 편성 탭에도 버튼이 있다. 유비는 새 캐릭터(보병, 공7 방6 지6 속5 행동력3 매력10, 임시값)
 - **병종 스탯 보정** (캐릭터 기본 스탯에 더해짐, `statMods`): 방패병 공−1 속−1 (방어 보정은 제거) / 보병 없음(표준) / 기병 공+1 방+1 속+1 / 궁병 방−1 속−1 / 책사 지+1 / 도사 속+1 / 풍수사 없음. 승급 병종은 자기 보정을 따로 가진다
 - **AP = 병종 기본 AP + 캐릭터 행동력 추가 AP.** 병종 기본 AP: 방패병 3, 보병/기병/궁병 2, 책사/도사/풍수사 2. 행동력 스탯(1~10)은 2마다 추가 AP 1 (올림, `balance.action`으로 조정). 예: 행동력 3이면 +2. 캐릭터마다 다르게 둔다. 초반엔 행동력 대체로 5 이하(+3), 10(+5)까지는 아이템 등으로 올리는 방향. 지금 캐릭터 행동력은 방패병/보병/기병/궁병 3, 책사/도사 1이라 총 AP는 방패병 5, 보병/기병/궁병 4, 책사/도사 3
 - **기병 돌격 계수 1.2, 대상의 방어를 1 무시하고, 기병이 받는 피해는 ×0.9** (`cavalry-tough`) (`ignoreDefense`, 물리 공격만)

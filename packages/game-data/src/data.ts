@@ -1,4 +1,5 @@
-import type { CharacterData, GameData, SkillData, Stats, TraitData, UnitTypeData } from '@samgukji/battle-engine';
+import type { CharacterData, GameData, SkillData, TraitData, UnitTypeData } from '@samgukji/battle-engine';
+import charactersJson from '../data/characters.json';
 
 // ---------- 병종 특성 ----------
 // 계열 간 상성표 대신 병종이 가진 효과로 피해를 보정한다. 아래는 예시이며 아직 어떤 병종에도 붙어 있지 않다.
@@ -57,48 +58,10 @@ const unitTypeList: UnitTypeData[] = [
 // 지금은 방패병 기본 3 + 행동력 3(+2) = 5, 보병/기병/궁병 기본 2 + 행동력 3(+2) = 4, 책사/도사 기본 2 + 행동력 1(+1) = 3.
 // 초반엔 행동력 대체로 5 이하, 10(+5)까지는 아이템 등으로 올리는 방향
 
-const s = (attack: number, defense: number, intellect: number, speed: number, action: number, diplomacy = 5, politics = 5, charm = 5): Stats => ({
-  attack,
-  defense,
-  intellect,
-  speed,
-  action,
-  diplomacy,
-  politics,
-  charm,
-});
-
-const characterList: CharacterData[] = [
-  // 촉
-  { id: 'zhangFei', name: '장비', unitType: 'shield', stats: s(8, 9, 4, 5, 3), level: 15 },
-  { id: 'guanYu', name: '관우', unitType: 'cavalry', stats: s(9, 7, 6, 6, 3), level: 15 },
-  { id: 'zhaoYun', name: '조운', unitType: 'cavalry', stats: s(8, 7, 6, 8, 3), level: 15 },
-  { id: 'huangZhong', name: '황충', unitType: 'archer', stats: s(9, 4, 5, 5, 3), level: 15 },
-  { id: 'zhugeLiang', name: '제갈량', unitType: 'strategist', stats: s(3, 3, 10, 6, 1), level: 15 },
-  { id: 'pangTong', name: '방통', unitType: 'taoist', stats: s(2, 3, 9, 5, 1), level: 15 },
-  { id: 'weiYan', name: '위연', unitType: 'infantry', stats: s(8, 7, 4, 6, 3), level: 15 },
-  // 위
-  { id: 'xuChu', name: '허저', unitType: 'shield', stats: s(8, 9, 3, 5, 3), level: 15 },
-  { id: 'xiahouDun', name: '하후돈', unitType: 'cavalry', stats: s(9, 6, 4, 7, 3), level: 15 },
-  { id: 'zhangLiao', name: '장료', unitType: 'cavalry', stats: s(8, 6, 5, 8, 3), level: 15 },
-  { id: 'xiahouYuan', name: '하후연', unitType: 'archer', stats: s(8, 5, 5, 8, 3), level: 15 },
-  { id: 'xunYu', name: '순욱', unitType: 'strategist', stats: s(2, 3, 9, 5, 1), level: 15 },
-  { id: 'dianWei', name: '전위', unitType: 'infantry', stats: s(9, 7, 3, 5, 3), level: 15 },
-  { id: 'guoJia', name: '곽가', unitType: 'taoist', stats: s(1, 3, 10, 6, 1), level: 15 },
-  // 평범한 장수 (황건적 같은 일반 병력). 네임드 장수보다 스탯이 전반적으로 낮다. 무작위 편성은 기본으로 네임드 장수만 쓰고, 이쪽은 pool: 'normal'로 쓴다.
-  { id: 'ytShieldA', name: '황건 방패병A', rank: 'normal', unitType: 'shield', stats: s(5, 5, 2, 3, 3), level: 15 },
-  { id: 'ytShieldB', name: '황건 방패병B', rank: 'normal', unitType: 'shield', stats: s(4, 6, 2, 3, 3), level: 15 },
-  { id: 'ytInfantryA', name: '황건 보병A', rank: 'normal', unitType: 'infantry', stats: s(5, 4, 2, 4, 3), level: 15 },
-  { id: 'ytInfantryB', name: '황건 보병B', rank: 'normal', unitType: 'infantry', stats: s(6, 4, 2, 4, 3), level: 15 },
-  { id: 'ytCavalryA', name: '황건 기병A', rank: 'normal', unitType: 'cavalry', stats: s(5, 4, 2, 5, 3), level: 15 },
-  { id: 'ytCavalryB', name: '황건 기병B', rank: 'normal', unitType: 'cavalry', stats: s(6, 4, 2, 6, 3), level: 15 },
-  { id: 'ytArcherA', name: '황건 궁병A', rank: 'normal', unitType: 'archer', stats: s(5, 3, 3, 4, 3), level: 15 },
-  { id: 'ytArcherB', name: '황건 궁병B', rank: 'normal', unitType: 'archer', stats: s(6, 3, 3, 4, 3), level: 15 },
-  { id: 'ytStrategistA', name: '황건 책사A', rank: 'normal', unitType: 'strategist', stats: s(2, 3, 6, 4, 1), level: 15 },
-  { id: 'ytStrategistB', name: '황건 책사B', rank: 'normal', unitType: 'strategist', stats: s(2, 3, 5, 4, 1), level: 15 },
-  { id: 'ytTaoistA', name: '황건 도사A', rank: 'normal', unitType: 'taoist', stats: s(1, 3, 6, 4, 1), level: 15 },
-  { id: 'ytTaoistB', name: '황건 도사B', rank: 'normal', unitType: 'taoist', stats: s(2, 3, 5, 4, 1), level: 15 },
-];
+// 캐릭터 데이터는 data/characters.json에 있다. 장수 편집기(apps/character-editor, `npm run chars`)에서 저장하면 이 파일이 바뀌고,
+// 전투 테스트기(Lab/게임/시뮬레이터)가 그 값을 쓴다. 스탯 순서: 공격/방어/지력/속도/행동력/외교/내정/매력.
+// 평범한 장수(황건적 등)는 rank: 'normal'이다. 무작위 편성은 기본으로 네임드 장수(elite)만 쓰고, pool: 'normal'로 평범한 장수를 쓴다.
+const characterList = charactersJson as unknown as CharacterData[];
 
 const toRecord = <T extends { id: string }>(list: T[]): Record<string, T> => Object.fromEntries(list.map((x) => [x.id, x]));
 

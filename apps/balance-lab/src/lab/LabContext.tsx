@@ -1,12 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { setIn } from '../lib/path';
+import { gameData } from '@samgukji/game-data';
+import { syncCharacters } from '../lib/charactersSync';
 import { createDefaultState } from './defaults';
 import type { LabState } from './types';
 
 // 기본 데이터가 바뀌면 저장 키를 올린다. 이전 저장값이 새 기본값을 가리지 않도록 이전 저장값은 쓰지 않는다.
 // v2: 사기 5:5·피해 영향 없음 / v3: 병력 배율(풍수사 0.6, 책사·기병 0.8), 곽가 도사, 보병 가드, 기병 전열 공격
-const STORAGE_KEY = 'samgukji-balance-lab-v23';
+const STORAGE_KEY = 'samgukji-balance-lab-v24';
 
 const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 
@@ -62,7 +64,8 @@ function loadState(): LabState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed: unknown = JSON.parse(raw);
-      if (isLabState(parsed)) return normalizeState(parsed);
+      // 장수 편집기에서 장수 파일이 바뀌었으면 저장된 장수를 새 값으로 바꾼다 (가져오기에는 적용하지 않는다)
+      if (isLabState(parsed)) return syncCharacters(normalizeState(parsed), gameData);
     }
   } catch {
     // 저장소를 쓸 수 없는 환경이면 기본값으로 시작한다.

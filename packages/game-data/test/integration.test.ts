@@ -116,11 +116,32 @@ describe('게임 데이터 무결성', () => {
     expect(gameData.skills[unitTypes.taoist.extraSkillIds[0]].buff).toMatchObject({ type: 'barrier', charges: 1 });
   });
 
-  it('기본 편성은 전열 3 + 후열 3이다', () => {
-    for (const lineup of Object.values(presets)) {
-      expect(lineup.filter((e) => e.row === 'front')).toHaveLength(3);
-      expect(lineup.filter((e) => e.row === 'back')).toHaveLength(3);
+  it('6 vs 6 기본 편성(촉, 위, 황건적)은 전열 3 + 후열 3이다', () => {
+    for (const name of ['shu', 'wei', 'yellow']) {
+      expect(presets[name].filter((e) => e.row === 'front'), name).toHaveLength(3);
+      expect(presets[name].filter((e) => e.row === 'back'), name).toHaveLength(3);
     }
+  });
+
+  it('모든 기본 편성은 1~6군단이고 허용된 열과 열당 3군단 이하를 지킨다', () => {
+    for (const [name, lineup] of Object.entries(presets)) {
+      expect(lineup.length, name).toBeGreaterThanOrEqual(1);
+      expect(lineup.length, name).toBeLessThanOrEqual(6);
+      for (const row of ['front', 'back'] as const) expect(lineup.filter((e) => e.row === row).length, `${name} ${row}`).toBeLessThanOrEqual(3);
+      for (const e of lineup) {
+        const unitType = gameData.unitTypes[gameData.characters[e.characterId].unitType];
+        expect(unitType.allowedRows, `${name} ${e.characterId}`).toContain(e.row);
+      }
+    }
+  });
+
+  it('초반 시나리오: 촉은 유관장(보병/방패병/기병)으로, 황건적은 보보방 / 보방궁 / 보보방+궁으로 싸운다', () => {
+    const families = (name: string) => presets[name].map((e) => gameData.unitTypes[gameData.characters[e.characterId].unitType].family).sort();
+    expect(families('shuStart')).toEqual(['cavalry', 'infantry', 'shield']);
+    expect(families('yellowEasy')).toEqual(['infantry', 'infantry', 'shield']);
+    expect(families('yellowNormal')).toEqual(['archer', 'infantry', 'shield']);
+    expect(families('yellowHard')).toEqual(['archer', 'infantry', 'infantry', 'shield']);
+    expect(gameData.characters.liuBei.unitType).toBe('infantry');
   });
 });
 

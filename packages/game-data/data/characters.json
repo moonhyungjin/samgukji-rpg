@@ -1,0 +1,461 @@
+[
+  {
+    "id": "zhangFei",
+    "name": "장비",
+    "rank": "elite",
+    "unitType": "shield",
+    "level": 15,
+    "stats": {
+      "attack": 8,
+      "defense": 9,
+      "intellect": 4,
+      "speed": 5,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "guanYu",
+    "name": "관우",
+    "rank": "elite",
+    "unitType": "cavalry",
+    "level": 15,
+    "stats": {
+      "attack": 9,
+      "defense": 7,
+      "intellect": 6,
+      "speed": 6,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "zhaoYun",
+    "name": "조운",
+    "rank": "elite",
+    "unitType": "cavalry",
+    "level": 15,
+    "stats": {
+      "attack": 8,
+      "defense": 7,
+      "intellect": 6,
+      "speed": 8,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "huangZhong",
+    "name": "황충",
+    "rank": "elite",
+    "unitType": "archer",
+    "level": 15,
+    "stats": {
+      "attack": 9,
+      "defense": 4,
+      "intellect": 5,
+      "speed": 5,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "zhugeLiang",
+    "name": "제갈량",
+    "rank": "elite",
+    "unitType": "strategist",
+    "level": 15,
+    "stats": {
+      "attack": 3,
+      "defense": 3,
+      "intellect": 10,
+      "speed": 6,
+      "action": 1,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "pangTong",
+    "name": "방통",
+    "rank": "elite",
+    "unitType": "taoist",
+    "level": 15,
+    "stats": {
+      "attack": 2,
+      "defense": 3,
+      "intellect": 9,
+      "speed": 5,
+      "action": 1,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "weiYan",
+    "name": "위연",
+    "rank": "elite",
+    "unitType": "infantry",
+    "level": 15,
+    "stats": {
+      "attack": 8,
+      "defense": 7,
+      "intellect": 4,
+      "speed": 6,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "liuBei",
+    "name": "유비",
+    "rank": "elite",
+    "unitType": "infantry",
+    "level": 15,
+    "stats": {
+      "attack": 7,
+      "defense": 6,
+      "intellect": 6,
+      "speed": 5,
+      "action": 3,
+      "diplomacy": 6,
+      "politics": 6,
+      "charm": 10
+    }
+  },
+  {
+    "id": "xuChu",
+    "name": "허저",
+    "rank": "elite",
+    "unitType": "shield",
+    "level": 15,
+    "stats": {
+      "attack": 8,
+      "defense": 9,
+      "intellect": 3,
+      "speed": 5,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "xiahouDun",
+    "name": "하후돈",
+    "rank": "elite",
+    "unitType": "cavalry",
+    "level": 15,
+    "stats": {
+      "attack": 9,
+      "defense": 6,
+      "intellect": 4,
+      "speed": 7,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "zhangLiao",
+    "name": "장료",
+    "rank": "elite",
+    "unitType": "cavalry",
+    "level": 15,
+    "stats": {
+      "attack": 8,
+      "defense": 6,
+      "intellect": 5,
+      "speed": 8,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "xiahouYuan",
+    "name": "하후연",
+    "rank": "elite",
+    "unitType": "archer",
+    "level": 15,
+    "stats": {
+      "attack": 8,
+      "defense": 5,
+      "intellect": 5,
+      "speed": 8,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "xunYu",
+    "name": "순욱",
+    "rank": "elite",
+    "unitType": "strategist",
+    "level": 15,
+    "stats": {
+      "attack": 2,
+      "defense": 3,
+      "intellect": 9,
+      "speed": 5,
+      "action": 1,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "dianWei",
+    "name": "전위",
+    "rank": "elite",
+    "unitType": "infantry",
+    "level": 15,
+    "stats": {
+      "attack": 9,
+      "defense": 7,
+      "intellect": 3,
+      "speed": 5,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "guoJia",
+    "name": "곽가",
+    "rank": "elite",
+    "unitType": "taoist",
+    "level": 15,
+    "stats": {
+      "attack": 1,
+      "defense": 3,
+      "intellect": 10,
+      "speed": 6,
+      "action": 1,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytShieldA",
+    "name": "황건 방패병A",
+    "rank": "normal",
+    "unitType": "shield",
+    "level": 15,
+    "stats": {
+      "attack": 5,
+      "defense": 5,
+      "intellect": 2,
+      "speed": 3,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytShieldB",
+    "name": "황건 방패병B",
+    "rank": "normal",
+    "unitType": "shield",
+    "level": 15,
+    "stats": {
+      "attack": 4,
+      "defense": 6,
+      "intellect": 2,
+      "speed": 3,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytInfantryA",
+    "name": "황건 보병A",
+    "rank": "normal",
+    "unitType": "infantry",
+    "level": 15,
+    "stats": {
+      "attack": 5,
+      "defense": 4,
+      "intellect": 2,
+      "speed": 4,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytInfantryB",
+    "name": "황건 보병B",
+    "rank": "normal",
+    "unitType": "infantry",
+    "level": 15,
+    "stats": {
+      "attack": 6,
+      "defense": 4,
+      "intellect": 2,
+      "speed": 4,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytCavalryA",
+    "name": "황건 기병A",
+    "rank": "normal",
+    "unitType": "cavalry",
+    "level": 15,
+    "stats": {
+      "attack": 5,
+      "defense": 4,
+      "intellect": 2,
+      "speed": 5,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytCavalryB",
+    "name": "황건 기병B",
+    "rank": "normal",
+    "unitType": "cavalry",
+    "level": 15,
+    "stats": {
+      "attack": 6,
+      "defense": 4,
+      "intellect": 2,
+      "speed": 6,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytArcherA",
+    "name": "황건 궁병A",
+    "rank": "normal",
+    "unitType": "archer",
+    "level": 15,
+    "stats": {
+      "attack": 5,
+      "defense": 3,
+      "intellect": 3,
+      "speed": 4,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytArcherB",
+    "name": "황건 궁병B",
+    "rank": "normal",
+    "unitType": "archer",
+    "level": 15,
+    "stats": {
+      "attack": 6,
+      "defense": 3,
+      "intellect": 3,
+      "speed": 4,
+      "action": 3,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytStrategistA",
+    "name": "황건 책사A",
+    "rank": "normal",
+    "unitType": "strategist",
+    "level": 15,
+    "stats": {
+      "attack": 2,
+      "defense": 3,
+      "intellect": 6,
+      "speed": 4,
+      "action": 1,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytStrategistB",
+    "name": "황건 책사B",
+    "rank": "normal",
+    "unitType": "strategist",
+    "level": 15,
+    "stats": {
+      "attack": 2,
+      "defense": 3,
+      "intellect": 5,
+      "speed": 4,
+      "action": 1,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytTaoistA",
+    "name": "황건 도사A",
+    "rank": "normal",
+    "unitType": "taoist",
+    "level": 15,
+    "stats": {
+      "attack": 1,
+      "defense": 3,
+      "intellect": 6,
+      "speed": 4,
+      "action": 1,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytTaoistB",
+    "name": "황건 도사B",
+    "rank": "normal",
+    "unitType": "taoist",
+    "level": 15,
+    "stats": {
+      "attack": 2,
+      "defense": 3,
+      "intellect": 5,
+      "speed": 4,
+      "action": 1,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  }
+]

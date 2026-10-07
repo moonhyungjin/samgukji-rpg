@@ -62,6 +62,18 @@ export function LineupEditor({ teamKey, title }: Props) {
           <button type="button" onClick={() => set(teamKey, slotsFromLineup(presets.wei))}>
             위 편성
           </button>
+          <button type="button" onClick={() => set(teamKey, slotsFromLineup(presets.shuStart))}>
+            유관장
+          </button>
+          <button type="button" onClick={() => set(teamKey, slotsFromLineup(presets.yellowEasy))}>
+            황건 쉬움
+          </button>
+          <button type="button" onClick={() => set(teamKey, slotsFromLineup(presets.yellowNormal))}>
+            황건 보통
+          </button>
+          <button type="button" onClick={() => set(teamKey, slotsFromLineup(presets.yellowHard))}>
+            황건 어려움
+          </button>
           <button type="button" onClick={() => set(teamKey, Array.from({ length: SLOT_COUNT }, () => null))}>
             비우기
           </button>

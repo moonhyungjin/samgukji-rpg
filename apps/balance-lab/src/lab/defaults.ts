@@ -1,6 +1,7 @@
 import { FAMILIES } from '@samgukji/battle-engine';
 import type { Family } from '@samgukji/battle-engine';
 import { defaultBalance, gameData, presets } from '@samgukji/game-data';
+import { charactersSignature } from '../lib/charactersSync';
 import { slotsFromLineup } from '../lib/slots';
 import type { FamilySurvivalTarget, LabState } from './types';
 
@@ -15,6 +16,7 @@ export function createDefaultState(): LabState {
   ) as Record<Family, FamilySurvivalTarget>;
 
   return {
+    charactersSignature: charactersSignature(gameData.characters),
     data: clone(gameData),
     balance: clone(defaultBalance),
     teamA: slotsFromLineup(presets.shu),

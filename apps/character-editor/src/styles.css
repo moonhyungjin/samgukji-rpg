@@ -1,0 +1,269 @@
+:root {
+  --bg: #12151c;
+  --panel: #1a1f29;
+  --panel-2: #222836;
+  --border: #2d3548;
+  --text: #e4e8f0;
+  --muted: #8f99ad;
+  --accent: #5b8cff;
+  --ok: #46c281;
+  --warn: #f0a93b;
+  --err: #ef5b5b;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif;
+}
+
+.app {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 16px 64px;
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+  padding: 14px 0 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.top h1 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.top h1 small {
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+button,
+select,
+input {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 10px;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+button.danger:hover:not(:disabled) {
+  border-color: var(--err);
+  color: var(--err);
+}
+
+.badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.badge.dirty {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.badge.clean {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.message {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+.message.ok {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.message.error {
+  border-color: var(--err);
+  color: var(--err);
+}
+
+.issues {
+  margin: 8px 0 0;
+  padding: 8px 12px 8px 28px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.issues .error {
+  color: var(--err);
+}
+
+.issues .warning {
+  color: var(--warn);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 14px 0 8px;
+}
+
+.filters input[type='search'] {
+  width: 200px;
+}
+
+.tablewrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 1180px;
+}
+
+th,
+td {
+  padding: 4px 3px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  white-space: nowrap;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-2);
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+th[title] {
+  cursor: help;
+}
+
+td.name,
+th.name {
+  text-align: left;
+}
+
+td input[type='number'] {
+  width: 46px;
+  text-align: center;
+  padding: 4px 2px;
+}
+
+td input.name-input {
+  width: 112px;
+}
+
+td input.level-input {
+  width: 50px;
+}
+
+tr.changed td {
+  background: rgba(240, 169, 59, 0.08);
+}
+
+tr.added td {
+  background: rgba(70, 194, 129, 0.1);
+}
+
+tr.invalid td {
+  background: rgba(239, 91, 91, 0.12);
+}
+
+td.derived {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+td.derived strong {
+  color: var(--text);
+}
+
+td.id {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: left;
+}
+
+td.id input {
+  width: 96px;
+  font-size: 12px;
+}
+
+td.actions {
+  text-align: right;
+}
+
+td.actions button {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.note {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.note code {
+  background: var(--panel-2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}

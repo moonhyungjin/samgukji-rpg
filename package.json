@@ -9,14 +9,17 @@
   ],
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -p packages/battle-engine && tsc -p packages/game-data && tsc -p tools/sim && tsc -p apps/balance-lab && tsc -p apps/game",
+    "typecheck": "tsc -p packages/battle-engine && tsc -p packages/game-data && tsc -p tools/sim && tsc -p apps/balance-lab && tsc -p apps/game && tsc -p apps/character-editor",
     "sim": "npm run start -w @samgukji/sim --",
     "lab": "npm run dev -w @samgukji/balance-lab --",
     "lab:build": "npm run build -w @samgukji/balance-lab",
     "game": "npm run dev -w @samgukji/game --",
     "game:build": "npm run build -w @samgukji/game",
+    "chars": "npm run dev -w @samgukji/character-editor --",
+    "chars:build": "npm run build -w @samgukji/character-editor",
     "e2e": "node tools/e2e/game-e2e.mjs",
-    "e2e:lab": "node tools/e2e/lab-e2e.mjs"
+    "e2e:lab": "node tools/e2e/lab-e2e.mjs",
+    "e2e:chars": "node tools/e2e/chars-e2e.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
