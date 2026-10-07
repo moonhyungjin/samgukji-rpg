@@ -239,3 +239,11 @@ Balance Lab의 "파일에 저장"을 누를 때마다 자동으로 덧붙는다 
 ## 2026-10-08 00:31 — 스킬
 - skills.stratagem.power: 0.8 → 1
 - skills.poison-smoke.power: 0.8 → 1
+
+## 2026-10-08 00:32 — 밸런스 수치
+- balance.damage.formula: "additive" → "gap"
+- balance.troopFactor.mode: "tiered" → "relative"
+- balance.troopFactor.normalizeByScale: false → true
+
+## 2026-10-08 00:34 — 병종
+- unitTypes.cavalry.statMods.attack: 1 → 0

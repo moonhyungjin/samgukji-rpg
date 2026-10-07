@@ -50,7 +50,7 @@
     "name": "책략",
     "kind": "attack",
     "scalesWith": "intellect",
-    "power": 0.8,
+    "power": 1,
     "apCost": 1,
     "counterable": false
   },
@@ -59,7 +59,7 @@
     "name": "독연",
     "kind": "attack",
     "scalesWith": "intellect",
-    "power": 0.8,
+    "power": 1,
     "apCost": 1,
     "counterable": false
   },

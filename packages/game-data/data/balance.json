@@ -23,7 +23,7 @@
     "defenseScale": 0.1,
     "resistScale": 0.1,
     "minDamage": 1,
-    "formula": "additive",
+    "formula": "gap",
     "additive": {
       "attackMul": 10,
       "defenseMul": 8,
@@ -52,8 +52,8 @@
     "reference": 1000,
     "min": 0.3,
     "max": 1.75,
-    "mode": "tiered",
-    "normalizeByScale": false,
+    "mode": "relative",
+    "normalizeByScale": true,
     "relative": {
       "min": 0.5,
       "max": 1.5,
