@@ -29,6 +29,8 @@ export const testData: GameData = {
     shoot: { id: 'shoot', name: '사격', kind: 'attack', scalesWith: 'attack', power: 1, apCost: 1, counterable: false, guardable: true },
     mind: { id: 'mind', name: '책략', kind: 'attack', scalesWith: 'intellect', power: 1, apCost: 1, counterable: false },
     mend: { id: 'mend', name: '치유', kind: 'heal', scalesWith: 'intellect', power: 1, apCost: 1, counterable: false },
+    inspire: { id: 'inspire', name: '독려', kind: 'buff', scalesWith: 'intellect', power: 0, apCost: 1, counterable: false, buff: { stat: 'attack', amount: 1 } },
+    ward: { id: 'ward', name: '결계', kind: 'buff', scalesWith: 'intellect', power: 0, apCost: 1, counterable: false, buff: { stat: 'defense', amount: 1, maxStacks: 2 } },
     guard: { id: 'guard', name: '가드', kind: 'guard', scalesWith: 'attack', power: 0, apCost: 1, counterable: false },
   },
   traits: {
@@ -42,6 +44,7 @@ export const testData: GameData = {
     arc: { id: 'arc', name: '궁병', family: 'archer', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: true, basicSkillId: 'shoot', extraSkillIds: [], promotesTo: [], traitIds: [] },
     str: { id: 'str', name: '책사', family: 'strategist', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, basicSkillId: 'mind', extraSkillIds: [], promotesTo: [], traitIds: [] },
     geo: { id: 'geo', name: '풍수사', family: 'geomancer', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, basicSkillId: 'mend', extraSkillIds: [], promotesTo: [], traitIds: [] },
+    advisor: { id: 'advisor', name: '참모', family: 'strategist', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, basicSkillId: 'mind', extraSkillIds: ['inspire', 'ward'], promotesTo: [], traitIds: [] },
     shield: {
       id: 'shield', name: '방패병', family: 'infantry', tier: 1, allowedRows: ['front'], targetRule: 'front-first', canCounter: true,
       basicSkillId: 'hit', extraSkillIds: ['guard'], promotesTo: [], traitIds: [], guard: { start: 50, gain: 70, decay: 40 },
@@ -57,6 +60,7 @@ export const testData: GameData = {
     arc: { id: 'arc', name: '궁병A', unitType: 'arc', stats: stats(5, 5, 5, 5), ap: 3, level: 15 },
     str: { id: 'str', name: '책사A', unitType: 'str', stats: stats(2, 3, 8, 5), ap: 4, level: 15 },
     geo: { id: 'geo', name: '풍수사A', unitType: 'geo', stats: stats(1, 3, 8, 5), ap: 4, level: 15 },
+    advisor: { id: 'advisor', name: '참모A', unitType: 'advisor', stats: stats(2, 3, 8, 5), ap: 4, level: 15 },
     shield: { id: 'shield', name: '방패병A', unitType: 'shield', stats: stats(5, 5, 5, 5), ap: 4, level: 15 },
   },
 };
@@ -79,6 +83,7 @@ export function makeUnit(overrides: Partial<CharacterState> = {}): CharacterStat
     ap: 4,
     maxAp: 4,
     guardRate: 0,
+    buffs: { attack: 0, defense: 0 },
     isDead: false,
     ...overrides,
   };

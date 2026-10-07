@@ -11,7 +11,7 @@ export type Stats = Record<StatKey, number>;
 
 /** 적 대상 선택 규칙. front-first: 전열이 남아 있으면 전열만, any: 전열/후열 모두 */
 export type TargetRule = 'front-first' | 'any';
-export type SkillKind = 'attack' | 'heal' | 'guard';
+export type SkillKind = 'attack' | 'heal' | 'guard' | 'buff';
 
 // ---------- 정적 데이터 ----------
 
@@ -30,6 +30,16 @@ export interface SkillData {
    * 책략처럼 막을 수 없는 공격은 false. 생략하면 false.
    */
   guardable?: boolean;
+  /** kind가 buff일 때: 아군 하나의 스탯을 전투가 끝날 때까지 올린다 */
+  buff?: BuffEffect;
+}
+
+export interface BuffEffect {
+  stat: 'attack' | 'defense';
+  /** 한 번에 오르는 스탯 */
+  amount: number;
+  /** 한 아군에게 쌓을 수 있는 횟수 (생략하면 1) */
+  maxStacks?: number;
 }
 
 /**
@@ -166,6 +176,8 @@ export interface CharacterState {
   maxAp: number;
   /** 같은 열 아군을 대신 맞아줄 확률 (%p). 가드를 못 쓰는 병종은 항상 0 */
   guardRate: number;
+  /** 버프로 올라간 스탯 (stats에 이미 반영돼 있다). 쌓인 양을 세는 용도 */
+  buffs: { attack: number; defense: number };
   isDead: boolean;
 }
 
@@ -200,6 +212,8 @@ export type BattleEvent =
   | { type: 'intercept'; round: number; attacker: string; target: string; guardian: string }
   /** 가드 확률이 바뀌었다. raise: 가드 커맨드, block: 막은 뒤 감소, reset: 공격해서 해제 */
   | { type: 'guardChange'; round: number; unit: string; rate: number; reason: 'raise' | 'block' | 'reset' }
+  /** 버프로 target의 스탯이 올랐다. value는 올라간 뒤의 스탯 */
+  | { type: 'buff'; round: number; source: string; target: string; stat: 'attack' | 'defense'; amount: number; value: number }
   | { type: 'morale'; round: number; defenderMorale: number }
   | { type: 'battleEnd'; winner: Side; endCause: EndCause; decidedBy: DecidedBy; rounds: number };
 

@@ -2,7 +2,7 @@ import { Application, Container, Graphics, Text } from 'pixi.js';
 import type { BattleEvent, GameData } from '@samgukji/battle-engine';
 import type { SceneLike } from '../battle/controller';
 import type { BattleOutcome, ViewState } from '../battle/viewState';
-import { DECIDED_BY_LABEL, END_CAUSE_LABEL, SIDE_LABEL } from '../lib/labels';
+import { DECIDED_BY_LABEL, END_CAUSE_LABEL, SIDE_LABEL, STAT_LABEL } from '../lib/labels';
 import { UnitSprite } from './UnitSprite';
 import { CARD_H, CARD_W, columnX, FONT, SIDE_COLOR, WORLD_H, WORLD_W } from './theme';
 import { delay, easeOut, tween } from './tween';
@@ -134,6 +134,16 @@ export class BattleScene implements SceneLike {
         if (!target) return;
         void this.floatText(target, `+${event.amount}`, 0x59e08a, 28, 600);
         await target.animateTroops(event.troopsAfter);
+        return;
+      }
+      case 'buff': {
+        const source = this.sprites.get(event.source);
+        const target = this.sprites.get(event.target);
+        if (!target) return;
+        if (source && source !== target) await source.pulse();
+        void this.floatText(target, `${STAT_LABEL[event.stat]} +${event.amount}`, 0xffd166, 24, 600);
+        target.setBuffs(event.stat, event.amount);
+        await target.pulse();
         return;
       }
       case 'unitDestroyed': {

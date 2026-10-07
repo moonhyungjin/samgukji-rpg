@@ -9,6 +9,9 @@ export const FAMILY_LABEL: Record<Family, string> = {
   geomancer: '풍수사',
 };
 
+/** 버프가 올리는 스탯 */
+export const STAT_LABEL: Record<'attack' | 'defense', string> = { attack: '공격', defense: '방어' };
+
 export const SIDE_LABEL: Record<Side, string> = { attacker: '공격측', defender: '방어측' };
 
 /** 기본 편성 이름 (game-data/presets) */

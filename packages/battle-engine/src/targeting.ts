@@ -1,5 +1,5 @@
 import type { Rng } from './rng';
-import type { BattleState, CharacterState, TargetRule } from './types';
+import type { BattleState, CharacterState, SkillData, TargetRule } from './types';
 
 /**
  * 대상 선택 정책 (시뮬레이션용 AI).
@@ -47,4 +47,11 @@ export function chooseTarget(
         return c.troops < best.troops ? c : best;
       });
   }
+}
+
+/** 이 스킬의 버프를 target에게 더 쌓을 수 있는가 */
+export function canBuff(target: CharacterState, skill: SkillData): boolean {
+  const buff = skill.buff;
+  if (!buff || target.isDead) return false;
+  return target.buffs[buff.stat] < buff.amount * (buff.maxStacks ?? 1);
 }

@@ -32,6 +32,8 @@ export class UnitSprite {
   private readonly deadText: Text;
   private readonly guardText: Text;
   private guardRate = 0;
+  private readonly buffText: Text;
+  private buffs = { attack: 0, defense: 0 };
   private dead = false;
 
   constructor(
@@ -75,9 +77,15 @@ export class UnitSprite {
     this.guardText.anchor.set(1, 0.5);
     this.guardText.position.set(CARD_W - 17, 100);
 
+    // 버프 표시 (이름 줄 오른쪽). 올라간 스탯이 없으면 비어 있다
+    this.buffText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 12, fill: 0xffd166, fontWeight: 'bold' } });
+    this.buffText.anchor.set(1, 0);
+    this.buffText.position.set(CARD_W - 10, 13);
+    this.buffs = { ...unit.buffs };
+
     this.root.addChild(
       bg, portrait, glyph, name, subtitle, this.troopsText, this.hpBar, this.pips,
-      this.guardBadge, this.guardText, this.flashOverlay, this.ring, this.deadText,
+      this.guardBadge, this.guardText, this.buffText, this.flashOverlay, this.ring, this.deadText,
     );
     this.root.pivot.set(CARD_W / 2, CARD_H / 2);
     const { x, y } = slotPosition(unit.side, unit.row, unit.slot);
@@ -86,6 +94,7 @@ export class UnitSprite {
     this.drawHp(this.troops);
     this.drawPips();
     this.setGuard(unit.guardRate);
+    this.drawBuffs();
     this.setDead(unit.dead);
   }
 
@@ -112,6 +121,19 @@ export class UnitSprite {
       this.guardBadge.roundRect(CARD_W - 10 - w, 91, w, 18, 6).fill(0x23406e).stroke({ width: 1, color: 0x5b8cff });
     }
     this.updateGuardVisibility();
+  }
+
+  /** 버프로 올라간 스탯 표시를 갱신한다 */
+  setBuffs(stat: 'attack' | 'defense', amount: number): void {
+    this.buffs[stat] += amount;
+    if (!this.gone) this.drawBuffs();
+  }
+
+  private drawBuffs(): void {
+    const parts: string[] = [];
+    if (this.buffs.attack > 0) parts.push(`공+${this.buffs.attack}`);
+    if (this.buffs.defense > 0) parts.push(`방+${this.buffs.defense}`);
+    this.buffText.text = parts.join(' ');
   }
 
   /** 병력 바와 숫자를 부드럽게 바꾼다 */
@@ -216,6 +238,7 @@ export class UnitSprite {
     this.deadText.visible = dead;
     this.troopsText.visible = !dead;
     this.hpBar.visible = !dead;
+    this.buffText.visible = !dead;
     this.updateGuardVisibility();
   }
 

@@ -5,7 +5,7 @@ import { defaultCommandPolicy } from './policy';
 import type { Command, CommandPolicy } from './policy';
 import { createRng } from './rng';
 import type { Rng } from './rng';
-import { TargetSelector } from './targeting';
+import { canBuff, TargetSelector } from './targeting';
 import { buildTurnOrder } from './turnOrder';
 import type {
   BalanceConfig,
@@ -51,6 +51,7 @@ export type CommandPreview =
       interceptChance: number;
     }
   | { kind: 'heal'; amount: number }
+  | { kind: 'buff'; stat: 'attack' | 'defense'; amount: number; valueAfter: number }
   | { kind: 'guard'; rateAfter: number };
 
 /**
@@ -184,6 +185,7 @@ export class BattleEngine {
       if (!skill || skill.apCost > actor.ap) continue;
       let targets: CharacterState[];
       if (skill.kind === 'heal') targets = TargetSelector.getAllies(actor, this.state);
+      else if (skill.kind === 'buff') targets = TargetSelector.getAllies(actor, this.state).filter((u) => canBuff(u, skill));
       else if (skill.kind === 'guard') targets = unitType.guard ? [actor] : []; // 가드는 자기 자신에게 쓴다
       else targets = TargetSelector.getValidTargets(actor, this.state, unitType.targetRule);
       if (targets.length > 0) commands.push({ skillId: id, targetUids: targets.map((t) => t.uid) });
@@ -200,6 +202,9 @@ export class BattleEngine {
 
     if (skill.kind === 'heal') {
       return { kind: 'heal', amount: Math.min(this.calc.heal(actor, skill), target.maxTroops - target.troops) };
+    }
+    if (skill.kind === 'buff' && skill.buff) {
+      return { kind: 'buff', stat: skill.buff.stat, amount: skill.buff.amount, valueAfter: target.stats[skill.buff.stat] + skill.buff.amount };
     }
     if (skill.kind === 'guard') {
       return { kind: 'guard', rateAfter: actor.guardRate + (data.unitTypes[actor.unitType].guard?.gain ?? 0) };
@@ -294,6 +299,7 @@ export class BattleEngine {
 
     if (skill.kind === 'attack') this.performAttack(actor, target, skill);
     else if (skill.kind === 'guard') this.performGuard(actor);
+    else if (skill.kind === 'buff') this.performBuff(actor, target, skill);
     else this.performHeal(actor, target, skill);
     return true;
   }
@@ -335,6 +341,22 @@ export class BattleEngine {
     const guard = this.input.data.unitTypes[actor.unitType].guard;
     if (!guard) throw new Error(`${actor.name} cannot guard`);
     this.setGuardRate(actor, actor.guardRate + guard.gain, 'raise');
+  }
+
+  private performBuff(actor: CharacterState, target: CharacterState, skill: SkillData): void {
+    const buff = skill.buff;
+    if (!buff) throw new Error(`Skill ${skill.id} has no buff effect`);
+    target.stats[buff.stat] += buff.amount;
+    target.buffs[buff.stat] += buff.amount;
+    this.emit({
+      type: 'buff',
+      round: this.state.round,
+      source: actor.uid,
+      target: target.uid,
+      stat: buff.stat,
+      amount: buff.amount,
+      value: target.stats[buff.stat],
+    });
   }
 
   // ---------- 가드 ----------

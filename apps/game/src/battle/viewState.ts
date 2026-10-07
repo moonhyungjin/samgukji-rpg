@@ -17,6 +17,8 @@ export interface ViewUnit {
   maxAp: number;
   /** 같은 열 아군을 대신 맞아줄 확률 (%p). 가드를 못 쓰는 병종은 0 */
   guardRate: number;
+  /** 버프로 올라간 스탯 */
+  buffs: { attack: number; defense: number };
   row: Row;
   slot: number;
   dead: boolean;
@@ -54,6 +56,7 @@ export function createViewState(units: readonly CharacterState[], defenderMorale
       ap: u.ap,
       maxAp: u.maxAp,
       guardRate: u.guardRate,
+      buffs: { ...u.buffs },
       row: u.row,
       slot: u.slot,
       dead: u.isDead,
@@ -86,6 +89,11 @@ export function applyEvent(state: ViewState, event: BattleEvent): ViewState {
     }
     case 'guardChange':
       return patch(state, event.unit, { guardRate: event.rate });
+    case 'buff': {
+      const unit = state.units.find((u) => u.uid === event.target);
+      if (!unit) return state;
+      return patch(state, event.target, { buffs: { ...unit.buffs, [event.stat]: unit.buffs[event.stat] + event.amount } });
+    }
     case 'intercept':
       // 대신 맞는 것은 이어지는 damage 이벤트가 처리한다. 상태는 바뀌지 않는다.
       return state;

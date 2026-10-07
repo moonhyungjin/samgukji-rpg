@@ -10,7 +10,7 @@ const traitList: TraitData[] = [
 ];
 
 // ---------- 스킬 (커맨드) ----------
-// 상태이상(화상/독/젖음), 가드, 필살기는 아직 구현하지 않았다. 책략/독연은 피해만 준다.
+// 상태이상(화상/독/젖음), 필살기는 아직 구현하지 않았다. 책략/독연은 피해만 준다.
 
 const skillList: SkillData[] = [
   // guardable: 같은 열의 가드 유닛이 대신 맞을 수 있는 공격 (단일 대상 물리 공격). 책략/독연은 막지 못한다.
@@ -20,6 +20,9 @@ const skillList: SkillData[] = [
   { id: 'stratagem', name: '책략', kind: 'attack', scalesWith: 'intellect', power: 0.8, apCost: 1, counterable: false },
   { id: 'poison-smoke', name: '독연', kind: 'attack', scalesWith: 'intellect', power: 0.8, apCost: 1, counterable: false },
   { id: 'heal', name: '치유', kind: 'heal', scalesWith: 'intellect', power: 0.8, apCost: 1, counterable: false },
+  // 버프: 아군 하나의 스탯을 전투가 끝날 때까지 올린다 (병력과 무관하게 아군을 돕는 수단). 책사는 공격, 도사는 방어.
+  { id: 'inspire', name: '독려', kind: 'buff', scalesWith: 'intellect', power: 0, apCost: 1, counterable: false, buff: { stat: 'attack', amount: 1, maxStacks: 1 } },
+  { id: 'ward', name: '결계', kind: 'buff', scalesWith: 'intellect', power: 0, apCost: 1, counterable: false, buff: { stat: 'defense', amount: 1, maxStacks: 1 } },
   // 가드: 같은 열 아군을 대신 맞아줄 확률을 올린다. 막기만 하거나 공격만 해야 한다 (공격하면 해제).
   { id: 'guard', name: '가드', kind: 'guard', scalesWith: 'attack', power: 0, apCost: 1, counterable: false },
 ];
@@ -37,8 +40,8 @@ const unitTypeList: UnitTypeData[] = [
   },
   { id: 'cavalry', name: '기병', family: 'cavalry', tier: 1, allowedRows: ['front'], targetRule: 'front-first', canCounter: true, basicSkillId: 'cavalry-charge', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 0.8 },
   { id: 'archer', name: '궁병', family: 'archer', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: true, basicSkillId: 'archer-shot', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 1 },
-  { id: 'strategist', name: '책사', family: 'strategist', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, basicSkillId: 'stratagem', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 0.8 },
-  { id: 'taoist', name: '도사', family: 'taoist', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, basicSkillId: 'poison-smoke', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 1 },
+  { id: 'strategist', name: '책사', family: 'strategist', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, basicSkillId: 'stratagem', extraSkillIds: ['inspire'], promotesTo: [], traitIds: [], troopScale: 0.8 },
+  { id: 'taoist', name: '도사', family: 'taoist', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, basicSkillId: 'poison-smoke', extraSkillIds: ['ward'], promotesTo: [], traitIds: [], troopScale: 1 },
   { id: 'geomancer', name: '풍수사', family: 'geomancer', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, basicSkillId: 'heal', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 0.6 },
 ];
 
@@ -68,7 +71,7 @@ const characterList: CharacterData[] = [
   { id: 'zhangLiao', name: '장료', unitType: 'cavalry', stats: s(8, 6, 5, 8), ap: 4, level: 15 },
   { id: 'xiahouYuan', name: '하후연', unitType: 'archer', stats: s(8, 5, 5, 8), ap: 3, level: 15 },
   { id: 'xunYu', name: '순욱', unitType: 'strategist', stats: s(2, 3, 9, 5), ap: 4, level: 15 },
-  { id: 'guoJia', name: '곽가', unitType: 'taoist', stats: s(1, 3, 10, 6), ap: 5, level: 15 },
+  { id: 'guoJia', name: '곽가', unitType: 'taoist', stats: s(1, 3, 10, 6), ap: 4, level: 15 },
 ];
 
 const toRecord = <T extends { id: string }>(list: T[]): Record<string, T> => Object.fromEntries(list.map((x) => [x.id, x]));

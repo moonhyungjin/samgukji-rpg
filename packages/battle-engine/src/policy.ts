@@ -1,8 +1,8 @@
 import { DamageCalculator } from './damage';
-import { chooseTarget, TargetSelector } from './targeting';
+import { canBuff, chooseTarget, TargetSelector } from './targeting';
 import type { TargetPolicy } from './targeting';
 import type { Rng } from './rng';
-import type { BalanceConfig, BattleState, CharacterState, GameData } from './types';
+import type { BalanceConfig, BattleState, CharacterState, GameData, SkillData } from './types';
 
 export type Command = { kind: 'wait' } | { kind: 'skill'; skillId: string; targetUid: string };
 
@@ -57,12 +57,21 @@ export function createDefaultPolicy(options: DefaultPolicyOptions = {}): Command
     }
 
     if (guardMode === 'protect' && unitType.guard) {
-      const hasAllyToProtect = state.units.some((u) => u.side === actor.side && !u.isDead && u.uid !== actor.uid && u.row === actor.row);
+      // 지킬 아군: 같은 열에서 아직 싸울 수 있는(AP가 남은) 아군. 다들 AP가 바닥났으면 지킬 필요가 없다.
+      const hasAllyToProtect = state.units.some(
+        (u) => u.side === actor.side && !u.isDead && u.uid !== actor.uid && u.row === actor.row && u.ap > 0,
+      );
       if (hasAllyToProtect) {
         const guard = skills.find((s) => s.kind === 'guard');
         if (guard && actor.guardRate < guardTarget) return { kind: 'skill', skillId: guard.id, targetUid: actor.uid };
         return { kind: 'wait' }; // 가드를 유지하며 AP를 아낀다
       }
+    }
+
+    // 버프: 쓸 수 있는 대상이 남아 있으면 공격보다 먼저 쓴다.
+    for (const buff of skills.filter((s) => s.kind === 'buff' && s.buff)) {
+      const target = chooseBuffTarget(actor, state, data, buff);
+      if (target) return { kind: 'skill', skillId: buff.id, targetUid: target.uid };
     }
 
     const attack = skills.find((s) => s.kind === 'attack');
@@ -78,6 +87,26 @@ export function createDefaultPolicy(options: DefaultPolicyOptions = {}): Command
 
     return { kind: 'wait' };
   };
+}
+
+/**
+ * 버프를 받을 아군. 공격 버프는 물리 공격을 쓰는 아군(공격 스탯이 높은 순), 방어 버프는 전열(방어가 낮은 순)부터.
+ * 쓸모가 없는 대상(책략만 쓰는 군단에 공격 버프 등)은 고르지 않는다.
+ */
+function chooseBuffTarget(actor: CharacterState, state: BattleState, data: GameData, skill: SkillData): CharacterState | null {
+  const buff = skill.buff!;
+  const candidates = TargetSelector.getAllies(actor, state).filter((u) => {
+    if (!canBuff(u, skill) || u.ap <= 0) return false;
+    if (buff.stat === 'attack') return data.skills[data.unitTypes[u.unitType].basicSkillId].scalesWith === 'attack';
+    return true;
+  });
+  if (candidates.length === 0) return null;
+  if (buff.stat === 'attack') return candidates.reduce((best, c) => (c.stats.attack > best.stats.attack ? c : best));
+  const rowRank = (u: CharacterState) => (u.row === 'front' ? 0 : 1);
+  return candidates.reduce((best, c) => {
+    if (rowRank(c) !== rowRank(best)) return rowRank(c) < rowRank(best) ? c : best;
+    return c.stats.defense < best.stats.defense ? c : best;
+  });
 }
 
 export const defaultCommandPolicy: CommandPolicy = createDefaultPolicy();

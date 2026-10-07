@@ -1,10 +1,11 @@
 import type { Command, CommandPreview } from '@samgukji/battle-engine';
 import type { CommandOption, ControllerSnapshot } from '../battle/controller';
-import { DECIDED_BY_LABEL, END_CAUSE_LABEL, FAMILY_LABEL, SIDE_LABEL } from '../lib/labels';
+import { DECIDED_BY_LABEL, END_CAUSE_LABEL, FAMILY_LABEL, SIDE_LABEL, STAT_LABEL } from '../lib/labels';
 
 /** 대상 버튼에 보여 줄 예상 결과 */
 export function previewText(preview: CommandPreview): string {
   if (preview.kind === 'heal') return `회복 +${preview.amount}`;
+  if (preview.kind === 'buff') return `${STAT_LABEL[preview.stat]} +${preview.amount} (→ ${preview.valueAfter})`;
   if (preview.kind === 'guard') return `막을 확률 ${preview.rateAfter}%`;
   const parts = [`피해 ${preview.damage}`];
   if (preview.targetTroopsAfter === 0) parts.push('격파');

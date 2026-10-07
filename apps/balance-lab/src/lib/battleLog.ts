@@ -34,6 +34,9 @@ export function formatBattleLog(result: BattleResult, data: GameData): string[] 
       case 'heal':
         lines.push(`    회복 ${e.amount} → ${name(e.target)} 병력 ${e.troopsAfter}`);
         break;
+      case 'buff':
+        lines.push(`    ${e.stat === 'attack' ? '공격' : '방어'} +${e.amount} → ${name(e.target)} (${e.value})`);
+        break;
       case 'unitDestroyed':
         lines.push(`    ✕ ${name(e.unit)} 전멸 (${name(e.by)})`);
         break;

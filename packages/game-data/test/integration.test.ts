@@ -39,6 +39,10 @@ describe('게임 데이터 무결성', () => {
     expect(unitTypes.infantry.extraSkillIds).toContain('guard');
     expect(unitTypes.cavalry.targetRule).toBe('front-first');
     expect(characters.guoJia.unitType).toBe('taoist');
+    expect(characters.guoJia.ap).toBe(4);
+    // 책사는 공격 버프(독려), 도사는 방어 버프(결계)를 쓴다
+    expect(gameData.skills[unitTypes.strategist.extraSkillIds[0]].buff).toMatchObject({ stat: 'attack', amount: 1 });
+    expect(gameData.skills[unitTypes.taoist.extraSkillIds[0]].buff).toMatchObject({ stat: 'defense', amount: 1 });
   });
 
   it('기본 편성은 전열 3 + 후열 3이다', () => {

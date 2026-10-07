@@ -191,6 +191,7 @@ export function DataTab() {
               <th>AP 소모</th>
               <th>반격 받음</th>
               <th>가드로 막힘</th>
+              <th>버프 (스탯 / 올리는 양 / 최대 중첩)</th>
             </tr>
           </thead>
           <tbody>
@@ -204,6 +205,7 @@ export function DataTab() {
                       { value: 'attack', label: '공격' },
                       { value: 'heal', label: '회복' },
                       { value: 'guard', label: '가드' },
+                      { value: 'buff', label: '버프' },
                     ]}
                   />
                 </td>
@@ -228,6 +230,21 @@ export function DataTab() {
                 <td>
                   <CheckField label="막을 수 있음" path={`data.skills.${s.id}.guardable`} />
                 </td>
+                <td>
+                  {s.kind === 'buff' && s.buff ? (
+                    <>
+                      <SelectField
+                        path={`data.skills.${s.id}.buff.stat`}
+                        options={[
+                          { value: 'attack', label: '공격' },
+                          { value: 'defense', label: '방어' },
+                        ]}
+                      />
+                      <NumberField path={`data.skills.${s.id}.buff.amount`} step={0.5} min={0} />
+                      <NumberField path={`data.skills.${s.id}.buff.maxStacks`} min={1} />
+                    </>
+                  ) : null}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -236,6 +253,7 @@ export function DataTab() {
           "반격 받음"이 켜진 공격(근접)은 대상이 살아 있고 반격할 수 있는 병종이면 공격자도 일부 피해를 입습니다. 원거리 공격은 끕니다.
           "가드로 막힘"이 켜진 공격은 대상과 같은 열의 가드 유닛이 확률로 대신 맞습니다. 책략처럼 막을 수 없는 공격은 끕니다.
           가드는 공격하면 풀리고, 막을 때마다 확률이 줄어듭니다.
+          버프는 아군 하나의 스탯을 전투가 끝날 때까지 올립니다 (병력과 무관). 한 아군에게 쌓을 수 있는 횟수가 "최대 중첩"입니다.
         </p>
       </section>
     </div>

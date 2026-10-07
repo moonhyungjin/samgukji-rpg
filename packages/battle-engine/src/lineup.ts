@@ -65,6 +65,7 @@ export function buildUnits(side: Side, lineup: LineupEntry[], data: GameData, ba
       ap: character.ap,
       maxAp: character.ap,
       guardRate: unitType.guard?.start ?? 0,
+      buffs: { attack: 0, defense: 0 },
       isDead: false,
     };
   });

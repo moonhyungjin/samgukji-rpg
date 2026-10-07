@@ -205,6 +205,8 @@ try {
   const t0 = Date.now();
   await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('전투 종료')`, 90000, '관전 종료');
   check('4배속 관전이 끝까지 재생된다', true, `${((Date.now() - t0) / 1000 + 1.5).toFixed(1)}초`);
+  const watchLog = await text('.log');
+  check('책사/도사의 버프가 로그에 남는다', watchLog.includes('공격 +1 →') && watchLog.includes('방어 +1 →'), `공격 ${watchLog.includes('공격 +1 →')} 방어 ${watchLog.includes('방어 +1 →')}`);
 
   // 4. 건너뛰기
   await goto('?control=watch&autostart=1&speed=1&seed=2');

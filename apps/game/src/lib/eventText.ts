@@ -1,5 +1,5 @@
 import type { BattleEvent, CharacterState, GameData } from '@samgukji/battle-engine';
-import { DECIDED_BY_LABEL, END_CAUSE_LABEL, SIDE_LABEL } from './labels';
+import { DECIDED_BY_LABEL, END_CAUSE_LABEL, SIDE_LABEL, STAT_LABEL } from './labels';
 
 /** uid → 표시 이름 ("공:관우" / "방:하후돈") */
 export function buildNameMap(units: readonly CharacterState[]): Map<string, string> {
@@ -28,6 +28,8 @@ export function formatEvent(event: BattleEvent, names: ReadonlyMap<string, strin
       return `    ${event.kind === 'counter' ? '반격' : '피해'} ${event.amount} → ${name(event.target)} (병력 ${event.troopsAfter})`;
     case 'heal':
       return `    회복 ${event.amount} → ${name(event.target)} (병력 ${event.troopsAfter})`;
+    case 'buff':
+      return `    ${STAT_LABEL[event.stat]} +${event.amount} → ${name(event.target)} (${STAT_LABEL[event.stat]} ${event.value})`;
     case 'unitDestroyed':
       return `    ✕ ${name(event.unit)} 전멸`;
     case 'rowAdvance':
