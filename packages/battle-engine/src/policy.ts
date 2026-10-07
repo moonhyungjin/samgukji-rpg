@@ -27,11 +27,21 @@ export type CommandPolicy = (ctx: PolicyContext) => Command;
  */
 export type GuardMode = 'protect' | 'never';
 
+/**
+ * 버프를 쓸 수 있는 군단(책사/도사)의 AI. 사람은 버프만 쓸 때도, 공격만 할 때도 있어서 성향 몇 가지로 범위를 본다.
+ * first: 쓸 대상이 남아 있으면 항상 공격보다 먼저 쓴다 (기본)
+ * opening: 1라운드에만 버프를 쓰고 이후에는 공격한다
+ * half: 행동마다 절반의 확률로 버프를 고른다 (쓸 수 있을 때)
+ * never: 버프를 쓰지 않고 공격만 한다
+ */
+export type BuffMode = 'first' | 'opening' | 'half' | 'never';
+
 export interface DefaultPolicyOptions {
   /** 이 비율 미만으로 병력이 줄어든 아군이 있으면 회복을 우선한다 */
   healThreshold?: number;
   targetPolicy?: TargetPolicy;
   guardMode?: GuardMode;
+  buffMode?: BuffMode;
   /** protect 모드에서 이 확률(%p)까지 가드를 올린다. 이보다 낮아지면 다시 올린다 */
   guardTarget?: number;
 }
@@ -40,6 +50,7 @@ export function createDefaultPolicy(options: DefaultPolicyOptions = {}): Command
   const healThreshold = options.healThreshold ?? 0.7;
   const targetPolicy = options.targetPolicy ?? 'highest-damage';
   const guardMode = options.guardMode ?? 'protect';
+  const buffMode = options.buffMode ?? 'first';
   const guardTarget = options.guardTarget ?? 100;
 
   return ({ state, actor, data, balance, rng }) => {
@@ -70,8 +81,12 @@ export function createDefaultPolicy(options: DefaultPolicyOptions = {}): Command
 
     // 버프: 쓸 수 있는 대상이 남아 있으면 공격보다 먼저 쓴다.
     for (const buff of skills.filter((s) => s.kind === 'buff' && s.buff)) {
+      if (buffMode === 'never') break;
+      if (buffMode === 'opening' && state.round > 1) break;
       const target = chooseBuffTarget(actor, state, data, buff);
-      if (target) return { kind: 'skill', skillId: buff.id, targetUid: target.uid };
+      if (!target) continue;
+      if (buffMode === 'half' && rng() >= 0.5) continue;
+      return { kind: 'skill', skillId: buff.id, targetUid: target.uid };
     }
 
     const attack = skills.find((s) => s.kind === 'attack');

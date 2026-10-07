@@ -123,10 +123,12 @@ export function DataTab() {
               <th>병종</th>
               <th>병력 배율</th>
               <th>기본 AP</th>
+              <th>받는 피해 배수 (물리 / 책략)</th>
               <th>스탯 보정 (공 / 방 / 지 / 속)</th>
               <th>시작 배치 가능 열</th>
               <th>대상 규칙</th>
               <th>반격</th>
+              <th>반격 비율</th>
               <th>일반공격</th>
               <th>특성</th>
               <th>가드 (시작 / 상승 / 감소 %p / 가드 중 받는 피해 배수)</th>
@@ -146,8 +148,21 @@ export function DataTab() {
                 </td>
                 <td>
                   <span className="check-group">
-                    {(['attack', 'defense', 'intellect', 'speed'] as const).map((k) => (
-                      <NumberField key={k} path={`data.unitTypes.${u.id}.statMods.${k}`} step={1} />
+                    <NumberField label="물리" path={`data.unitTypes.${u.id}.damageTakenByType.physical`} step={0.05} min={0} />
+                    <NumberField label="책략" path={`data.unitTypes.${u.id}.damageTakenByType.magic`} step={0.05} min={0} />
+                  </span>
+                </td>
+                <td>
+                  <span className="check-group">
+                    {(
+                      [
+                        ['attack', '공'],
+                        ['defense', '방'],
+                        ['intellect', '지'],
+                        ['speed', '속'],
+                      ] as const
+                    ).map(([k, label]) => (
+                      <NumberField key={k} label={label} path={`data.unitTypes.${u.id}.statMods.${k}`} step={1} />
                     ))}
                   </span>
                 </td>
@@ -165,6 +180,9 @@ export function DataTab() {
                 </td>
                 <td>
                   <CheckField label="반격함" path={`data.unitTypes.${u.id}.canCounter`} />
+                </td>
+                <td>
+                  <NumberField path={`data.unitTypes.${u.id}.counterRate`} step={0.05} min={0} />
                 </td>
                 <td>
                   <SelectField path={`data.unitTypes.${u.id}.basicSkillId`} options={skillOptions} />

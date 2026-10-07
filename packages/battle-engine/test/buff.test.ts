@@ -169,3 +169,38 @@ describe('가드 AI: 지킬 아군', () => {
     expect(engine.decide(unit(engine, 'attacker:0'))).toEqual(use('hit', 'defender:0'));
   });
 });
+
+describe('버프 AI 성향 (buffMode)', () => {
+  const lineup = () => new BattleEngine(input([front('inf'), back('advisor')], [front('inf')], { policy: createDefaultPolicy() }));
+  const decideWith = (buffMode: 'first' | 'opening' | 'half' | 'never', round?: number) => {
+    const engine = new BattleEngine(input([front('inf'), back('advisor')], [front('inf')], { policy: createDefaultPolicy({ buffMode }) }));
+    if (round !== undefined) engine.state.round = round;
+    return engine.decide(unit(engine, 'attacker:1'));
+  };
+  void lineup;
+
+  it('first: 쓸 대상이 있으면 버프를 먼저 쓴다 (기본)', () => {
+    expect(decideWith('first')).toMatchObject({ skillId: 'inspire' });
+    expect(decideWith('first', 5)).toMatchObject({ skillId: 'inspire' });
+  });
+
+  it('never: 버프 없이 항상 공격한다', () => {
+    expect(decideWith('never')).toEqual(use('mind', 'defender:0'));
+  });
+
+  it('opening: 1라운드에만 버프를 쓰고 이후에는 공격한다', () => {
+    expect(decideWith('opening', 1)).toMatchObject({ skillId: 'inspire' });
+    expect(decideWith('opening', 2)).toEqual(use('mind', 'defender:0'));
+  });
+
+  it('half: 버프와 공격이 모두 나온다', () => {
+    const kinds = new Set<string>();
+    for (let seed = 1; seed <= 60; seed++) {
+      const engine = new BattleEngine(input([front('inf'), back('advisor')], [front('inf')], { seed, policy: createDefaultPolicy({ buffMode: 'half' }) }));
+      const c = engine.decide(unit(engine, 'attacker:1'));
+      kinds.add(c.kind === 'skill' ? c.skillId : c.kind);
+    }
+    expect(kinds.has('mind')).toBe(true);
+    expect(kinds.has('inspire') || kinds.has('ward')).toBe(true);
+  });
+});

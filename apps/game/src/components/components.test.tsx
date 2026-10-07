@@ -72,7 +72,7 @@ describe('CommandPanel', () => {
   it('내 차례: 군단 정보, 스킬, 대기, AI 위임 버튼이 나온다', async () => {
     const html = panel(await snapshotOf('attacker'));
     expect(html).toContain('의 차례');
-    expect(html).toContain('AP 3/3');
+    expect(html).toContain('AP 4/4');
     expect(html).toContain('돌격 (AP 1)');
     expect(html).toContain('대기 (AP 소모 없음)');
     expect(html).toContain('AI에게 맡기기');

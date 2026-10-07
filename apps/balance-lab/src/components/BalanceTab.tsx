@@ -48,6 +48,12 @@ export function BalanceTab() {
       </section>
 
       <section className="panel">
+        <h3>행동력 → AP</h3>
+        <NumberField label="행동력 몇 마다 AP 1" path="balance.action.perAp" step={1} min={1} hint="추가 AP = 올림(행동력 ÷ 이 값). 전투 총 AP = 병종 기본 AP + 추가 AP" />
+        <NumberField label="행동력 상한" path="balance.action.cap" step={1} min={1} hint="이보다 큰 행동력은 세지 않는다 (아이템으로 올리는 한계)" />
+      </section>
+
+      <section className="panel">
         <h3>스탯 변환</h3>
         <NumberField label="스탯 입력 상한" path="balance.statCap" min={10} hint="아이템 보정 하드캡" />
         <p className="note">스탯(0~10) → 유효 스탯 곡선. 10을 넘으면 마지막 기울기로 이어진다.</p>

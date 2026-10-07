@@ -61,6 +61,16 @@ export function SimulationTab({ sim, pinned, setPinned }: Props) {
               { value: 'never', label: '가드를 쓰지 않고 항상 공격' },
             ]}
           />
+          <SelectField
+            label="버프(책사/도사) AI"
+            path="sim.buffMode"
+            options={[
+              { value: 'first', label: '쓸 대상이 있으면 항상 먼저 (기본)' },
+              { value: 'opening', label: '1라운드에만 버프, 이후 공격' },
+              { value: 'half', label: '행동마다 절반 확률로 버프' },
+              { value: 'never', label: '버프 없이 공격만' },
+            ]}
+          />
           <NumberField label="시드" path="sim.seed" />
         </div>
         <div className="row">

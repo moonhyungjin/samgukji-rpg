@@ -30,6 +30,9 @@ describe('Balance Lab 화면 렌더링', () => {
     expectClean(html);
     expect(html).toContain('피해 공식');
     expect(html).toContain('사기');
+    // 행동력 → AP 설정
+    expect(html).toContain('행동력 → AP');
+    expect(html).toContain('행동력 몇 마다 AP 1');
   });
 
   it('병종 · 특성 · 스킬 탭에 기본 병종과 예시 특성이 보인다', () => {
@@ -42,6 +45,13 @@ describe('Balance Lab 화면 렌더링', () => {
     // 가드: 병종 표의 가드 열, 스킬 표의 가드 스킬과 "가드로 막힘" 열
     expect(html).toContain('가드 (시작 / 상승 / 감소');
     expect(html).toContain('가드로 막힘');
+    // 병종 기본 AP, 스탯 보정, 방어 무시, 버프 설정
+    expect(html).toContain('기본 AP');
+    expect(html).toContain('반격 비율');
+    expect(html).toContain('받는 피해 배수 (물리 / 책략)');
+    expect(html).toContain('스탯 보정');
+    expect(html).toContain('방어 무시');
+    expect(html).toContain('피해 무시 횟수');
     expect(html).toContain('>가드<');
   });
 

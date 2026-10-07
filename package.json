@@ -15,7 +15,8 @@
     "lab:build": "npm run build -w @samgukji/balance-lab",
     "game": "npm run dev -w @samgukji/game --",
     "game:build": "npm run build -w @samgukji/game",
-    "e2e": "node tools/e2e/game-e2e.mjs"
+    "e2e": "node tools/e2e/game-e2e.mjs",
+    "e2e:lab": "node tools/e2e/lab-e2e.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

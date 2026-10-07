@@ -26,7 +26,7 @@ export function BattleTab() {
         defender: attacker === 'A' ? teamB : teamA,
         seed: nextSeed,
         recordEvents: true,
-        policy: createDefaultPolicy({ targetPolicy: state.sim.targetPolicy, guardMode: state.sim.guardMode }),
+        policy: createDefaultPolicy({ targetPolicy: state.sim.targetPolicy, guardMode: state.sim.guardMode, buffMode: state.sim.buffMode }),
       });
       setSeed(nextSeed);
       setResult(outcome);

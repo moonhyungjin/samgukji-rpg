@@ -39,6 +39,13 @@ export class DamageCalculator {
     return multiplier;
   }
 
+  /** 공격 종류(물리/책략)에 따른 병종의 받는 피해 보정 */
+  typeMultiplier(defender: CharacterState, physical: boolean): number {
+    const by = this.data.unitTypes[defender.unitType]?.damageTakenByType;
+    if (!by) return 1;
+    return physical ? by.physical : by.magic;
+  }
+
   /** 가드 상태(가드 확률 > 0)인 유닛이 받는 피해 보정 */
   guardMultiplier(defender: CharacterState): number {
     if (defender.guardRate <= 0) return 1;
@@ -63,15 +70,22 @@ export class DamageCalculator {
       this.traitMultiplier(attacker, defender) *
       troopFactor(b, attacker.troops) *
       this.guardMultiplier(defender) *
+      this.typeMultiplier(defender, physical) *
       moraleMultiplier(b, attackerMoraleShare) *
       mitigation;
 
     return Math.max(b.damage.minDamage, Math.round(raw));
   }
 
-  /** 반격 피해. 반격자의 일반공격 피해에 counter.rate를 곱한다. */
+  /** 반격 비율. 병종의 counterRate가 있으면 그것을, 없으면 balance.counter.rate를 쓴다. */
+  counterRate(counterer: CharacterState): number {
+    return this.data.unitTypes[counterer.unitType]?.counterRate ?? this.balance.counter.rate;
+  }
+
+  /** 반격 피해. 반격자의 일반공격 피해에 반격 비율을 곱한다. 방어 무시는 반격에는 붙지 않는다. */
   counterDamage(counterer: CharacterState, target: CharacterState, skill: SkillData, countererMoraleShare: number): number {
-    return Math.round(this.damage(counterer, target, skill, countererMoraleShare) * this.balance.counter.rate);
+    const plain = skill.ignoreDefense ? { ...skill, ignoreDefense: 0 } : skill;
+    return Math.round(this.damage(counterer, target, plain, countererMoraleShare) * this.counterRate(counterer));
   }
 
   /** 병사 회복량. 기본은 병력 보정과 사기 보정을 받지 않고, heal.useTroopFactor를 켜면 시전자의 병력 보정을 곱한다. */

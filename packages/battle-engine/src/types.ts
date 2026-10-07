@@ -87,6 +87,8 @@ export interface UnitTypeData {
   targetRule: TargetRule;
   /** 공격받았을 때 반격할 수 있는가 */
   canCounter: boolean;
+  /** 반격 피해 = 반격자의 일반공격 피해 × 이 값. 생략하면 balance.counter.rate. 반격에는 방어 무시(ignoreDefense)가 붙지 않는다 */
+  counterRate?: number;
   basicSkillId: string;
   extraSkillIds: string[];
   /** 승급 병종 id 목록 (프로토타입에서는 비어 있음) */
@@ -101,6 +103,11 @@ export interface UnitTypeData {
   /** 병종 스탯 보정. 캐릭터의 기본 스탯에 더해진다 (0 아래로는 내려가지 않는다). 승급 병종은 자기 보정을 따로 가진다 */
   /** 병종 기본 AP. 전투 총 AP = 병종 기본 AP + 캐릭터 행동력으로 얻는 추가 AP (생략하면 0) */
   baseAp?: number;
+  /**
+   * 공격 종류에 따라 이 병종이 받는 피해에 곱하는 값. physical: 공격 스탯 기반 공격(일반공격/돌격/화살), magic: 지력 기반 공격(책략/독연).
+   * 예: 지력 계열은 책략에 ×0.8, 물리에 ×1.2 — 궁병 같은 물리 공격수가 책사/도사를 잡는 전문가가 된다. 생략하면 둘 다 1
+   */
+  damageTakenByType?: { physical: number; magic: number };
   statMods?: Partial<Pick<Stats, 'attack' | 'defense' | 'intellect' | 'speed' | 'action'>>;
   /** 가드를 쓸 수 있는 병종 (스킬 목록에 kind: 'guard' 스킬도 있어야 한다) */
   guard?: GuardConfig;

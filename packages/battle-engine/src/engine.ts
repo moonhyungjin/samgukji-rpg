@@ -222,7 +222,7 @@ export class BattleEngine {
     const remaining = target.troops - damage;
     let counter = 0;
     const targetType = data.unitTypes[target.unitType];
-    if (skill.counterable && remaining > 0 && targetType.canCounter && balance.counter.rate > 0) {
+    if (skill.counterable && remaining > 0 && targetType.canCounter && this.calc.counterRate(target) > 0) {
       const counterSkill = data.skills[targetType.basicSkillId];
       if (counterSkill.kind === 'attack') {
         // 실제 처리에서는 피격으로 사기가 먼저 움직인 뒤 반격하므로, 같은 값으로 계산한다.
@@ -333,7 +333,7 @@ export class BattleEngine {
     const targetType = data.unitTypes[target.unitType];
     if (skill.counterable && !target.isDead && !actor.isDead && targetType.canCounter) {
       const counterSkill = data.skills[targetType.basicSkillId];
-      if (counterSkill.kind === 'attack' && balance.counter.rate > 0) {
+      if (counterSkill.kind === 'attack' && this.calc.counterRate(target) > 0) {
         const counter = this.calc.counterDamage(target, actor, counterSkill, this.moraleShare(target.side));
         if (counter > 0) this.inflict(target, actor, counter, 'counter');
       }

@@ -37,11 +37,19 @@ describe('게임 데이터 무결성', () => {
     const { unitTypes, characters } = gameData;
     expect(unitTypes.geomancer.troopScale).toBe(0.6);
     expect(unitTypes.strategist.troopScale).toBe(0.8);
+    expect(unitTypes.taoist.troopScale).toBe(0.8);
     expect(unitTypes.cavalry.troopScale).toBe(0.8);
     expect(unitTypes.infantry.troopScale).toBe(1);
     expect(unitTypes.shield.guard).toEqual({ start: 50, gain: 70, decay: 40, damageTaken: 0.75 });
     // 기병 돌격은 방어를 1 무시하고, AP는 병종 기준(방패병 4, 보병/기병/궁병 3, 책사/도사 2)
     expect(gameData.skills['cavalry-charge'].ignoreDefense).toBe(1);
+    // 병종 기본 AP: 방패병 3, 보병/기병/궁병 2, 책사/도사/풍수사 2
+    expect(Object.fromEntries(Object.entries(unitTypes).map(([id, u]) => [id, u.baseAp]))).toEqual({ infantry: 2, shield: 3, cavalry: 2, archer: 2, strategist: 2, taoist: 2, geomancer: 2 });
+    // 공격 종류별 받는 피해: 방패병/보병/기병/궁병 물리 ×1 책략 ×1.1, 책사/도사/풍수사 물리 ×1.1 책략 ×0.8
+    for (const id of ['infantry', 'shield', 'cavalry', 'archer']) expect(unitTypes[id].damageTakenByType, id).toEqual({ physical: 1, magic: 1.1 });
+    for (const id of ['strategist', 'taoist', 'geomancer']) expect(unitTypes[id].damageTakenByType, id).toEqual({ physical: 1.1, magic: 0.8 });
+    // 병종별 반격 비율: 방패병 0.5, 보병 0.5, 기병 0.6, 궁병 0.25 (기본 balance.counter.rate는 0.5)
+    expect(Object.fromEntries(['shield', 'infantry', 'cavalry', 'archer'].map((id) => [id, unitTypes[id].counterRate]))).toEqual({ shield: 0.5, infantry: 0.5, cavalry: 0.6, archer: 0.25 });
     // 병종 스탯 보정 (공/방/지/속)
     const mods = (id: string) => ({ attack: 0, defense: 0, intellect: 0, speed: 0, ...unitTypes[id].statMods });
     expect(mods('shield')).toEqual({ attack: -1, defense: 0, intellect: 0, speed: -1 });
@@ -52,21 +60,21 @@ describe('게임 데이터 무결성', () => {
     expect(mods('taoist')).toEqual({ attack: 0, defense: 0, intellect: 0, speed: 1 });
     expect(mods('geomancer')).toEqual({ attack: 0, defense: 0, intellect: 0, speed: 0 });
     const apOf = (id: string) => Object.values(characters).filter((c) => c.unitType === id).map(maxApOf);
-    expect(apOf('shield')).toEqual([4, 4]);
-    for (const [id, ap] of [['infantry', 3], ['cavalry', 3], ['archer', 3], ['strategist', 2], ['taoist', 2]] as const) {
+    expect(apOf('shield')).toEqual([5, 5]);
+    for (const [id, ap] of [['infantry', 4], ['cavalry', 4], ['archer', 4], ['strategist', 3], ['taoist', 3]] as const) {
       expect(new Set(apOf(id)), id).toEqual(new Set([ap]));
     }
     // 보병은 가드를 쓰지 않는다 (방패병만 쓴다)
     expect(unitTypes.infantry.guard).toBeUndefined();
     expect(unitTypes.infantry.extraSkillIds).not.toContain('guard');
-    expect(unitTypes.archer.troopScale).toBe(0.9);
-    // 궁병이 전열을 때리면 ×0.9, 후열을 때리면 ×1
+    expect(unitTypes.archer.troopScale).toBe(0.85);
+    // 궁병이 전열을 때리면 ×0.8, 후열을 때리면 ×1
     expect(unitTypes.archer.traitIds).toContain('archer-vs-front');
-    expect(gameData.traits['archer-vs-front']).toMatchObject({ kind: 'damage-dealt', multiplier: 0.9, versus: { rows: ['front'] } });
+    expect(gameData.traits['archer-vs-front']).toMatchObject({ kind: 'damage-dealt', multiplier: 0.8, versus: { rows: ['front'] } });
     expect(unitTypes.shield.extraSkillIds).toContain('guard');
     expect(unitTypes.cavalry.targetRule).toBe('front-first');
     expect(characters.guoJia.unitType).toBe('taoist');
-    expect(maxApOf(characters.guoJia)).toBe(2);
+    expect(maxApOf(characters.guoJia)).toBe(3);
     // 책사는 공격 버프(독려), 도사는 방어 버프(결계)를 쓴다
     expect(gameData.skills[unitTypes.strategist.extraSkillIds[0]].buff).toMatchObject({ type: 'stats', minCount: 1, maxCount: 3, amount: 1 });
     expect(gameData.skills[unitTypes.taoist.extraSkillIds[0]].buff).toMatchObject({ type: 'barrier', charges: 1 });
@@ -123,7 +131,12 @@ describe('숫자를 바꾸면 결과가 달라진다', () => {
 
   it('반격 비율을 0으로 하면 평균 전투 진행이 달라진다', () => {
     const base = sim(defaultBalance);
-    const noCounter = sim({ ...defaultBalance, counter: { rate: 0 } });
+    // 병종마다 counterRate가 있으므로 전 병종의 값을 0으로 만든다
+    const noCounterData = {
+      ...gameData,
+      unitTypes: Object.fromEntries(Object.entries(gameData.unitTypes).map(([id, u]) => [id, { ...u, counterRate: 0 }])),
+    };
+    const noCounter = sim(defaultBalance, noCounterData);
     expect(noCounter.averageDestroyed).not.toEqual(base.averageDestroyed);
   });
 

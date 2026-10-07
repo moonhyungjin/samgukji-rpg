@@ -23,6 +23,7 @@ describe('시뮬레이션 워커', () => {
     lineups: 'fixed',
     targetPolicy: 'lowest-troops',
     guardMode: 'protect',
+    buffMode: 'first',
     ...overrides,
   });
 

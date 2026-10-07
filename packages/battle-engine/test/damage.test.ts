@@ -153,3 +153,63 @@ describe('방어 무시 (ignoreDefense)', () => {
     expect(calc.damage(makeUnit(), makeUnit(), magic, 50)).toBe(calc.damage(makeUnit(), makeUnit(), mind, 50));
   });
 });
+
+describe('공격 종류별 받는 피해 배수 (damageTakenByType)', () => {
+  const data = {
+    ...testData,
+    unitTypes: {
+      ...testData.unitTypes,
+      str: { ...testData.unitTypes.str, damageTakenByType: { physical: 1.2, magic: 0.8 } },
+      inf: { ...testData.unitTypes.inf, damageTakenByType: { physical: 1, magic: 1.1 } },
+    },
+  };
+  const typed = new DamageCalculator(testBalance, data);
+  const caster = makeUnit({ unitType: 'str' });
+  const fighter = makeUnit({ unitType: 'inf' });
+
+  it('물리 공격은 physical 배수를, 책략은 magic 배수를 곱한다', () => {
+    expect(typed.damage(makeUnit(), caster, hit, 50)).toBe(40); // 33.33 × 1.2
+    expect(typed.damage(makeUnit(), caster, mind, 50)).toBe(27); // 33.33 × 0.8
+    expect(typed.damage(makeUnit(), fighter, hit, 50)).toBe(33); // ×1
+    expect(typed.damage(makeUnit(), fighter, mind, 50)).toBe(37); // ×1.1
+  });
+
+  it('배수를 생략하면 피해가 변하지 않는다', () => {
+    expect(calc.damage(makeUnit(), makeUnit({ unitType: 'str' }), hit, 50)).toBe(33);
+    expect(calc.damage(makeUnit(), makeUnit({ unitType: 'str' }), mind, 50)).toBe(33);
+  });
+});
+
+describe('병종별 반격 비율 (counterRate)', () => {
+  const data = {
+    ...testData,
+    skills: { ...testData.skills, hit: { ...testData.skills.hit, ignoreDefense: 2 } },
+    unitTypes: {
+      ...testData.unitTypes,
+      inf: { ...testData.unitTypes.inf, counterRate: 1 },
+      cav: { ...testData.unitTypes.cav, counterRate: 0.9 },
+    },
+  };
+  const c = new DamageCalculator(testBalance, data);
+  const hitPlain = testData.skills.hit; // 방어 무시 없음
+
+  it('병종의 counterRate를 쓰고, 없으면 balance.counter.rate를 쓴다', () => {
+    expect(c.counterRate(makeUnit({ unitType: 'inf' }))).toBe(1);
+    expect(c.counterRate(makeUnit({ unitType: 'cav' }))).toBe(0.9);
+    expect(c.counterRate(makeUnit({ unitType: 'arc' }))).toBe(0.5);
+  });
+
+  it('반격 피해 = 일반공격 피해 × 반격 비율', () => {
+    const base = calc.damage(makeUnit(), makeUnit(), hitPlain, 50);
+    expect(c.counterDamage(makeUnit({ unitType: 'inf' }), makeUnit(), hitPlain, 50)).toBe(Math.round(base * 1));
+    expect(c.counterDamage(makeUnit({ unitType: 'arc' }), makeUnit(), hitPlain, 50)).toBe(Math.round(base * 0.5));
+  });
+
+  it('반격에는 방어 무시가 붙지 않는다', () => {
+    const pierceHit = data.skills.hit;
+    const attack = c.damage(makeUnit({ unitType: 'inf' }), makeUnit(), pierceHit, 50);
+    const counter = c.counterDamage(makeUnit({ unitType: 'inf' }), makeUnit(), pierceHit, 50);
+    expect(attack).toBeGreaterThan(counter); // 방어 무시가 있는 공격이 더 아프다 (반격 비율 1이어도)
+    expect(counter).toBe(calc.damage(makeUnit(), makeUnit(), hitPlain, 50));
+  });
+});
