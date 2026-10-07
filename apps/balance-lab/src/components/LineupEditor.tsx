@@ -55,12 +55,13 @@ export function LineupEditor({ teamKey, title }: Props) {
       <header className="lineup-head">
         <h3>{title}</h3>
         <span className="presets">
+          <span className="presets-label">편성 불러오기</span>
           {state.presets.map((p) => (
             <button key={p.id} type="button" title={p.id} onClick={() => set(teamKey, slotsFromLineup(p.lineup))}>
               {p.label}
             </button>
           ))}
-          <button type="button" onClick={() => set(teamKey, Array.from({ length: SLOT_COUNT }, () => null))}>
+          <button type="button" className="clear" onClick={() => set(teamKey, Array.from({ length: SLOT_COUNT }, () => null))}>
             비우기
           </button>
         </span>
