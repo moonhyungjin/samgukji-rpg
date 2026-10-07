@@ -239,3 +239,111 @@ describe('대상 열에 따른 주는 피해 배수 (damageDealtByRow)', () => {
     expect(rowed.damage(makeUnit({ unitType: 'inf' }), makeUnit({ unitType: 'arc', row: 'front' }), hit, 50)).toBe(33);
   });
 });
+
+describe('병력 보정 방식 (troopFactor.mode)', () => {
+  const relative = {
+    ...testBalance,
+    troopFactor: { ...testBalance.troopFactor, mode: 'relative' as const },
+  };
+  const abs = new DamageCalculator(testBalance, testData);
+  const rel = new DamageCalculator(relative, testData);
+
+  it('기존 방식(absolute)은 병종과 상대에 상관없이 현재 병력 ÷ 기준 병력이다', () => {
+    const small = makeUnit({ troops: 800, maxTroops: 800 });
+    const big = makeUnit({ troops: 1000, maxTroops: 1000 });
+    // 같은 스탯: 병력 800이면 1000일 때의 0.8배
+    expect(abs.damage(small, makeUnit(), hit, 50)).toBe(Math.round(33.33 * 0.8));
+    expect(abs.damage(big, makeUnit({ troops: 100 }), hit, 50)).toBe(33);
+  });
+
+  it('상대 비교(relative), 공격력 기반: 최대 병력이 800인 병종도 가득 차면 불이익이 없다', () => {
+    const smallFull = makeUnit({ troops: 800, maxTroops: 800 });
+    const sameSize = makeUnit({ troops: 800, maxTroops: 800 });
+    expect(rel.damage(smallFull, sameSize, hit, 50)).toBe(33); // 800 대 800 = 1.0
+    expect(abs.damage(smallFull, sameSize, hit, 50)).toBe(27); // 기존 방식은 0.8배로 깎임
+  });
+
+  it('상대 비교, 공격력 기반: 큰 군단이 작은 군단을 치면 더 아프다', () => {
+    const big = makeUnit({ troops: 1000 });
+    const smallTarget = makeUnit({ troops: 500 });
+    const sameTarget = makeUnit({ troops: 900 });
+    const vsSmall = rel.damage(big, smallTarget, hit, 50);
+    const vsSame = rel.damage(big, sameTarget, hit, 50);
+    expect(vsSmall).toBeGreaterThan(vsSame);
+    expect(vsSmall).toBe(Math.round(33.333 * Math.SQRT2)); // 1000 대 500
+    expect(vsSame).toBe(Math.round(33.333 * Math.sqrt(1000 / 900))); // 1000 대 900은 거의 같다
+  });
+
+  it('상대 비교, 지력 기반: 상대의 병력은 보지 않고 내 최대 병력 대비 현재 병력만 본다', () => {
+    const caster = makeUnit({ stats: stats(1, 1, 8), troops: 400, maxTroops: 800 });
+    const weakTarget = makeUnit({ troops: 100 });
+    const bigTarget = makeUnit({ troops: 1000 });
+    expect(rel.damage(caster, weakTarget, mind, 50)).toBe(rel.damage(caster, bigTarget, mind, 50)); // 상대 병력과 무관
+    const full = makeUnit({ stats: stats(1, 1, 8), troops: 800, maxTroops: 800 });
+    expect(rel.damage(caster, bigTarget, mind, 50)).toBeLessThan(rel.damage(full, bigTarget, mind, 50)); // 내 병력이 절반이면 약해짐
+    // 가득 찬 책사(800/800)는 보정 1.0이다 (기존 방식은 0.8)
+    expect(rel.damage(full, bigTarget, mind, 50)).toBeGreaterThan(abs.damage(full, bigTarget, mind, 50));
+  });
+
+  it('mode를 생략하면 기존 방식이다', () => {
+    const noMode = { ...testBalance, troopFactor: { reference: 1000, min: 0.3, max: 1.75 } };
+    const u = makeUnit({ troops: 800, maxTroops: 800 });
+    expect(new DamageCalculator(noMode, testData).damage(u, makeUnit(), hit, 50)).toBe(abs.damage(u, makeUnit(), hit, 50));
+  });
+
+  it('반격도 같은 방식으로 계산된다 (맞은 뒤의 줄어든 병력 기준)', () => {
+    const wounded = makeUnit({ troops: 500, maxTroops: 1000 });
+    const attacker = makeUnit({ troops: 1000, maxTroops: 1000 });
+    // 상대 비교: 반격하는 쪽(500)이 공격자(1000)를 친다 → 비율 0.5의 제곱근
+    expect(rel.counterDamage(wounded, attacker, hit, 50)).toBe(Math.round(Math.round(33.333 * Math.sqrt(0.5)) * 0.5));
+  });
+});
+
+describe('병종 병력 배율은 피해에 영향을 주지 않는다 (normalizeByScale)', () => {
+  // inf 병종의 병력 배율을 0.8로 둔다: 최대 병력 800은 "가득 찬 상태"다
+  const scaled = {
+    ...testData,
+    unitTypes: { ...testData.unitTypes, inf: { ...testData.unitTypes.inf, troopScale: 0.8 } },
+  };
+  const on = new DamageCalculator(testBalance, scaled);
+  const off = new DamageCalculator({ ...testBalance, troopFactor: { ...testBalance.troopFactor, normalizeByScale: false } }, scaled);
+  const full800 = makeUnit({ unitType: 'inf', troops: 800, maxTroops: 800 });
+  const full1000 = makeUnit({ unitType: 'arc', troops: 1000, maxTroops: 1000 });
+
+  it('켜져 있으면(기본) 최대 병력이 800인 병종도 가득 차면 1000인 병종과 같은 세기로 때린다', () => {
+    expect(on.damage(full800, makeUnit(), hit, 50)).toBe(33);
+    expect(on.damage(full1000, makeUnit(), hit, 50)).toBe(33);
+  });
+
+  it('끄면 실제 병력 수만 보므로 0.8배로 약해진다', () => {
+    expect(off.damage(full800, makeUnit(), hit, 50)).toBe(27);
+  });
+
+  it('설정을 생략하면 켜진 것으로 본다', () => {
+    const noFlag = { ...testBalance, troopFactor: { reference: 1000, min: 0.3, max: 1.75 } };
+    expect(new DamageCalculator(noFlag, scaled).damage(full800, makeUnit(), hit, 50)).toBe(33);
+  });
+
+  it('맞아서 병력이 줄면 가득 찼을 때 대비 비율만큼 약해진다 (환산 병력 400 → 0.4)', () => {
+    const half = makeUnit({ unitType: 'inf', troops: 400, maxTroops: 800 });
+    expect(on.damage(half, makeUnit(), hit, 50)).toBe(Math.round(33.333 * 0.5));
+  });
+
+  it('레벨 차이로 생긴 병력 차이는 그대로 반영된다 (같은 병종, 1000 대 800)', () => {
+    const big = makeUnit({ unitType: 'inf', troops: 1000, maxTroops: 1000 });
+    expect(on.damage(big, makeUnit(), hit, 50)).toBeGreaterThan(on.damage(full800, makeUnit(), hit, 50) - 1);
+    expect(on.damage(big, makeUnit(), hit, 50)).toBe(Math.round(33.333 * 1.25));
+  });
+
+  it('상대 비교 방식에서도 환산 병력으로 비교한다 (책사 800 대 방패병 1000은 같은 크기)', () => {
+    const relative = new DamageCalculator({ ...testBalance, troopFactor: { ...testBalance.troopFactor, mode: 'relative' as const } }, scaled);
+    expect(relative.damage(full800, makeUnit({ unitType: 'arc', troops: 1000, maxTroops: 1000 }), hit, 50)).toBe(33);
+  });
+
+  it('치유(병력 보정 적용 시)도 환산 병력을 쓴다', () => {
+    const healBalance = { ...testBalance, heal: { scale: 10, useTroopFactor: true } };
+    const healScaled = { ...scaled, unitTypes: { ...testData.unitTypes, str: { ...testData.unitTypes.str, troopScale: 0.8 } } };
+    const healer = makeUnit({ unitType: 'str', stats: stats(1, 1, 6), troops: 800, maxTroops: 800 });
+    expect(new DamageCalculator(healBalance, healScaled).heal(healer, testData.skills.mend)).toBe(60); // 지력 6 × 10 × 1.0
+  });
+});

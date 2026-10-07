@@ -8,8 +8,9 @@ import type { FamilySurvivalTarget, LabState } from './types';
 export function createDefaultState(): LabState {
   const files = filesSnapshot();
   const familySurvival = Object.fromEntries(
-    // 궁병 생존율 40%가 첫 목표 지표다. 나머지 병종은 필요할 때 켠다.
-    FAMILIES.map((f): [Family, FamilySurvivalTarget] => [f, { enabled: f === 'archer', target: 0.4, tolerance: 0.1 }]),
+    // 병종별 생존율 목표는 모두 꺼 둔다. 승급 병종과 새 커맨드가 들어오면 판도가 달라지므로 지금은 맞추지 않는다 (필요할 때 켠다).
+    // 궁병 생존율 40%는 한때의 첫 목표였다. 켜면 그 값을 쓴다.
+    FAMILIES.map((f): [Family, FamilySurvivalTarget] => [f, { enabled: false, target: 0.4, tolerance: 0.1 }]),
   ) as Record<Family, FamilySurvivalTarget>;
 
   return {

@@ -103,10 +103,18 @@ const setValue = (selector, value) =>
 const DATA_DIR = resolve('packages/game-data/data');
 const DATA_NAMES = ['skills', 'traits', 'unitTypes', 'characters', 'presets', 'balance'];
 const originals = Object.fromEntries(DATA_NAMES.map((n) => [n, readFileSync(join(DATA_DIR, `${n}.json`), 'utf-8')]));
+const CHANGELOG = join(DATA_DIR, 'changelog.md');
+const originalChangelog = existsSync(CHANGELOG) ? readFileSync(CHANGELOG, 'utf-8') : null;
+const restoreChangelog = () => (originalChangelog === null ? rmSync(CHANGELOG, { force: true }) : writeFileSync(CHANGELOG, originalChangelog));
+const readChangelog = () => (existsSync(CHANGELOG) ? readFileSync(CHANGELOG, 'utf-8') : '');
 const readData = (name) => JSON.parse(readFileSync(join(DATA_DIR, `${name}.json`), 'utf-8'));
 const writeData = (name, value) => writeFileSync(join(DATA_DIR, `${name}.json`), JSON.stringify(value, null, 2) + '\n');
-const restoreAll = () => DATA_NAMES.forEach((n) => writeFileSync(join(DATA_DIR, `${n}.json`), originals[n]));
-const filesEqualOriginal = () => DATA_NAMES.every((n) => readFileSync(join(DATA_DIR, `${n}.json`), 'utf-8') === originals[n]);
+const restoreAll = () => {
+  DATA_NAMES.forEach((n) => writeFileSync(join(DATA_DIR, `${n}.json`), originals[n]));
+  restoreChangelog();
+};
+const filesEqualOriginal = () =>
+  DATA_NAMES.every((n) => readFileSync(join(DATA_DIR, `${n}.json`), 'utf-8') === originals[n]) && readChangelog() === (originalChangelog ?? '');
 const load = async () => {
   await send('Page.navigate', { url: BASE });
   // 개발 서버가 처음 요청을 컴파일하는 동안 기다린다
@@ -148,11 +156,15 @@ try {
 
   // ---- 2. 파일에 저장: 스킬 ----
   const skillBefore = readData('skills').find((s) => s.id === 'cavalry-charge').power;
+  await setValue('input[aria-label="변경 메모"]', '시험: 돌격 계수 올림');
   await clickButton('파일에 저장');
   await waitFor(`!!document.querySelector('.savemsg.ok') || document.querySelectorAll('button.tab').length === 0`, 8000, '저장').catch(() => {});
   await sleep(1500); // 저장하면 개발 서버가 페이지를 새로고침한다
   await waitFor(`document.querySelectorAll('button.tab').length > 0`, 30000, '새로고침 뒤 Lab');
   check('스킬 계수를 저장하면 skills.json이 바뀐다', readData('skills').find((s) => s.id === 'cavalry-charge').power === 1.5, `${skillBefore} → ${readData('skills').find((s) => s.id === 'cavalry-charge').power}`);
+  const log1 = readChangelog().slice((originalChangelog ?? '').length);
+  check('저장하면 changelog.md에 무엇이 어떻게 바뀌었는지 남는다', log1.includes('— 스킬') && log1.includes('- skills.cavalry-charge.power: 1.2 → 1.5'), log1.split('\n').filter(Boolean).slice(0, 3).join(' | '));
+  check('변경 메모가 기록에 들어간다', log1.includes('메모: 시험: 돌격 계수 올림'));
   check('저장 뒤 페이지가 새로고침되고 안내 문구가 남는다', (await text('.savemsg')).includes('스킬'), (await text('.savemsg')).trim().slice(0, 50));
   check('새로고침 뒤 "프로젝트 파일과 같음"이다', (await text('.savebar .badge')).includes('프로젝트 파일과 같음'));
   writeData('skills', JSON.parse(originals.skills)); // 스킬 변경은 여기서 되돌린다
@@ -187,6 +199,7 @@ try {
   await clickButton('파일에 저장');
   await sleep(2500);
   await waitFor(`document.querySelectorAll('button.tab').length > 0`, 30000, '새로고침 뒤 Lab');
+  check('두 번째 저장도 기록이 쌓인다 (장수, 메모 없음)', readChangelog().includes('— 장수') && readChangelog().includes('- characters.guanYu.stats.attack:'));
   check('장수를 저장하면 characters.json에 기록된다', readData('characters').find((c) => c.id === 'guanYu').stats.attack === guanBefore + 1, `${guanBefore} → ${readData('characters').find((c) => c.id === 'guanYu').stats.attack}`);
   await tabs('장수');
   await sleep(300);

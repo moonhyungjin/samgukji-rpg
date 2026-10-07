@@ -42,3 +42,21 @@ export function apFromAction(balance: BalanceConfig, action: number): number {
 export function totalAp(balance: BalanceConfig, baseAp: number | undefined, action: number): number {
   return Math.max(1, (baseAp ?? 0) + apFromAction(balance, action));
 }
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+/**
+ * relative 방식: 공격 스탯 기반 공격의 병력 보정. 내 병력과 상대 병력의 비율을 완만하게(exponent) 반영한다.
+ * 1000이 500을 치면 크게 유리하고, 1000과 900이면 거의 같다.
+ */
+export function relativeTroopFactor(balance: BalanceConfig, attackerTroops: number, defenderTroops: number): number {
+  const { min, max, exponent } = balance.troopFactor.relative ?? { min: 0.5, max: 1.5, exponent: 0.5 };
+  const ratio = Math.max(attackerTroops, 0) / Math.max(defenderTroops, 1);
+  return clamp(Math.pow(ratio, exponent), min, max);
+}
+
+/** relative 방식: 지력 기반 공격과 치유의 병력 보정. 상대는 보지 않고 내 최대 병력 대비 현재 병력만 본다. */
+export function selfTroopFactor(balance: BalanceConfig, troops: number, maxTroops: number): number {
+  const { min, max } = balance.troopFactor.self ?? { min: 0.3, max: 1 };
+  return clamp(troops / Math.max(maxTroops, 1), min, max);
+}

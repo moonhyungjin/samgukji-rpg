@@ -80,9 +80,10 @@ describe('Lab 상태', () => {
     expect(normalized.sim.autoRunIterations).toBe(state.sim.autoRunIterations);
   });
 
-  it('궁병 생존율 40%가 기본 목표로 켜져 있다', () => {
-    const { archer } = createDefaultState().targets.familySurvival;
-    expect(archer).toEqual({ enabled: true, target: 0.4, tolerance: 0.1 });
+  it('병종별 생존율 목표는 기본으로 모두 꺼져 있고, 켜면 쓸 값(궁병 40% ±10%p)은 남아 있다', () => {
+    const { familySurvival } = createDefaultState().targets;
+    for (const [family, spec] of Object.entries(familySurvival)) expect(spec.enabled, family).toBe(false);
+    expect(familySurvival.archer).toEqual({ enabled: false, target: 0.4, tolerance: 0.1 });
   });
 });
 
@@ -92,7 +93,9 @@ describe('목표 지표 점검', () => {
     BattleSimulator.run({ data: state.data, balance: state.balance, iterations: 300, seed: 1, lineups: 'random' });
 
   it('무작위 편성 결과는 모든 종류의 점검을 포함한다', () => {
-    const findings = evaluateReport(randomReport(), state.targets, state.data);
+    // 병종별 생존율 목표는 기본으로 꺼져 있으므로 이 시험에서는 궁병 목표를 켠다
+    const targets = { ...state.targets, familySurvival: { ...state.targets.familySurvival, archer: { enabled: true, target: 0.4, tolerance: 0.1 } } };
+    const findings = evaluateReport(randomReport(), targets, state.data);
     expect(findings.length).toBeGreaterThan(2);
     expect(findings.some((f) => f.message.includes('평균 전투 길이'))).toBe(true);
     expect(findings.some((f) => f.message.includes('궁병 생존율'))).toBe(true);

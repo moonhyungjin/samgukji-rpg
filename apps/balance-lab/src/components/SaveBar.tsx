@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useLab } from '../lab/LabContext';
 import { dataIssues } from '../lib/dataIssues';
+import { describeChanges } from '../lib/dataLog';
 import { FILE_LABEL, FILE_NAMES, changedFileNames, serializeFile } from '../lib/fileSync';
 import type { DataFiles, FileName } from '../lib/fileSync';
 
@@ -28,6 +29,7 @@ export function SaveBar() {
   const { state, update, baseline, setBaseline } = useLab();
   const [notice, setNotice] = useState<Notice | null>(readStoredNotice);
   const [saving, setSaving] = useState(false);
+  const [memo, setMemo] = useState('');
 
   const current: DataFiles = useMemo(() => ({ data: state.data, balance: state.balance, presets: state.presets }), [state.data, state.balance, state.presets]);
   const changed = useMemo(() => changedFileNames(baseline, current), [baseline, current]);
@@ -48,11 +50,14 @@ export function SaveBar() {
       /* 저장소를 못 써도 저장은 계속한다 */
     }
     try {
-      const body = Object.fromEntries(changed.map((name) => [name, JSON.parse(serializeFile(name, current))]));
+      const body: Record<string, unknown> = Object.fromEntries(changed.map((name) => [name, JSON.parse(serializeFile(name, current))]));
+      // 무엇이 어떻게 바뀌었는지 기록으로 남긴다 (data/changelog.md). 메모는 바꾼 이유를 적는 칸이다.
+      body.__log = describeChanges(baseline, current, memo, new Date()) ?? '';
       const response = await fetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const result = (await response.json().catch(() => ({}))) as { error?: string };
       if (!response.ok) throw new Error(result.error ?? `저장 실패 (${response.status})`);
       setBaseline(JSON.parse(JSON.stringify(current)) as DataFiles);
+      setMemo('');
       setNotice({ kind: 'ok', text: message });
     } catch (error) {
       try {
@@ -87,7 +92,15 @@ export function SaveBar() {
         <button type="button" disabled={!dirty} onClick={revert}>
           파일 값으로 되돌리기
         </button>
-        <span className="savebar-hint">고친 값은 "파일에 저장"을 눌러야 게임과 시뮬레이터에 반영됩니다. 저장 위치: packages/game-data/data/ ({FILE_NAMES.length}개 파일)</span>
+        <input
+          type="text"
+          className="savebar-memo"
+          aria-label="변경 메모"
+          placeholder="변경 메모 (선택): 왜 바꿨는지 적으면 기록에 남습니다"
+          value={memo}
+          onChange={(e) => setMemo(e.target.value)}
+        />
+        <span className="savebar-hint">고친 값은 "파일에 저장"을 눌러야 게임과 시뮬레이터에 반영됩니다. 저장 위치: packages/game-data/data/ ({FILE_NAMES.length}개 파일), 변경 기록: changelog.md</span>
       </div>
       {notice && <div className={`savemsg ${notice.kind}`}>{notice.text}</div>}
       {issues.all.length > 0 && (

@@ -846,3 +846,9 @@ tr.dead td {
 .saveissues .warning {
   color: var(--warn);
 }
+
+.savebar-memo {
+  flex: 1 1 260px;
+  min-width: 200px;
+  max-width: 460px;
+}

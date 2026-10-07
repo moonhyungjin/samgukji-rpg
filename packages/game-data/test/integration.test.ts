@@ -85,6 +85,15 @@ describe('게임 데이터 무결성', () => {
     expect(buffOf('strategist')?.type).toBe('stats');
     expect(buffOf('taoist')?.type).toBe('barrier');
     expect(characters.guoJia.unitType).toBe('taoist');
+    // 풍수사: 기본 공격은 활 공격(공격력 기반, 궁병보다 약하게), 치유만 지력 기반이고 아군만 치료한다
+    const geo = unitTypes.geomancer;
+    const geoAttack = skills[geo.basicSkillId];
+    expect(geoAttack.kind).toBe('attack');
+    expect(geoAttack.scalesWith).toBe('attack');
+    expect(geoAttack.power).toBeLessThan(skills[unitTypes.archer.basicSkillId].power);
+    expect(geoAttack.counterable).toBe(false); // 원거리라 반격을 받지 않는다
+    const geoHeal = geo.extraSkillIds.map((id) => skills[id]).find((s) => s.kind === 'heal');
+    expect(geoHeal?.scalesWith).toBe('intellect');
     for (const c of Object.values(characters)) {
       expect(maxApOf(c), `${c.name} 총 AP`).toBeGreaterThanOrEqual(1);
       expect(maxApOf(c), `${c.name} 총 AP`).toBeLessThanOrEqual(8);

@@ -6,7 +6,7 @@ export function BalanceTab() {
     <div className="grid">
       <section className="panel">
         <h3>피해 공식</h3>
-        <p className="note">피해 = 공격 스탯 × 공격 계수 × 스킬 계수 × 특성 × 병력 보정 × 사기 보정 ÷ (1 + 방어 × 방어 계수)</p>
+        <p className="note">피해 = 기준 스탯(공격 또는 지력) × 공격 계수 × 스킬 계수 × 대상 열 배수 × 병력 보정 × 사기 보정 × 가드 배수 × 받는 피해 배수(물리/책략) ÷ (1 + 방어(책략은 지력) × 방어 계수). 방어 무시가 있으면 방어에서 뺀다. 병종 특성은 지금 쓰지 않는다.</p>
         <NumberField label="공격 계수 (attackScale)" path="balance.damage.attackScale" step={1} min={0} />
         <NumberField label="방어 계수 (defenseScale)" path="balance.damage.defenseScale" step={0.01} min={0} />
         <NumberField label="지력 저항 계수 (resistScale)" path="balance.damage.resistScale" step={0.01} min={0} />
@@ -19,9 +19,26 @@ export function BalanceTab() {
         <h3>병력</h3>
         <NumberField label="Lv1 최대 병력" path="balance.troops.base" step={10} min={1} />
         <NumberField label="레벨당 병력 증가" path="balance.troops.perLevel" step={5} min={0} />
-        <NumberField label="병력 보정 기준 병력" path="balance.troopFactor.reference" step={50} min={1} hint="현재 병력 ÷ 이 값이 보정이 된다" />
-        <NumberField label="병력 보정 하한" path="balance.troopFactor.min" step={0.05} min={0} />
-        <NumberField label="병력 보정 상한" path="balance.troopFactor.max" step={0.05} min={0} />
+        <SelectField
+          label="병력 보정 방식"
+          path="balance.troopFactor.mode"
+          options={[
+            { value: 'absolute', label: '기존: 모든 병종 같은 기준 병력(1000)' },
+            { value: 'relative', label: '상대 비교: 공격력 기반은 상대 병력과 비교, 지력 기반은 내 최대 병력 대비' },
+          ]}
+        />
+        <CheckField label="병종 병력 배율은 피해에 영향을 주지 않는다 (환산 병력)" path="balance.troopFactor.normalizeByScale" />
+        <p className="note">병종의 병력 배율은 징병 비용 때문에 모이는 병력이 적다는 뜻입니다. 켜면 병력 보정에 쓰는 병력을 병력 배율로 나눈 값(환산 병력)으로 세어서, 최대 병력이 800인 병종도 가득 차면 1000인 병종과 같은 세기로 때립니다. 레벨 차이로 생기는 병력 차이는 그대로 반영됩니다.</p>
+        <p className="note">기존 방식: 보정 = 현재 병력 ÷ 기준 병력 (하한~상한). 병종마다 최대 병력이 달라도 같은 기준을 써서 최대 병력이 800인 병종은 가득 차도 0.8입니다.</p>
+        <NumberField label="[기존] 병력 보정 기준 병력" path="balance.troopFactor.reference" step={50} min={1} hint="현재 병력 ÷ 이 값이 보정이 된다" />
+        <NumberField label="[기존] 병력 보정 하한" path="balance.troopFactor.min" step={0.05} min={0} />
+        <NumberField label="[기존] 병력 보정 상한" path="balance.troopFactor.max" step={0.05} min={0} />
+        <p className="note">상대 비교 방식: 공격력 기반(일반공격/돌격/화살/풍수사 활)은 (내 병력 ÷ 상대 병력)의 거듭제곱, 지력 기반(책략/독연/치유)은 상대와 무관하게 내 최대 병력 대비 현재 병력입니다.</p>
+        <NumberField label="[상대 비교] 하한" path="balance.troopFactor.relative.min" step={0.05} min={0} hint="약한 쪽이 얼마까지 약해지는가" />
+        <NumberField label="[상대 비교] 상한" path="balance.troopFactor.relative.max" step={0.05} min={0} hint="큰 쪽의 이점이 어디서 멈추는가" />
+        <NumberField label="[상대 비교] 지수" path="balance.troopFactor.relative.exponent" step={0.05} min={0} hint="0.5면 완만(제곱근), 1이면 병력 비율 그대로" />
+        <NumberField label="[지력 기반] 하한" path="balance.troopFactor.self.min" step={0.05} min={0} hint="내 병력이 거의 없을 때의 최소 보정" />
+        <NumberField label="[지력 기반] 상한" path="balance.troopFactor.self.max" step={0.05} min={0} hint="1이면 병력이 가득 찼을 때가 최대" />
       </section>
 
       <section className="panel">

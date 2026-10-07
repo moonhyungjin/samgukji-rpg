@@ -94,8 +94,8 @@
     "troopScale": 0.8,
     "baseAp": 2,
     "damageTakenByType": {
-      "physical": 0.855,
-      "magic": 0.99
+      "physical": 0.9,
+      "magic": 1.1
     },
     "damageDealtByRow": {
       "front": 1,
@@ -227,7 +227,7 @@
     "range": 3,
     "canCounter": false,
     "counterRate": 0.5,
-    "basicSkillId": "infantry-attack",
+    "basicSkillId": "geomancer-shot",
     "extraSkillIds": [
       "heal"
     ],

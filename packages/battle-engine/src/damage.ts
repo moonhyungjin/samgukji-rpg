@@ -1,4 +1,4 @@
-import { effectiveStat, moraleMultiplier, troopFactor } from './stats';
+import { effectiveStat, moraleMultiplier, relativeTroopFactor, selfTroopFactor, troopFactor } from './stats';
 import type { BalanceConfig, CharacterState, GameData, SkillData, TraitData } from './types';
 
 function traitApplies(trait: TraitData, other: CharacterState): boolean {
@@ -39,6 +39,28 @@ export class DamageCalculator {
     return multiplier;
   }
 
+  /**
+   * 병력 보정. absolute(기본)는 모든 병종에 같은 기준 병력을 쓴다.
+   * relative는 공격 스탯 기반 공격이면 상대 병력과 비교하고, 지력 기반 공격이면 내 최대 병력 대비 현재 병력만 본다.
+   */
+  troopMultiplier(attacker: CharacterState, defender: CharacterState, physical: boolean): number {
+    const b = this.balance;
+    if ((b.troopFactor.mode ?? 'absolute') === 'relative') {
+      return physical ? relativeTroopFactor(b, this.strength(attacker), this.strength(defender)) : selfTroopFactor(b, attacker.troops, attacker.maxTroops);
+    }
+    return troopFactor(b, this.strength(attacker));
+  }
+
+  /**
+   * 병력 보정에 쓰는 병력. 기본은 병종 병력 배율로 나눈 "환산 병력"이다 (징병 비용 때문에 병력이 적은 병종이 피해까지 약해지지 않도록).
+   * balance.troopFactor.normalizeByScale가 false이면 실제 병력 수다.
+   */
+  strength(unit: CharacterState): number {
+    if (this.balance.troopFactor.normalizeByScale === false) return unit.troops;
+    const scale = this.data.unitTypes[unit.unitType]?.troopScale ?? 1;
+    return unit.troops / (scale > 0 ? scale : 1);
+  }
+
   /** 공격자 병종의 "대상 열에 따른 주는 피해" 보정 */
   rowMultiplier(attacker: CharacterState, defender: CharacterState): number {
     const by = this.data.unitTypes[attacker.unitType]?.damageDealtByRow;
@@ -75,7 +97,7 @@ export class DamageCalculator {
       base *
       this.traitMultiplier(attacker, defender) *
       this.rowMultiplier(attacker, defender) *
-      troopFactor(b, attacker.troops) *
+      this.troopMultiplier(attacker, defender, physical) *
       this.guardMultiplier(defender) *
       this.typeMultiplier(defender, physical) *
       moraleMultiplier(b, attackerMoraleShare) *
@@ -99,6 +121,8 @@ export class DamageCalculator {
   heal(healer: CharacterState, skill: SkillData): number {
     const b = this.balance;
     const base = effectiveStat(b, healer.stats.intellect) * b.heal.scale * skill.power;
-    return Math.round(b.heal.useTroopFactor ? base * troopFactor(b, healer.troops) : base);
+    if (!b.heal.useTroopFactor) return Math.round(base);
+    const factor = (b.troopFactor.mode ?? 'absolute') === 'relative' ? selfTroopFactor(b, healer.troops, healer.maxTroops) : troopFactor(b, this.strength(healer));
+    return Math.round(base * factor);
   }
 }

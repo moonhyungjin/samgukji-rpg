@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyStatMods, apFromAction, createRng, totalAp, deriveSeed, effectiveStat, maxTroops, moraleMultiplier, troopFactor } from '../src';
+import { applyStatMods, apFromAction, createRng, relativeTroopFactor, selfTroopFactor, totalAp, deriveSeed, effectiveStat, maxTroops, moraleMultiplier, troopFactor } from '../src';
 import { testBalance } from './fixtures';
 
 describe('rng', () => {
@@ -106,5 +106,47 @@ describe('행동력 → 추가 AP (apFromAction), 총 AP (totalAp)', () => {
     expect(totalAp(testBalance, 2, 3)).toBe(4); // 방패병 기본 2 + 행동력 3(+2)
     expect(totalAp(testBalance, undefined, 6)).toBe(3);
     expect(totalAp(testBalance, 0, 0)).toBe(1);
+  });
+});
+
+describe('병력 보정: 상대 비교 방식 (relativeTroopFactor)', () => {
+  const rel = (mine: number, theirs: number) => relativeTroopFactor(testBalance, mine, theirs);
+
+  it('같은 병력이면 1이고, 큰 쪽이 유리하며, 차이가 작으면 거의 같다 (제곱근)', () => {
+    expect(rel(800, 800)).toBe(1);
+    expect(rel(1000, 500)).toBeCloseTo(Math.SQRT2, 5); // 1.41
+    expect(rel(1000, 900)).toBeCloseTo(Math.sqrt(1000 / 900), 5); // 1.05
+    expect(rel(500, 1000)).toBeCloseTo(Math.sqrt(0.5), 5); // 0.71
+  });
+
+  it('하한과 상한으로 제한된다 (기본 0.5 ~ 1.5)', () => {
+    expect(rel(100, 1000)).toBe(0.5);
+    expect(rel(1000, 100)).toBe(1.5);
+  });
+
+  it('balance.troopFactor.relative로 하한, 상한, 지수를 바꿀 수 있다', () => {
+    const b = { ...testBalance, troopFactor: { ...testBalance.troopFactor, relative: { min: 0.2, max: 3, exponent: 1 } } };
+    expect(relativeTroopFactor(b, 1000, 500)).toBe(2);
+    expect(relativeTroopFactor(b, 100, 1000)).toBeCloseTo(0.2, 5);
+    expect(relativeTroopFactor(b, 1000, 100)).toBe(3);
+  });
+
+  it('상대 병력이 0이어도 계산이 깨지지 않는다', () => {
+    expect(Number.isFinite(rel(500, 0))).toBe(true);
+  });
+});
+
+describe('병력 보정: 지력 기반 (selfTroopFactor)', () => {
+  const self = (troops: number, max: number) => selfTroopFactor(testBalance, troops, max);
+
+  it('내 최대 병력 대비 현재 병력이다: 병종마다 최대가 달라도 가득 찬 상태는 1', () => {
+    expect(self(800, 800)).toBe(1);
+    expect(self(1000, 1000)).toBe(1);
+    expect(self(400, 800)).toBe(0.5);
+  });
+
+  it('하한 0.3, 상한 1', () => {
+    expect(self(10, 800)).toBe(0.3);
+    expect(self(2000, 800)).toBe(1);
   });
 });

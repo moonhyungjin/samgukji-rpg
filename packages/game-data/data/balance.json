@@ -19,13 +19,13 @@
     "cap": 10
   },
   "damage": {
-    "attackScale": 47,
+    "attackScale": 60,
     "defenseScale": 0.1,
     "resistScale": 0.1,
     "minDamage": 1
   },
   "heal": {
-    "scale": 47,
+    "scale": 45,
     "useTroopFactor": false
   },
   "troops": {
@@ -35,7 +35,18 @@
   "troopFactor": {
     "reference": 1000,
     "min": 0.3,
-    "max": 1.75
+    "max": 1.75,
+    "mode": "absolute",
+    "normalizeByScale": true,
+    "relative": {
+      "min": 0.5,
+      "max": 1.5,
+      "exponent": 0.5
+    },
+    "self": {
+      "min": 0.3,
+      "max": 1
+    }
   },
   "counter": {
     "rate": 0.5

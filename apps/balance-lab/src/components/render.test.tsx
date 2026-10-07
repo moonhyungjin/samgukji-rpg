@@ -35,6 +35,8 @@ describe('Balance Lab 화면 렌더링', () => {
     // 행동력 → AP 설정
     expect(html).toContain('행동력 → AP');
     expect(html).toContain('행동력 몇 마다 AP 1');
+    // 병력 보정 방식 선택과 상대 비교 설정
+    for (const label of ['병력 보정 방식', '[상대 비교] 하한', '[상대 비교] 상한', '[상대 비교] 지수', '[지력 기반] 하한', '[지력 기반] 상한']) expect(html).toContain(label);
   });
 
   it('병종 · 스킬 탭에 병종 카드와 스킬 표가 보인다', () => {

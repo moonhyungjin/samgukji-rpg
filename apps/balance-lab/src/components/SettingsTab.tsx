@@ -67,7 +67,7 @@ export function SettingsTab() {
 
       <section className="panel">
         <h3>병종별 생존율 목표</h3>
-        <p className="note">첫 목표는 궁병 생존율 40% (±10%p)입니다.</p>
+        <p className="note">지금은 모두 꺼 두었습니다. 승급 병종과 새 커맨드가 들어오면 판도가 달라지므로 병종별 생존율을 맞추지 않습니다. 필요하면 "사용"을 켜세요 (예: 궁병 40% ±10%p).</p>
         <table>
           <thead>
             <tr>

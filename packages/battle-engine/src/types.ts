@@ -143,6 +143,8 @@ export interface GameData {
   characters: Record<string, CharacterData>;
 }
 
+export type TroopFactorMode = 'absolute' | 'relative';
+
 export interface BalanceConfig {
   /** 총 전투 턴 한도 (교착 방지용 안전장치) */
   maxTurns: number;
@@ -167,7 +169,28 @@ export interface BalanceConfig {
   };
   troops: { base: number; perLevel: number };
   /** 병력 → 피해 보정: clamp(현재 병력 / reference, min, max) */
-  troopFactor: { reference: number; min: number; max: number };
+  /**
+   * 병력 → 피해 보정.
+   * absolute(기본): clamp(현재 병력 / reference, min, max) — 모든 병종에 같은 기준(reference)을 쓴다.
+   * relative: 공격 스탯 기반 공격은 내 병력과 상대 병력을 비교하고(relative), 지력 기반 공격은 상대와 무관하게
+   *   내 최대 병력 대비 현재 병력만 본다(self). 병종마다 최대 병력이 달라도 가득 찬 상태가 1.0이다.
+   */
+  troopFactor: {
+    reference: number;
+    min: number;
+    max: number;
+    mode?: TroopFactorMode;
+    /**
+     * true(기본)이면 병력 보정에 쓰는 병력을 병종 병력 배율(troopScale)로 나눈 "환산 병력"으로 센다.
+     * 병력 배율은 징병 비용 때문에 모이는 병력이 적다는 뜻일 뿐이라서, 최대 병력이 800인 병종도 가득 차 있으면 1000인 병종과 같은 세기로 때린다.
+     * 레벨 차이로 생기는 병력 차이는 그대로 반영된다. false이면 실제 병력 수만 본다.
+     */
+    normalizeByScale?: boolean;
+    /** relative 방식, 공격 스탯 기반 공격: clamp((내 병력 / 상대 병력) ^ exponent, min, max) */
+    relative?: { min: number; max: number; exponent: number };
+    /** relative 방식, 지력 기반 공격과 치유: clamp(현재 병력 / 최대 병력, min, max) */
+    self?: { min: number; max: number };
+  };
   /** 반격 피해 = 반격자의 일반공격 피해 × rate */
   counter: { rate: number };
   morale: {

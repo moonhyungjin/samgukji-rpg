@@ -33,6 +33,17 @@
     "ignoreDefense": 0
   },
   {
+    "id": "geomancer-shot",
+    "name": "활 공격",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 0.6,
+    "apCost": 1,
+    "counterable": false,
+    "guardable": true,
+    "ignoreDefense": 0
+  },
+  {
     "id": "stratagem",
     "name": "책략",
     "kind": "attack",
