@@ -22,6 +22,25 @@ describe('게임 데이터 무결성', () => {
     for (const f of FAMILIES) expect(families.has(f), f).toBe(true);
   });
 
+  it('가드 설정과 가드 스킬은 서로 짝이 맞는다', () => {
+    for (const u of Object.values(gameData.unitTypes)) {
+      const hasGuardSkill = [u.basicSkillId, ...u.extraSkillIds].some((id) => gameData.skills[id]?.kind === 'guard');
+      expect(hasGuardSkill, `${u.id}: guard 설정과 guard 스킬`).toBe(u.guard !== undefined);
+    }
+  });
+
+  it('확정한 병종 설정: 병력 배율, 보병의 가드, 기병은 전열만 공격, 곽가는 도사', () => {
+    const { unitTypes, characters } = gameData;
+    expect(unitTypes.geomancer.troopScale).toBe(0.6);
+    expect(unitTypes.strategist.troopScale).toBe(0.8);
+    expect(unitTypes.cavalry.troopScale).toBe(0.8);
+    expect(unitTypes.infantry.troopScale).toBe(1);
+    expect(unitTypes.infantry.guard).toEqual({ start: 50, gain: 70, decay: 40 });
+    expect(unitTypes.infantry.extraSkillIds).toContain('guard');
+    expect(unitTypes.cavalry.targetRule).toBe('front-first');
+    expect(characters.guoJia.unitType).toBe('taoist');
+  });
+
   it('기본 편성은 전열 3 + 후열 3이다', () => {
     for (const lineup of Object.values(presets)) {
       expect(lineup.filter((e) => e.row === 'front')).toHaveLength(3);
@@ -46,9 +65,13 @@ describe('실제 데이터로 6 vs 6', () => {
     expect(report.averageRounds).toBeGreaterThan(0);
   });
 
-  it('무작위 편성 1,000회에서 모든 병종 계열의 통계가 나온다', () => {
+  it('무작위 편성 1,000회에서 캐릭터가 있는 모든 병종 계열의 통계가 나온다', () => {
     const report = BattleSimulator.run({ data: gameData, balance: defaultBalance, iterations: 1000, seed: 1, lineups: 'random' });
-    for (const f of FAMILIES) expect(report.familyStats[f]?.fielded, f).toBeGreaterThan(0);
+    for (const f of FAMILIES) {
+      const hasCharacter = Object.values(gameData.characters).some((c) => gameData.unitTypes[c.unitType].family === f);
+      // 풍수사처럼 병종은 있어도 캐릭터가 없으면 전투에 나오지 않는다
+      expect(report.familyStats[f] !== undefined, f).toBe(hasCharacter);
+    }
   });
 });
 

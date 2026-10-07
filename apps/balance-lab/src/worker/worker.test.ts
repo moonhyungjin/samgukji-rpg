@@ -22,6 +22,7 @@ describe('시뮬레이션 워커', () => {
     roles: 'alternate',
     lineups: 'fixed',
     targetPolicy: 'lowest-troops',
+    guardMode: 'protect',
     ...overrides,
   });
 

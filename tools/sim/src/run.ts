@@ -3,12 +3,13 @@
 //   npm run sim -- --balance my-balance.json     (defaultBalance에 부분 덮어쓰기)
 //   npm run sim -- --target-policy lowest-troops (highest-damage(기본) | lowest-troops | random)
 //   npm run sim -- --lineups random              (fixed | random: 전투마다 무작위 편성, 병종/캐릭터별 승률 확인용)
+//   npm run sim -- --guard-policy never          (protect(기본) | never: 가드를 쓸 수 있는 군단의 AI)
 //   npm run sim -- --team-a shu --team-b wei     (src/presets.ts의 편성 이름)
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { BattleSimulator, createDefaultPolicy } from '@samgukji/battle-engine';
-import type { BalanceConfig, LineupMode, RoleMode, TargetPolicy } from '@samgukji/battle-engine';
+import type { BalanceConfig, GuardMode, LineupMode, RoleMode, TargetPolicy } from '@samgukji/battle-engine';
 import { defaultBalance, gameData, presets } from '@samgukji/game-data';
 
 const args = process.argv.slice(2);
@@ -57,7 +58,12 @@ if (!['lowest-troops', 'highest-damage', 'random'].includes(targetPolicy)) {
   console.error(`Unknown --target-policy value: ${targetPolicy}`);
   process.exit(1);
 }
-const policy = createDefaultPolicy({ targetPolicy });
+const guardMode = (opt('guard-policy') ?? 'protect') as GuardMode;
+if (!['protect', 'never'].includes(guardMode)) {
+  console.error(`Unknown --guard-policy value: ${guardMode}`);
+  process.exit(1);
+}
+const policy = createDefaultPolicy({ targetPolicy, guardMode });
 
 const started = performance.now();
 const lineups = (opt('lineups') ?? 'fixed') as LineupMode;

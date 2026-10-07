@@ -41,6 +41,8 @@ export interface CharacterReport {
   averageKills: number;
   averageHealing: number;
   averageActions: number;
+  /** 가드로 대신 맞은 평균 횟수 */
+  averageBlocks: number;
 }
 
 export interface FamilyReport {
@@ -91,6 +93,7 @@ interface UnitAcc {
   kills: number;
   healing: number;
   actions: number;
+  blocks: number;
 }
 
 const round4 = (n: number) => Math.round(n * 10000) / 10000;
@@ -169,6 +172,7 @@ export class BattleSimulator {
             kills: 0,
             healing: 0,
             actions: 0,
+            blocks: 0,
           };
           units.set(key, acc);
         }
@@ -180,6 +184,7 @@ export class BattleSimulator {
         acc.kills += u.kills;
         acc.healing += u.healing;
         acc.actions += u.actions;
+        acc.blocks += u.blocks;
       }
 
       for (const [id, s] of Object.entries(result.skillStats)) {
@@ -206,6 +211,7 @@ export class BattleSimulator {
         averageKills: round4(a.kills / a.fielded),
         averageHealing: round4(a.healing / a.fielded),
         averageActions: round4(a.actions / a.fielded),
+        averageBlocks: round4(a.blocks / a.fielded),
       };
       const f = familyAcc.get(a.family) ?? { ...a, fielded: 0, teamWins: 0, survived: 0, damageDealt: 0, damageTaken: 0 };
       f.fielded += a.fielded;

@@ -15,7 +15,7 @@ self.onmessage = (event: MessageEvent<SimRequest>) => {
       seed: req.seed,
       roles: req.roles,
       lineups: req.lineups,
-      policy: createDefaultPolicy({ targetPolicy: req.targetPolicy }),
+      policy: createDefaultPolicy({ targetPolicy: req.targetPolicy, guardMode: req.guardMode }),
     });
     const response: SimResponse = { id: req.id, report, elapsedMs: performance.now() - started };
     self.postMessage(response);

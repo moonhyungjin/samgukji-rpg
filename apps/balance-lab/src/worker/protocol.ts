@@ -1,4 +1,4 @@
-import type { BalanceConfig, GameData, LineupEntry, LineupMode, RoleMode, SimulationReport, TargetPolicy } from '@samgukji/battle-engine';
+import type { BalanceConfig, GameData, GuardMode, LineupEntry, LineupMode, RoleMode, SimulationReport, TargetPolicy } from '@samgukji/battle-engine';
 
 export interface SimRequest {
   id: number;
@@ -11,6 +11,7 @@ export interface SimRequest {
   roles: RoleMode;
   lineups: LineupMode;
   targetPolicy: TargetPolicy;
+  guardMode: GuardMode;
 }
 
 export interface SimResponse {

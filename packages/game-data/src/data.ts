@@ -13,23 +13,33 @@ const traitList: TraitData[] = [
 // 상태이상(화상/독/젖음), 가드, 필살기는 아직 구현하지 않았다. 책략/독연은 피해만 준다.
 
 const skillList: SkillData[] = [
-  { id: 'infantry-attack', name: '공격', kind: 'attack', scalesWith: 'attack', power: 1.0, apCost: 1, counterable: true },
-  { id: 'cavalry-charge', name: '돌격', kind: 'attack', scalesWith: 'attack', power: 1.1, apCost: 1, counterable: true },
-  { id: 'archer-shot', name: '화살 공격', kind: 'attack', scalesWith: 'attack', power: 1.0, apCost: 1, counterable: false },
+  // guardable: 같은 열의 가드 유닛이 대신 맞을 수 있는 공격 (단일 대상 물리 공격). 책략/독연은 막지 못한다.
+  { id: 'infantry-attack', name: '공격', kind: 'attack', scalesWith: 'attack', power: 1.0, apCost: 1, counterable: true, guardable: true },
+  { id: 'cavalry-charge', name: '돌격', kind: 'attack', scalesWith: 'attack', power: 1.1, apCost: 1, counterable: true, guardable: true },
+  { id: 'archer-shot', name: '화살 공격', kind: 'attack', scalesWith: 'attack', power: 1.0, apCost: 1, counterable: false, guardable: true },
   { id: 'stratagem', name: '책략', kind: 'attack', scalesWith: 'intellect', power: 0.8, apCost: 1, counterable: false },
   { id: 'poison-smoke', name: '독연', kind: 'attack', scalesWith: 'intellect', power: 0.8, apCost: 1, counterable: false },
   { id: 'heal', name: '치유', kind: 'heal', scalesWith: 'intellect', power: 0.8, apCost: 1, counterable: false },
+  // 가드: 같은 열 아군을 대신 맞아줄 확률을 올린다. 막기만 하거나 공격만 해야 한다 (공격하면 해제).
+  { id: 'guard', name: '가드', kind: 'guard', scalesWith: 'attack', power: 0, apCost: 1, counterable: false },
 ];
 
 // ---------- 1차 병종 6계열 ----------
+// troopScale: 같은 징병 비용으로 모이는 병력의 비율. 기병·책사는 병력이 비싸서 0.8, 풍수사는 0.6.
+// 보병은 처음부터 가드를 쓴다 (시작 50%p, 가드 +70%p, 막을 때마다 -40%p).
+// 기병은 일단 전열만 공격한다 (targetRule: front-first). 후열 저격은 나중에 승급 병종(경기병 등)이나 스킬로 다시 정한다.
 
 const unitTypeList: UnitTypeData[] = [
-  { id: 'infantry', name: '보병', family: 'infantry', tier: 1, allowedRows: ['front'], targetRule: 'front-first', canCounter: true, basicSkillId: 'infantry-attack', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 1 },
-  { id: 'cavalry', name: '기병', family: 'cavalry', tier: 1, allowedRows: ['front'], targetRule: 'any', canCounter: true, basicSkillId: 'cavalry-charge', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 1 },
+  {
+    id: 'infantry', name: '보병', family: 'infantry', tier: 1, allowedRows: ['front'], targetRule: 'front-first', canCounter: true,
+    basicSkillId: 'infantry-attack', extraSkillIds: ['guard'], promotesTo: [], traitIds: [], troopScale: 1,
+    guard: { start: 50, gain: 70, decay: 40 },
+  },
+  { id: 'cavalry', name: '기병', family: 'cavalry', tier: 1, allowedRows: ['front'], targetRule: 'front-first', canCounter: true, basicSkillId: 'cavalry-charge', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 0.8 },
   { id: 'archer', name: '궁병', family: 'archer', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: true, basicSkillId: 'archer-shot', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 1 },
-  { id: 'strategist', name: '책사', family: 'strategist', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, basicSkillId: 'stratagem', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 1 },
+  { id: 'strategist', name: '책사', family: 'strategist', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, basicSkillId: 'stratagem', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 0.8 },
   { id: 'taoist', name: '도사', family: 'taoist', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, basicSkillId: 'poison-smoke', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 1 },
-  { id: 'geomancer', name: '풍수사', family: 'geomancer', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, basicSkillId: 'heal', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 1 },
+  { id: 'geomancer', name: '풍수사', family: 'geomancer', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, basicSkillId: 'heal', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 0.6 },
 ];
 
 // ---------- 캐릭터 (이름만 삼국지, 수치는 모두 임시) ----------
@@ -58,7 +68,7 @@ const characterList: CharacterData[] = [
   { id: 'zhangLiao', name: '장료', unitType: 'cavalry', stats: s(8, 6, 5, 8), ap: 4, level: 15 },
   { id: 'xiahouYuan', name: '하후연', unitType: 'archer', stats: s(8, 5, 5, 8), ap: 3, level: 15 },
   { id: 'xunYu', name: '순욱', unitType: 'strategist', stats: s(2, 3, 9, 5), ap: 4, level: 15 },
-  { id: 'guoJia', name: '곽가', unitType: 'geomancer', stats: s(1, 3, 10, 6), ap: 5, level: 15 },
+  { id: 'guoJia', name: '곽가', unitType: 'taoist', stats: s(1, 3, 10, 6), ap: 5, level: 15 },
 ];
 
 const toRecord = <T extends { id: string }>(list: T[]): Record<string, T> => Object.fromEntries(list.map((x) => [x.id, x]));

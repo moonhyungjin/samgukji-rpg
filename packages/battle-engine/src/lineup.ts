@@ -64,6 +64,7 @@ export function buildUnits(side: Side, lineup: LineupEntry[], data: GameData, ba
       troops: max,
       ap: character.ap,
       maxAp: character.ap,
+      guardRate: unitType.guard?.start ?? 0,
       isDead: false,
     };
   });

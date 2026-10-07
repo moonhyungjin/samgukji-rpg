@@ -134,6 +134,7 @@ export function ReportView({ report, baseline, baselineLabel, findings, elapsedM
               <th>킬</th>
               <th>회복</th>
               <th>행동</th>
+              <th>막음</th>
             </tr>
           </thead>
           <tbody>
@@ -153,6 +154,7 @@ export function ReportView({ report, baseline, baselineLabel, findings, elapsedM
                 <td>{num(c.averageKills, 2)}</td>
                 <td>{num(c.averageHealing)}</td>
                 <td>{num(c.averageActions, 2)}</td>
+                <td>{num(c.averageBlocks, 2)}</td>
               </tr>
             ))}
           </tbody>

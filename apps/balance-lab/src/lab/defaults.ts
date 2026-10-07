@@ -25,6 +25,7 @@ export function createDefaultState(): LabState {
       roles: 'alternate',
       lineups: 'random',
       targetPolicy: 'highest-damage',
+      guardMode: 'protect',
       autoRun: true,
       autoRunIterations: 1000,
     },

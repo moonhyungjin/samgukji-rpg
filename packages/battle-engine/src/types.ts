@@ -11,7 +11,7 @@ export type Stats = Record<StatKey, number>;
 
 /** 적 대상 선택 규칙. front-first: 전열이 남아 있으면 전열만, any: 전열/후열 모두 */
 export type TargetRule = 'front-first' | 'any';
-export type SkillKind = 'attack' | 'heal';
+export type SkillKind = 'attack' | 'heal' | 'guard';
 
 // ---------- 정적 데이터 ----------
 
@@ -25,6 +25,24 @@ export interface SkillData {
   apCost: number;
   /** true이면 이 공격에 대해 대상이 반격 피해를 줄 수 있다 (근접 일반공격 등) */
   counterable: boolean;
+  /**
+   * true이면 대상과 같은 열의 가드 유닛이 대신 맞을 수 있다 (단일 대상 물리 공격).
+   * 책략처럼 막을 수 없는 공격은 false. 생략하면 false.
+   */
+  guardable?: boolean;
+}
+
+/**
+ * 가드(방패) 설정. 가드 확률은 "같은 열 아군을 대신 맞아줄 확률"이며 %p 단위로 쌓고 100을 넘을 수 있다.
+ * 막을 때마다 decay만큼 줄고, 그 유닛이 공격하면 0이 된다.
+ */
+export interface GuardConfig {
+  /** 전투 시작 시 가드 확률 */
+  start: number;
+  /** 가드 커맨드 한 번에 오르는 확률 */
+  gain: number;
+  /** 한 번 막을 때 줄어드는 확률 */
+  decay: number;
 }
 
 /**
@@ -61,6 +79,8 @@ export interface UnitTypeData {
    * 예: 보병 1, 풍수사 0.5 → 같은 레벨에서 풍수사의 최대 병력이 절반이다.
    */
   troopScale?: number;
+  /** 가드를 쓸 수 있는 병종 (스킬 목록에 kind: 'guard' 스킬도 있어야 한다) */
+  guard?: GuardConfig;
 }
 
 export interface CharacterData {
@@ -144,6 +164,8 @@ export interface CharacterState {
   troops: number;
   ap: number;
   maxAp: number;
+  /** 같은 열 아군을 대신 맞아줄 확률 (%p). 가드를 못 쓰는 병종은 항상 0 */
+  guardRate: number;
   isDead: boolean;
 }
 
@@ -174,6 +196,10 @@ export type BattleEvent =
   | { type: 'heal'; round: number; source: string; target: string; amount: number; troopsAfter: number }
   | { type: 'unitDestroyed'; round: number; unit: string; by: string }
   | { type: 'rowAdvance'; round: number; side: Side; units: string[] }
+  /** 가드 유닛이 원래 대상 대신 맞는다. 이 이벤트 다음의 damage는 guardian이 받는다 */
+  | { type: 'intercept'; round: number; attacker: string; target: string; guardian: string }
+  /** 가드 확률이 바뀌었다. raise: 가드 커맨드, block: 막은 뒤 감소, reset: 공격해서 해제 */
+  | { type: 'guardChange'; round: number; unit: string; rate: number; reason: 'raise' | 'block' | 'reset' }
   | { type: 'morale'; round: number; defenderMorale: number }
   | { type: 'battleEnd'; winner: Side; endCause: EndCause; decidedBy: DecidedBy; rounds: number };
 
@@ -193,6 +219,8 @@ export interface UnitReport {
   kills: number;
   healing: number;
   actions: number;
+  /** 가드로 대신 맞은 횟수 */
+  blocks: number;
 }
 
 export interface SkillStat {

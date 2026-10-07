@@ -14,11 +14,19 @@ export function formatBattleLog(result: BattleResult, data: GameData): string[] 
         lines.push(`── 라운드 ${e.round} ──`);
         break;
       case 'action':
-        lines.push(
-          e.skillId === 'wait'
-            ? `${name(e.actor)} 대기`
-            : `${name(e.actor)} → ${data.skills[e.skillId]?.name ?? e.skillId} → ${e.target ? name(e.target) : '-'}  (AP ${e.apAfter} 남음)`,
-        );
+        if (e.skillId === 'wait') {
+          lines.push(`${name(e.actor)} 대기`);
+        } else {
+          const skill = data.skills[e.skillId]?.name ?? e.skillId;
+          const self = !e.target || e.target === e.actor; // 가드처럼 자기 자신에게 쓰는 스킬
+          lines.push(`${name(e.actor)} → ${skill}${self ? '' : ` → ${name(e.target!)}`}  (AP ${e.apAfter} 남음)`);
+        }
+        break;
+      case 'intercept':
+        lines.push(`    방패 ${name(e.guardian)} → ${name(e.target)} 대신 맞음`);
+        break;
+      case 'guardChange':
+        lines.push(e.reason === 'reset' ? `    ${name(e.unit)} 가드 해제 (공격)` : `    ${name(e.unit)} 가드 확률 ${e.rate}%`);
         break;
       case 'damage':
         lines.push(`    ${e.kind === 'counter' ? '반격' : '피해'} ${e.amount} → ${name(e.target)} 병력 ${e.troopsAfter}`);

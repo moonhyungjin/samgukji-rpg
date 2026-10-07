@@ -29,6 +29,22 @@ export function DataTab() {
       };
     });
 
+  /** 병종의 가드를 켜고 끈다. 켜면 가드 스킬(kind: guard)도 병종의 스킬 목록에 넣는다. */
+  const toggleGuard = (typeId: string, on: boolean) =>
+    update((s) => {
+      const guardSkill = Object.values(s.data.skills).find((k) => k.kind === 'guard');
+      const type = s.data.unitTypes[typeId];
+      const extra = type.extraSkillIds.filter((id) => s.data.skills[id]?.kind !== 'guard');
+      let next;
+      if (on) {
+        next = { ...type, guard: type.guard ?? { start: 50, gain: 70, decay: 40 }, extraSkillIds: guardSkill ? [...extra, guardSkill.id] : extra };
+      } else {
+        const { guard: _removed, ...rest } = type;
+        next = { ...rest, extraSkillIds: extra };
+      }
+      return { ...s, data: { ...s.data, unitTypes: { ...s.data.unitTypes, [typeId]: next } } };
+    });
+
   const removeTrait = (id: string) =>
     update((s) => {
       const { [id]: _removed, ...traits } = s.data.traits;
@@ -111,6 +127,7 @@ export function DataTab() {
               <th>반격</th>
               <th>일반공격</th>
               <th>특성</th>
+              <th>가드 (시작 / 상승 / 감소, %p)</th>
             </tr>
           </thead>
           <tbody>
@@ -143,6 +160,19 @@ export function DataTab() {
                 <td>
                   <CheckGroup path={`data.unitTypes.${u.id}.traitIds`} options={traitOptions} />
                 </td>
+                <td>
+                  <label className="check">
+                    <input type="checkbox" checked={u.guard !== undefined} onChange={(e) => toggleGuard(u.id, e.target.checked)} />
+                    <span>사용</span>
+                  </label>
+                  {u.guard && (
+                    <span className="check-group">
+                      <NumberField path={`data.unitTypes.${u.id}.guard.start`} step={5} min={0} />
+                      <NumberField path={`data.unitTypes.${u.id}.guard.gain`} step={5} min={0} />
+                      <NumberField path={`data.unitTypes.${u.id}.guard.decay`} step={5} min={0} />
+                    </span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -160,6 +190,7 @@ export function DataTab() {
               <th>계수</th>
               <th>AP 소모</th>
               <th>반격 받음</th>
+              <th>가드로 막힘</th>
             </tr>
           </thead>
           <tbody>
@@ -172,6 +203,7 @@ export function DataTab() {
                     options={[
                       { value: 'attack', label: '공격' },
                       { value: 'heal', label: '회복' },
+                      { value: 'guard', label: '가드' },
                     ]}
                   />
                 </td>
@@ -193,11 +225,18 @@ export function DataTab() {
                 <td>
                   <CheckField label="반격 발생" path={`data.skills.${s.id}.counterable`} />
                 </td>
+                <td>
+                  <CheckField label="막을 수 있음" path={`data.skills.${s.id}.guardable`} />
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <p className="note">"반격 받음"이 켜진 공격(근접)은 대상이 살아 있고 반격할 수 있는 병종이면 공격자도 일부 피해를 입습니다. 원거리 공격은 끕니다.</p>
+        <p className="note">
+          "반격 받음"이 켜진 공격(근접)은 대상이 살아 있고 반격할 수 있는 병종이면 공격자도 일부 피해를 입습니다. 원거리 공격은 끕니다.
+          "가드로 막힘"이 켜진 공격은 대상과 같은 열의 가드 유닛이 확률로 대신 맞습니다. 책략처럼 막을 수 없는 공격은 끕니다.
+          가드는 공격하면 풀리고, 막을 때마다 확률이 줄어듭니다.
+        </p>
       </section>
     </div>
   );

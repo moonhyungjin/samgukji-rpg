@@ -20,15 +20,27 @@ export interface PolicyContext {
  */
 export type CommandPolicy = (ctx: PolicyContext) => Command;
 
+/**
+ * 가드를 쓸 수 있는 군단의 AI.
+ * protect: 지킬 같은 열 아군이 있는 동안은 가드 확률을 목표까지 올리고 유지한다 (공격하면 가드가 풀리므로 공격하지 않는다)
+ * never: 가드를 쓰지 않고 항상 공격한다
+ */
+export type GuardMode = 'protect' | 'never';
+
 export interface DefaultPolicyOptions {
   /** 이 비율 미만으로 병력이 줄어든 아군이 있으면 회복을 우선한다 */
   healThreshold?: number;
   targetPolicy?: TargetPolicy;
+  guardMode?: GuardMode;
+  /** protect 모드에서 이 확률(%p)까지 가드를 올린다. 이보다 낮아지면 다시 올린다 */
+  guardTarget?: number;
 }
 
 export function createDefaultPolicy(options: DefaultPolicyOptions = {}): CommandPolicy {
   const healThreshold = options.healThreshold ?? 0.7;
   const targetPolicy = options.targetPolicy ?? 'highest-damage';
+  const guardMode = options.guardMode ?? 'protect';
+  const guardTarget = options.guardTarget ?? 100;
 
   return ({ state, actor, data, balance, rng }) => {
     const unitType = data.unitTypes[actor.unitType];
@@ -42,6 +54,15 @@ export function createDefaultPolicy(options: DefaultPolicyOptions = {}): Command
         .filter((u) => u.troops < u.maxTroops * healThreshold)
         .sort((a, b) => a.troops / a.maxTroops - b.troops / b.maxTroops);
       if (wounded.length > 0) return { kind: 'skill', skillId: heal.id, targetUid: wounded[0].uid };
+    }
+
+    if (guardMode === 'protect' && unitType.guard) {
+      const hasAllyToProtect = state.units.some((u) => u.side === actor.side && !u.isDead && u.uid !== actor.uid && u.row === actor.row);
+      if (hasAllyToProtect) {
+        const guard = skills.find((s) => s.kind === 'guard');
+        if (guard && actor.guardRate < guardTarget) return { kind: 'skill', skillId: guard.id, targetUid: actor.uid };
+        return { kind: 'wait' }; // 가드를 유지하며 AP를 아낀다
+      }
     }
 
     const attack = skills.find((s) => s.kind === 'attack');

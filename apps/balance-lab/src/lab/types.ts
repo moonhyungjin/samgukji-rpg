@@ -1,4 +1,4 @@
-import type { BalanceConfig, Family, GameData, LineupMode, RoleMode, TargetPolicy } from '@samgukji/battle-engine';
+import type { BalanceConfig, Family, GameData, GuardMode, LineupMode, RoleMode, TargetPolicy } from '@samgukji/battle-engine';
 
 export interface SlotEntry {
   characterId: string;
@@ -15,6 +15,8 @@ export interface SimSettings {
   roles: RoleMode;
   lineups: LineupMode;
   targetPolicy: TargetPolicy;
+  /** 가드를 쓸 수 있는 군단의 AI. protect: 지킬 아군이 있으면 가드를 유지하며 공격하지 않음 / never: 항상 공격 */
+  guardMode: GuardMode;
   /** 수치를 고치면 잠시 뒤 자동으로 다시 돌린다 */
   autoRun: boolean;
   autoRunIterations: number;

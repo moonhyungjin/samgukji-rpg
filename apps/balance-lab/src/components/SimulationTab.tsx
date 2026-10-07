@@ -53,6 +53,14 @@ export function SimulationTab({ sim, pinned, setPinned }: Props) {
               { value: 'random', label: '무작위' },
             ]}
           />
+          <SelectField
+            label="가드(방패) AI"
+            path="sim.guardMode"
+            options={[
+              { value: 'protect', label: '지킬 아군이 있으면 가드 유지 (기본)' },
+              { value: 'never', label: '가드를 쓰지 않고 항상 공격' },
+            ]}
+          />
           <NumberField label="시드" path="sim.seed" />
         </div>
         <div className="row">

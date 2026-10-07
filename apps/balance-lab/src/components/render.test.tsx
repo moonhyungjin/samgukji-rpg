@@ -39,6 +39,10 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(html).toContain('대기병');
     expect(html).toContain('근접에 취약');
     expect(html).toContain('책략');
+    // 가드: 병종 표의 가드 열, 스킬 표의 가드 스킬과 "가드로 막힘" 열
+    expect(html).toContain('가드 (시작 / 상승 / 감소');
+    expect(html).toContain('가드로 막힘');
+    expect(html).toContain('>가드<');
   });
 
   it('캐릭터 탭에 모든 캐릭터가 보인다', () => {
