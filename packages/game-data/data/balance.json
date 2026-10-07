@@ -19,11 +19,11 @@
     "cap": 10
   },
   "damage": {
-    "attackScale": 50,
+    "attackScale": 60,
     "defenseScale": 0.1,
     "resistScale": 0.1,
     "minDamage": 1,
-    "formula": "gap",
+    "formula": "additive",
     "additive": {
       "attackMul": 10,
       "defenseMul": 8,
@@ -41,7 +41,7 @@
     }
   },
   "heal": {
-    "scale": 45,
+    "scale": 35,
     "useTroopFactor": false
   },
   "troops": {

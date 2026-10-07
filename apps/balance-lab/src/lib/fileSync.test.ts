@@ -36,7 +36,7 @@ describe('데이터 파일과 Lab', () => {
       return changedFileNames(base, f);
     };
     expect(edit((f) => (f.data.characters.guanYu.stats.attack += 1))).toEqual(['characters']);
-    expect(edit((f) => (f.data.unitTypes.cavalry.troopScale = 0.9))).toEqual(['unitTypes']);
+    expect(edit((f) => (f.data.unitTypes.cavalry.troopScale = (f.data.unitTypes.cavalry.troopScale ?? 1) + 0.1))).toEqual(['unitTypes']);
     expect(edit((f) => (f.data.skills['cavalry-charge'].power = 1.5))).toEqual(['skills']);
     expect(edit((f) => (f.data.traits['cavalry-tough'].multiplier = 0.8))).toEqual(['traits']);
     expect(edit((f) => (f.balance.damage.attackScale += 1))).toEqual(['balance']);

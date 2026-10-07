@@ -109,3 +109,133 @@ Balance Lab의 "파일에 저장"을 누를 때마다 자동으로 덧붙는다 
 메모: 기본 피해 공식을 원작식에서 격차식으로 바꿈 (병종 보정 없이 공격 − 방어 격차 1점당 ±10%, 하한 0.3배, 기본 피해 = 기준 스탯 × 공격 계수 50). 크리티컬 10% ×1.5 추가.
 - balance.damage.formula: additive → gap
 - balance.critical: (없음) → 확률 10%, 배율 1.5
+
+## 2026-10-07 23:52 — 밸런스 수치
+- balance.troopFactor.mode: "tiered" → "relative"
+- balance.troopFactor.normalizeByScale: false → true
+
+## 2026-10-07 23:57 — 병종
+- unitTypes.strategist.troopScale: 1 → 0.8
+- unitTypes.taoist.troopScale: 0.7 → 0.8
+- unitTypes.geomancer.vulnerability.physical: 10 → 5
+
+## 2026-10-07 23:57 — 병종
+- unitTypes.cavalry.troopScale: 1 → 0.9
+
+## 2026-10-07 23:58 — 병종
+- unitTypes.strategist.troopScale: 0.8 → 0.9
+
+## 2026-10-07 23:58 — 병종
+- unitTypes.strategist.troopScale: 0.9 → 1
+
+## 2026-10-07 23:59 — 병종
+- unitTypes.shield.recruit.replenish: 0.5 → 1
+
+## 2026-10-07 23:59 — 병종
+- unitTypes.cavalry.range: 1 → 2
+
+## 2026-10-08 00:00 — 병종
+- unitTypes.shield.typeBonus.physical: 0 → 5
+- unitTypes.cavalry.damageDealtByRow.back: 1 → 0.8
+- unitTypes.archer.typeBonus.physical: 5 → 0
+
+## 2026-10-08 00:05 — 병종
+- unitTypes.cavalry.canCounter: true → false
+- unitTypes.cavalry.vulnerability.magic: 20 → 10
+- unitTypes.archer.vulnerability.magic: 20 → 10
+
+## 2026-10-08 00:10 — 밸런스 수치
+- balance.damage.formula: "gap" → "additive"
+
+## 2026-10-08 00:12 — 밸런스 수치
+- balance.troopFactor.mode: "relative" → "tiered"
+
+## 2026-10-08 00:12 — 장수
+- characters.xiahouDun.stats.speed: 7 → 6
+
+## 2026-10-08 00:13 — 병종
+- unitTypes.archer.troopScale: 0.9 → 1
+
+## 2026-10-08 00:13 — 병종
+- unitTypes.archer.typeBonus.physical: 0 → 10
+- unitTypes.archer.statMods.defense: -1 → 0
+
+## 2026-10-08 00:14 — 밸런스 수치
+- balance.troopFactor.normalizeByScale: true → false
+
+## 2026-10-08 00:15 — 밸런스 수치
+- balance.damage.attackScale: 50 → 60
+- balance.heal.scale: 45 → 35
+
+## 2026-10-08 00:16 — 병종
+- unitTypes.infantry.typeBonus.magic: 5 → 0
+- unitTypes.infantry.vulnerability.magic: 20 → 0
+- unitTypes.shield.typeBonus.physical: 5 → 0
+- unitTypes.shield.typeBonus.magic: 5 → 0
+- unitTypes.shield.vulnerability.physical: 10 → 0
+- unitTypes.shield.vulnerability.magic: 10 → 0
+- unitTypes.cavalry.typeBonus.magic: 5 → 0
+- unitTypes.cavalry.vulnerability.magic: 10 → 0
+- unitTypes.archer.typeBonus.magic: 5 → 0
+- unitTypes.archer.vulnerability.physical: 15 → 0
+- unitTypes.archer.vulnerability.magic: 10 → 0
+- unitTypes.strategist.vulnerability.physical: 10 → 0
+- unitTypes.taoist.typeBonus.magic: 5 → 10
+- unitTypes.taoist.vulnerability.physical: 10 → 0
+- unitTypes.geomancer.typeBonus.magic: 5 → 0
+- unitTypes.geomancer.vulnerability.physical: 5 → 0
+
+## 2026-10-08 00:18 — 장수
+- characters.xiahouDun.stats.speed: 6 → 7
+
+## 2026-10-08 00:21 — 병종
+- unitTypes.infantry.damageTakenByType.magic: 1.1 → 1
+- unitTypes.infantry.vulnerability.magic: 0 → 20
+- unitTypes.shield.damageTakenByType.magic: 1.1 → 1
+- unitTypes.shield.vulnerability.magic: 0 → 20
+- unitTypes.cavalry.damageTakenByType.physical: 0.9 → 1
+- unitTypes.cavalry.damageTakenByType.magic: 1.1 → 1
+- unitTypes.cavalry.vulnerability.magic: 0 → 20
+- unitTypes.archer.damageTakenByType.physical: 1.1 → 1
+- unitTypes.archer.damageTakenByType.magic: 1.1 → 1
+- unitTypes.archer.vulnerability.magic: 0 → 20
+- unitTypes.strategist.damageTakenByType.physical: 1.1 → 1
+- unitTypes.strategist.vulnerability.physical: 0 → 20
+- unitTypes.taoist.damageTakenByType.physical: 1.1 → 1
+- unitTypes.taoist.vulnerability.physical: 0 → 20
+- unitTypes.geomancer.damageTakenByType.physical: 1.1 → 1
+- unitTypes.geomancer.vulnerability.physical: 0 → 20
+
+## 2026-10-08 00:21 — 장수
+- characters.xiahouDun.stats.speed: 7 → 6
+
+## 2026-10-08 00:22 — 병종
+- unitTypes.infantry.damageTakenByType.magic: 1 → 1.1
+- unitTypes.shield.damageTakenByType.magic: 1 → 1.1
+- unitTypes.cavalry.damageTakenByType.physical: 1 → 0.9
+- unitTypes.cavalry.damageTakenByType.magic: 1 → 1.1
+- unitTypes.archer.damageTakenByType.magic: 1 → 1.1
+
+## 2026-10-08 00:26 — 병종
+- unitTypes.strategist.troopScale: 1 → 0.8
+
+## 2026-10-08 00:28 — 병종
+- unitTypes.infantry.vulnerability.magic: 20 → 0
+- unitTypes.shield.vulnerability.magic: 20 → 0
+- unitTypes.cavalry.vulnerability.magic: 20 → 0
+- unitTypes.archer.troopScale: 1 → 0.8
+- unitTypes.archer.vulnerability.magic: 20 → 0
+
+## 2026-10-08 00:29 — 병종
+- unitTypes.infantry.damageTakenByType.magic: 1.1 → 1
+- unitTypes.shield.damageTakenByType.magic: 1.1 → 1
+- unitTypes.cavalry.damageTakenByType.physical: 0.9 → 1
+- unitTypes.cavalry.damageTakenByType.magic: 1.1 → 1
+- unitTypes.archer.damageTakenByType.magic: 1.1 → 1
+- unitTypes.strategist.damageTakenByType.magic: 0.8 → 1
+- unitTypes.taoist.damageTakenByType.magic: 0.8 → 1
+- unitTypes.geomancer.damageTakenByType.magic: 0.8 → 1
+
+## 2026-10-08 00:31 — 스킬
+- skills.stratagem.power: 0.8 → 1
+- skills.poison-smoke.power: 0.8 → 1

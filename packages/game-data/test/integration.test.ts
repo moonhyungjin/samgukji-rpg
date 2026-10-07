@@ -30,11 +30,13 @@ describe('평범한 장수 (황건적)와 무작위 편성 풀', () => {
     expect([...all].some((id) => (gameData.characters[id].rank ?? 'elite') === 'elite')).toBe(true);
   });
 
-  it('무작위 편성에서 사거리 3 병종은 후열에, 사거리 1 병종은 전열에 선다', () => {
+  it('무작위 편성에서 사거리 3 병종은 후열에, 사거리 1 병종은 전열에 선다 (사거리 2는 공격할 수 있는 어느 열이든)', () => {
     for (let i = 1; i <= 100; i++) {
       for (const e of generateRandomLineup(gameData, createRng(i), 6, 'all')) {
         const range = gameData.unitTypes[gameData.characters[e.characterId].unitType].range;
-        expect(e.row, e.characterId).toBe(range >= 3 ? 'back' : 'front');
+        if (range >= 3) expect(e.row, e.characterId).toBe('back');
+        else if (range === 1) expect(e.row, e.characterId).toBe('front');
+        else expect(['front', 'back'], e.characterId).toContain(e.row);
       }
     }
   });
@@ -159,11 +161,12 @@ describe('숫자를 바꾸면 결과가 달라진다', () => {
   const sim = (balance: BalanceConfig, data = gameData) =>
     BattleSimulator.run({ data, balance, teamA: presets.shu, teamB: presets.wei, iterations: 400, seed: 3, roles: 'alternate' });
 
-  it('기병이 전열에 주는 피해 배수를 낮추면 기병이 주는 피해가 줄어든다', () => {
+  // 한 열만 낮추면 기병이 사거리 2일 때 다른 열(후열)을 노려 오히려 피해가 늘 수 있어서 두 열 모두 낮춘다
+  it('기병이 주는 피해 배수(열)를 낮추면 기병이 주는 피해가 줄어든다', () => {
     const before = sim(defaultBalance);
     const weakened = {
       ...gameData,
-      unitTypes: { ...gameData.unitTypes, cavalry: { ...gameData.unitTypes.cavalry, damageDealtByRow: { front: 0.2, back: 1 } } },
+      unitTypes: { ...gameData.unitTypes, cavalry: { ...gameData.unitTypes.cavalry, damageDealtByRow: { front: 0.2, back: 0.2 } } },
     };
     const after = sim(defaultBalance, weakened);
     expect(after.familyStats.cavalry!.averageDamageDealt).toBeLessThan(before.familyStats.cavalry!.averageDamageDealt);

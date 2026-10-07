@@ -34,13 +34,16 @@ describe('저장 기록 (describeChanges)', () => {
   });
 
   it('병종과 장수: 항목 id와 안쪽 값 경로까지 적는다', () => {
+    // 현재 값에서 출발해 둘 다 바꾼다 (사용자가 Lab에서 값을 바꿔도 시험이 깨지지 않도록)
+    const cur = filesSnapshot().data.unitTypes.cavalry.damageTakenByType ?? { physical: 1, magic: 1 };
+    const next = { physical: Math.round((cur.physical + 0.3) * 100) / 100, magic: Math.round((cur.magic + 0.3) * 100) / 100 };
     const log = change((f) => {
-      f.data.unitTypes.cavalry.damageTakenByType = { physical: 0.8, magic: 1 };
+      f.data.unitTypes.cavalry.damageTakenByType = next;
       f.data.characters.guanYu.stats.attack += 1;
     })!;
     expect(log).toContain('— 병종 · 장수');
-    expect(log).toMatch(/- unitTypes\.cavalry\.damageTakenByType\.physical: [\d.]+ → 0\.8/);
-    expect(log).toContain('- unitTypes.cavalry.damageTakenByType.magic:');
+    expect(log).toContain(`- unitTypes.cavalry.damageTakenByType.physical: ${cur.physical} → ${next.physical}`);
+    expect(log).toContain(`- unitTypes.cavalry.damageTakenByType.magic: ${cur.magic} → ${next.magic}`);
     expect(log).toMatch(/- characters\.guanYu\.stats\.attack: \d+ → \d+/);
   });
 

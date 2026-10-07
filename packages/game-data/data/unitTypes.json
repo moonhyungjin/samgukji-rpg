@@ -23,7 +23,7 @@
     },
     "damageTakenByType": {
       "physical": 1,
-      "magic": 1.1
+      "magic": 1
     },
     "damageDealtByRow": {
       "front": 1,
@@ -31,11 +31,11 @@
     },
     "typeBonus": {
       "physical": 10,
-      "magic": 5
+      "magic": 0
     },
     "vulnerability": {
       "physical": 0,
-      "magic": 20
+      "magic": 0
     },
     "statMods": {
       "attack": 0,
@@ -66,12 +66,12 @@
     "baseAp": 3,
     "recruit": {
       "reinforce": 12,
-      "replenish": 0.5,
+      "replenish": 1,
       "dismiss": 1
     },
     "damageTakenByType": {
       "physical": 1,
-      "magic": 1.1
+      "magic": 1
     },
     "damageDealtByRow": {
       "front": 1,
@@ -79,11 +79,11 @@
     },
     "typeBonus": {
       "physical": 0,
-      "magic": 5
+      "magic": 0
     },
     "vulnerability": {
-      "physical": 10,
-      "magic": 10
+      "physical": 0,
+      "magic": 0
     },
     "statMods": {
       "attack": -1,
@@ -109,13 +109,13 @@
       "front",
       "back"
     ],
-    "range": 1,
-    "canCounter": true,
+    "range": 2,
+    "canCounter": false,
     "basicSkillId": "cavalry-charge",
     "extraSkillIds": [],
     "promotesTo": [],
     "traitIds": [],
-    "troopScale": 1,
+    "troopScale": 0.9,
     "baseAp": 2,
     "recruit": {
       "reinforce": 30,
@@ -123,20 +123,20 @@
       "dismiss": 2
     },
     "damageTakenByType": {
-      "physical": 0.9,
-      "magic": 1.1
+      "physical": 1,
+      "magic": 1
     },
     "damageDealtByRow": {
       "front": 1,
-      "back": 1
+      "back": 0.8
     },
     "typeBonus": {
       "physical": 30,
-      "magic": 5
+      "magic": 0
     },
     "vulnerability": {
       "physical": 0,
-      "magic": 20
+      "magic": 0
     },
     "statMods": {
       "attack": 1,
@@ -161,7 +161,7 @@
     "extraSkillIds": [],
     "promotesTo": [],
     "traitIds": [],
-    "troopScale": 0.9,
+    "troopScale": 0.8,
     "baseAp": 2,
     "recruit": {
       "reinforce": 18,
@@ -169,24 +169,24 @@
       "dismiss": 1.5
     },
     "damageTakenByType": {
-      "physical": 1.1,
-      "magic": 1.1
+      "physical": 1,
+      "magic": 1
     },
     "damageDealtByRow": {
       "front": 0.8,
       "back": 1
     },
     "typeBonus": {
-      "physical": 5,
-      "magic": 5
+      "physical": 10,
+      "magic": 0
     },
     "vulnerability": {
-      "physical": 15,
-      "magic": 20
+      "physical": 0,
+      "magic": 0
     },
     "statMods": {
       "attack": 0,
-      "defense": -1,
+      "defense": 0,
       "intellect": 0,
       "speed": -1,
       "action": 0
@@ -209,7 +209,7 @@
     ],
     "promotesTo": [],
     "traitIds": [],
-    "troopScale": 1,
+    "troopScale": 0.8,
     "baseAp": 2,
     "recruit": {
       "reinforce": 24,
@@ -217,8 +217,8 @@
       "dismiss": 2
     },
     "damageTakenByType": {
-      "physical": 1.1,
-      "magic": 0.8
+      "physical": 1,
+      "magic": 1
     },
     "damageDealtByRow": {
       "front": 1,
@@ -229,7 +229,7 @@
       "magic": 10
     },
     "vulnerability": {
-      "physical": 10,
+      "physical": 20,
       "magic": 0
     },
     "statMods": {
@@ -257,7 +257,7 @@
     ],
     "promotesTo": [],
     "traitIds": [],
-    "troopScale": 0.7,
+    "troopScale": 0.8,
     "baseAp": 2,
     "recruit": {
       "reinforce": 30,
@@ -265,8 +265,8 @@
       "dismiss": 2
     },
     "damageTakenByType": {
-      "physical": 1.1,
-      "magic": 0.8
+      "physical": 1,
+      "magic": 1
     },
     "damageDealtByRow": {
       "front": 1,
@@ -274,10 +274,10 @@
     },
     "typeBonus": {
       "physical": 0,
-      "magic": 5
+      "magic": 10
     },
     "vulnerability": {
-      "physical": 10,
+      "physical": 20,
       "magic": 0
     },
     "statMods": {
@@ -313,8 +313,8 @@
       "dismiss": 2
     },
     "damageTakenByType": {
-      "physical": 1.1,
-      "magic": 0.8
+      "physical": 1,
+      "magic": 1
     },
     "damageDealtByRow": {
       "front": 1,
@@ -322,10 +322,10 @@
     },
     "typeBonus": {
       "physical": 0,
-      "magic": 5
+      "magic": 0
     },
     "vulnerability": {
-      "physical": 10,
+      "physical": 20,
       "magic": 0
     },
     "statMods": {

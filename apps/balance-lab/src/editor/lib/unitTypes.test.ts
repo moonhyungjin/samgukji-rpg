@@ -106,7 +106,7 @@ describe('병종 요약과 변경 비교', () => {
 
   it('저장본과 비교해 수정/추가/삭제를 알려 준다', () => {
     expect(areUnitTypesDirty(list, list)).toBe(false);
-    const edited = list.map((u) => (u.id === 'cavalry' ? { ...u, troopScale: 0.9 } : u)).filter((u) => u.id !== 'geomancer');
+    const edited = list.map((u) => (u.id === 'cavalry' ? { ...u, troopScale: (u.troopScale ?? 1) + 0.1 } : u)).filter((u) => u.id !== 'geomancer');
     const added = [...edited, newUnitType(edited)];
     const diff = changedUnitTypeIds(list, added);
     expect(diff.changed).toEqual(['cavalry']);
