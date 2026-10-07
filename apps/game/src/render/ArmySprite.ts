@@ -53,7 +53,7 @@ export class ArmySprite {
 
   private addFigure(spec: SpriteSpec, textures: BattleTextures, x: number, y: number, height: number) {
     const sprite = new Sprite(textures[spec.texture]!);
-    const scale = height / (spec.ground[1] - spec.head);
+    const scale = (spec.displayHeight ?? height) / (spec.ground[1] - spec.head);
     const direction = this.unit.side === 'attacker' ? 1 : -1;
     sprite.pivot.set(...spec.ground);
     sprite.scale.set(scale * direction * spec.facing, scale);

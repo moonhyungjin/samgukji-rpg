@@ -3,8 +3,11 @@ import type { BalanceConfig, Family, GameData, Row, UnitTypeData } from '@samguk
 import type { Issue } from '../lib/editor';
 import { DEFAULT_GUARD, FAMILY_LABEL, MOD_FIELDS, charactersUsing, unitTypeSummary } from '../lib/unitTypes';
 
-type Patch = Partial<Omit<UnitTypeData, 'statMods' | 'damageTakenByType' | 'damageDealtByRow' | 'guard'>> & {
+type Patch = Partial<Omit<UnitTypeData, 'statMods' | 'damageTakenByType' | 'damageDealtByRow' | 'guard' | 'recruit' | 'typeBonus' | 'vulnerability'>> & {
   statMods?: Partial<NonNullable<UnitTypeData['statMods']>>;
+  typeBonus?: Partial<NonNullable<UnitTypeData['typeBonus']>>;
+  vulnerability?: Partial<NonNullable<UnitTypeData['vulnerability']>>;
+  recruit?: Partial<NonNullable<UnitTypeData['recruit']>>;
   damageTakenByType?: Partial<NonNullable<UnitTypeData['damageTakenByType']>>;
   damageDealtByRow?: Partial<NonNullable<UnitTypeData['damageDealtByRow']>>;
   /** null이면 가드를 끈다 */
@@ -104,7 +107,22 @@ export function UnitTypeEditor({ unitTypes, savedIds, changed, issues, character
               {field(
                 '병력 배율',
                 <input type="number" min={0.05} step={0.05} aria-label={`${u.id} 병력 배율`} value={u.troopScale ?? 1} onChange={(e) => onEdit(u.id, { troopScale: num(e.target.value) })} />,
-                '같은 레벨에서 최대 병력에 곱하는 값',
+                '같은 레벨에서 최대 병력에 곱하는 값 (원작의 병종별 병력 상한)',
+              )}
+              {field(
+                '증원 단가',
+                <input type="number" min={0} step={1} aria-label={`${u.id} 증원 단가`} value={u.recruit?.reinforce ?? 0} onChange={(e) => onEdit(u.id, { recruit: { reinforce: num(e.target.value) } })} />,
+                '정원을 1명 늘리는 돈 (아직 전투에서 쓰지 않음)',
+              )}
+              {field(
+                '보충 단가',
+                <input type="number" min={0} step={0.5} aria-label={`${u.id} 보충 단가`} value={u.recruit?.replenish ?? 0} onChange={(e) => onEdit(u.id, { recruit: { replenish: num(e.target.value) } })} />,
+                '잃은 병사 1명을 채우는 돈',
+              )}
+              {field(
+                '해고 환급',
+                <input type="number" min={0} step={0.5} aria-label={`${u.id} 해고 환급`} value={u.recruit?.dismiss ?? 0} onChange={(e) => onEdit(u.id, { recruit: { dismiss: num(e.target.value) } })} />,
+                '1명을 줄일 때 돌려받는 돈',
               )}
               {field(
                 '기본 AP',
@@ -159,15 +177,30 @@ export function UnitTypeEditor({ unitTypes, savedIds, changed, issues, character
                 <input type="number" min={0.05} step={0.05} aria-label={`${u.id} 주는 피해 대상 후열`} value={dealt.back} onChange={(e) => onEdit(u.id, { damageDealtByRow: { back: num(e.target.value) } })} />,
                 '대상이 후열일 때 이 병종이 주는 피해에 곱함',
               )}
+              {field(
+                '병종 보정 물리',
+                <input type="number" step={1} aria-label={`${u.id} 병종 보정 물리`} value={u.typeBonus?.physical ?? 0} onChange={(e) => onEdit(u.id, { typeBonus: { physical: num(e.target.value) } })} />,
+                '원작식 공식: 이 병종이 공격력으로 때릴 때 더하는 값 (원작 기마 50, 무사 30)',
+              )}
+              {field(
+                '병종 보정 책략',
+                <input type="number" step={1} aria-label={`${u.id} 병종 보정 책략`} value={u.typeBonus?.magic ?? 0} onChange={(e) => onEdit(u.id, { typeBonus: { magic: num(e.target.value) } })} />,
+                '원작식 공식: 이 병종이 지력으로 때릴 때 더하는 값 (원작 음양사 40)',
+              )}
+              {field(
+                '취약 물리',
+                <input type="number" step={1} aria-label={`${u.id} 취약 물리`} value={u.vulnerability?.physical ?? 0} onChange={(e) => onEdit(u.id, { vulnerability: { physical: num(e.target.value) } })} />,
+                '원작식 공식: 이 병종이 물리 공격에 맞을 때 더하는 값 (원작 무사 0, 지력 계열 20)',
+              )}
+              {field(
+                '취약 책략',
+                <input type="number" step={1} aria-label={`${u.id} 취약 책략`} value={u.vulnerability?.magic ?? 0} onChange={(e) => onEdit(u.id, { vulnerability: { magic: num(e.target.value) } })} />,
+                '원작식 공식: 이 병종이 책략에 맞을 때 더하는 값',
+              )}
               <label className="ufield check-field">
                 <span>반격</span>
                 <input type="checkbox" aria-label={`${u.id} 반격함`} checked={u.canCounter} onChange={(e) => onEdit(u.id, { canCounter: e.target.checked })} />
               </label>
-              {field(
-                '반격 비율',
-                <input type="number" min={0} step={0.05} aria-label={`${u.id} 반격 비율`} value={u.counterRate ?? 0.5} disabled={!u.canCounter} onChange={(e) => onEdit(u.id, { counterRate: num(e.target.value) })} />,
-                '반격 피해 = 일반공격 피해 × 이 값',
-              )}
             </div>
 
             <div className="usection">스킬</div>
@@ -213,8 +246,13 @@ export function UnitTypeEditor({ unitTypes, savedIds, changed, issues, character
             {u.guard && (
               <div className="ugrid">
                 {field('시작 %p', <input type="number" min={0} step={5} aria-label={`${u.id} 가드 시작`} value={u.guard.start} onChange={(e) => onEdit(u.id, { guard: { start: num(e.target.value) } })} />)}
-                {field('상승 %p', <input type="number" min={0} step={5} aria-label={`${u.id} 가드 상승`} value={u.guard.gain} onChange={(e) => onEdit(u.id, { guard: { gain: num(e.target.value) } })} />)}
-                {field('감소 %p', <input type="number" min={0} step={5} aria-label={`${u.id} 가드 감소`} value={u.guard.decay} onChange={(e) => onEdit(u.id, { guard: { decay: num(e.target.value) } })} />)}
+                {field('상승 %p', <input type="number" min={0} step={5} aria-label={`${u.id} 가드 상승`} value={u.guard.gain} onChange={(e) => onEdit(u.id, { guard: { gain: num(e.target.value) } })} />, '가드 한 번에 고정으로 오르는 확률')}
+                {field(
+                  '지력당 상승 %p',
+                  <input type="number" min={0} step={1} aria-label={`${u.id} 가드 지력당 상승`} value={u.guard.gainPerIntellect ?? 0} onChange={(e) => onEdit(u.id, { guard: { gainPerIntellect: num(e.target.value) } })} />,
+                  '가드 한 번에 지력 1당 더 오르는 확률 (원작: 지력 × 20)',
+                )}
+                {field('감소 %p', <input type="number" min={0} step={5} aria-label={`${u.id} 가드 감소`} value={u.guard.decay} onChange={(e) => onEdit(u.id, { guard: { decay: num(e.target.value) } })} />, '가드 중에 맞을 때마다 (대신 맞든 직접 맞든)')}
                 {field(
                   '받는 피해 배수',
                   <input type="number" min={0.05} step={0.05} aria-label={`${u.id} 가드 피해 배수`} value={u.guard.damageTaken ?? 1} onChange={(e) => onEdit(u.id, { guard: { damageTaken: num(e.target.value) } })} />,

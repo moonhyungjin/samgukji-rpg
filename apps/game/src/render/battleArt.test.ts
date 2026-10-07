@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { unitArt } from './battleArt';
+import { battleArtKeys, unitArt } from './battleArt';
 
 describe('battle art mapping', () => {
   it('maps stable IDs rather than side or display name', () => {
@@ -12,5 +12,22 @@ describe('battle art mapping', () => {
   });
   it('does not impersonate a named character using another portrait', () => {
     expect(unitArt({ characterId: 'weiYan', family: 'infantry' })).toBeNull();
+  });
+  it('uses mounted art only for Guan Yu while he is cavalry', () => {
+    const art = unitArt({ characterId: 'guanYu', family: 'cavalry' });
+    expect(art?.commander.texture).toBe('guanYu');
+    expect(art?.commander.displayHeight).toBe(116);
+    expect(art?.soldier.texture).toBe('shuCavalry');
+    expect(unitArt({ characterId: 'guanYu', family: 'infantry' })).toBeNull();
+    expect(unitArt({ characterId: 'zhaoYun', family: 'cavalry' })).toBeNull();
+  });
+  it('loads only the lineup artwork and deduplicates shared textures', () => {
+    expect(battleArtKeys([])).toEqual(['field']);
+    expect(battleArtKeys([
+      { characterId: 'guanYu', family: 'cavalry' },
+      { characterId: 'guanYu', family: 'cavalry' },
+      { characterId: 'weiYan', family: 'infantry' },
+    ])).toEqual(['field', 'guanYu', 'shuCavalry']);
+    expect(battleArtKeys([{ characterId: 'liuBei', family: 'infantry' }])).not.toContain('guanYu');
   });
 });

@@ -43,8 +43,8 @@ describe('병종 데이터 (unitTypes.json)', () => {
   });
 
   it('값이 빠져도 기본값으로 채워 일관된 모양이 된다', () => {
-    const u = normalizeUnitType({ ...archer(), baseAp: undefined, troopScale: undefined, statMods: undefined, damageTakenByType: undefined, counterRate: undefined });
-    expect(u).toMatchObject({ baseAp: 0, troopScale: 1, counterRate: 0.5, damageTakenByType: { physical: 1, magic: 1 }, statMods: { attack: 0, defense: 0, intellect: 0, speed: 0, action: 0 } });
+    const u = normalizeUnitType({ ...archer(), baseAp: undefined, troopScale: undefined, statMods: undefined, damageTakenByType: undefined });
+    expect(u).toMatchObject({ baseAp: 0, troopScale: 1, damageTakenByType: { physical: 1, magic: 1 }, statMods: { attack: 0, defense: 0, intellect: 0, speed: 0, action: 0 } });
   });
 });
 

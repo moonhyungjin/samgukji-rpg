@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyStatMods, apFromAction, createRng, relativeTroopFactor, selfTroopFactor, totalAp, deriveSeed, effectiveStat, maxTroops, moraleMultiplier, troopFactor } from '../src';
+import { applyStatMods, apFromAction, createRng, DEFAULT_TIERED, relativeTroopFactor, selfTroopFactor, tieredTroopFactor, tieredTroops, totalAp, deriveSeed, effectiveStat, maxTroops, moraleMultiplier, troopFactor } from '../src';
 import { testBalance } from './fixtures';
 
 describe('rng', () => {
@@ -57,6 +57,21 @@ describe('troopFactor', () => {
     expect(troopFactor(testBalance, 500)).toBe(0.5);
     expect(troopFactor(testBalance, 50)).toBe(0.3);
     expect(troopFactor(testBalance, 5000)).toBe(1.75);
+  });
+});
+
+describe('tieredTroops (구간식, 원작 인원 계산)', () => {
+  const b = { ...testBalance, troopFactor: { ...testBalance.troopFactor, mode: 'tiered' as const, tiered: { ...DEFAULT_TIERED } } };
+  it('꺾이는 지점(1000)까지는 1명당 1, 4000까지는 0.5, 그 이상은 0.25로 센다', () => {
+    expect(tieredTroops(b, 600)).toBe(600);
+    expect(tieredTroops(b, 1000)).toBe(1000);
+    expect(tieredTroops(b, 1500)).toBe(1250);
+    expect(tieredTroops(b, 4000)).toBe(2500);
+    expect(tieredTroops(b, 5000)).toBe(2750);
+  });
+  it('하한(200) 아래로는 내려가지 않고, 보정은 유효 병력 ÷ 기준 병력이다', () => {
+    expect(tieredTroops(b, 50)).toBe(200);
+    expect(tieredTroopFactor(b, 1500)).toBe(1.25);
   });
 });
 

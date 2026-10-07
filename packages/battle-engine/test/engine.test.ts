@@ -80,6 +80,14 @@ describe('BattleEngine: 행동 순서와 종료 조건', () => {
     expect(counter.amount).toBeLessThan(attack.amount);
   });
 
+  it('반격은 맞기 전 병력으로 계산한다 (원작 규칙)', () => {
+    // 첫 공격: 공격자와 대상 모두 같은 inf, 병력 1000. 반격 = 대상이 맞기 전(1000명)에 공격자를 친 피해 × 반격 비율
+    const result = runBattle(oneVsOne('inf', 'inf'));
+    const [attack, counter] = result.events!.filter((e) => e.type === 'damage') as { amount: number }[];
+    expect(attack.amount).toBeGreaterThan(0);
+    expect(counter.amount).toBe(Math.round(attack.amount * testBalance.counter.rate));
+  });
+
   it('원거리 공격(counterable: false)은 반격을 받지 않는다', () => {
     const result = runBattle(
       input({ attacker: [{ characterId: 'arc', row: 'back' }], defender: [{ characterId: 'inf', row: 'front' }], recordEvents: true }),

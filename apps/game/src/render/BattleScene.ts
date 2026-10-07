@@ -3,16 +3,18 @@ import { loadBattleArt } from './battleArt';
 import type { BattleTextures } from './battleArt';
 import type { BattleEvent, GameData } from '@samgukji/battle-engine';
 import type { SceneLike } from '../battle/controller';
-import type { BattleOutcome, ViewState } from '../battle/viewState';
+import type { BattleOutcome, ViewState, ViewUnit } from '../battle/viewState';
 import { DECIDED_BY_LABEL, END_CAUSE_LABEL, SIDE_LABEL, STAT_SHORT } from '../lib/labels';
 import { UnitSprite } from './UnitSprite';
 import { CARD_H, CARD_W, columnX, FONT, SIDE_COLOR, WORLD_H, WORLD_W } from './theme';
 import { delay, easeOut, tween } from './tween';
 import type { Clock } from './tween';
+import { playRangedEffect, rangedEffectFor, rangedImpact } from './rangedEffects';
 
 export interface SceneOptions {
   data: GameData;
   maxTurns: number;
+  artUnits?: readonly Pick<ViewUnit, 'characterId' | 'family'>[];
 }
 
 const MORALE_BAR = { x: 390, y: 16, w: 500, h: 18 };
@@ -36,11 +38,12 @@ export class BattleScene implements SceneLike {
   private instant = false;
   private destroyed = false;
   private morale = 50;
+  private lastAction: Extract<BattleEvent, { type: 'action' }> | null = null;
 
   private readonly clock: Clock = { scale: () => (this.instant || this.speed <= 0 ? Infinity : this.speed) };
 
   static async create(host: HTMLElement, options: SceneOptions): Promise<BattleScene> {
-    const textures = await loadBattleArt();
+    const textures = await loadBattleArt(options.artUnits);
     host.dataset.artLoaded = Object.entries(textures).filter(([, texture]) => !!texture).map(([key]) => key).join(',');
     const app = new Application();
     await app.init({
@@ -82,6 +85,7 @@ export class BattleScene implements SceneLike {
   // ---------- SceneLike ----------
 
   setState(state: ViewState): void {
+    this.lastAction = null;
     for (const sprite of this.sprites.values()) sprite.destroy();
     this.sprites.clear();
     this.clearLayer(this.effectsLayer);
@@ -109,6 +113,7 @@ export class BattleScene implements SceneLike {
         return;
       }
       case 'action': {
+        this.lastAction = event;
         const actor = this.sprites.get(event.actor);
         if (!actor) return;
         actor.setAp(event.apAfter);
@@ -128,6 +133,21 @@ export class BattleScene implements SceneLike {
         const target = this.sprites.get(event.target);
         if (!source || !target) return;
         const counter = event.kind === 'counter';
+        // Damage carries the actual recipient (including guard interception).
+        // The preceding action supplies only the visual skill, never the hit result.
+        const ranged = !counter && this.lastAction?.actor === event.source
+          ? rangedEffectFor(this.lastAction.skillId) : null;
+        if (ranged) {
+          await playRangedEffect(this.effectsLayer, this.clock, ranged, source.center, target.center);
+          if (this.destroyed) return;
+          void this.floatText(target, `-${event.amount}`, event.amount === 0 ? 0x9be7ff : 0xff5a5a, 28, 600);
+          await Promise.all([
+            rangedImpact(this.effectsLayer, this.clock, ranged, target.center, event.amount === 0),
+            event.amount > 0 ? target.flash() : Promise.resolve(),
+            target.animateTroops(event.troopsAfter),
+          ]);
+          return;
+        }
         // 찌르는 순간에 피격 연출을 시작해, 돌아오는 동안 병력 바가 줄어들게 한다
         let impact: Promise<unknown> = Promise.resolve();
         await source.lunge(target.center, counter ? 16 : 26, () => {

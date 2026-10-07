@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DamageCalculator } from '../src';
+import { DamageCalculator, DEFAULT_ADDITIVE, DEFAULT_TIERED } from '../src';
 import { makeUnit, testBalance, testData } from './fixtures';
 
 const calc = new DamageCalculator(testBalance, testData);
@@ -93,8 +93,8 @@ describe('병종 특성', () => {
 });
 
 describe('DamageCalculator.counterDamage / heal', () => {
-  it('반격 피해는 반격자 일반공격 피해 × counter.rate', () => {
-    expect(calc.counterDamage(makeUnit(), makeUnit(), hit, 50)).toBe(Math.round(33 * 0.5));
+  it('기술에 반격 비율이 없으면 반격 피해 = 반격자 피해 × counter.rate', () => {
+    expect(calc.counterDamage(makeUnit(), makeUnit(), hit, hit, 50)).toBe(Math.round(33 * 0.5));
   });
 
   it('회복량은 지력 × scale × 스킬 계수 (기본은 병력 보정 없음)', () => {
@@ -180,37 +180,26 @@ describe('공격 종류별 받는 피해 배수 (damageTakenByType)', () => {
   });
 });
 
-describe('병종별 반격 비율 (counterRate)', () => {
-  const data = {
-    ...testData,
-    skills: { ...testData.skills, hit: { ...testData.skills.hit, ignoreDefense: 2 } },
-    unitTypes: {
-      ...testData.unitTypes,
-      inf: { ...testData.unitTypes.inf, counterRate: 1 },
-      cav: { ...testData.unitTypes.cav, counterRate: 0.9 },
-    },
-  };
-  const c = new DamageCalculator(testBalance, data);
+describe('기술별 반격 비율 (skill.counterRate, 원작 방식)', () => {
   const hitPlain = testData.skills.hit; // 방어 무시 없음
+  const quarter = { ...hitPlain, counterRate: 0.25 };
+  const heavy = { ...hitPlain, power: 1.5, counterRate: 0.5 };
 
-  it('병종의 counterRate를 쓰고, 없으면 balance.counter.rate를 쓴다', () => {
-    expect(c.counterRate(makeUnit({ unitType: 'inf' }))).toBe(1);
-    expect(c.counterRate(makeUnit({ unitType: 'cav' }))).toBe(0.9);
-    expect(c.counterRate(makeUnit({ unitType: 'arc' }))).toBe(0.5);
+  it('공격한 쪽 기술의 counterRate를 쓰고, 없으면 balance.counter.rate를 쓴다', () => {
+    expect(calc.counterRate(quarter)).toBe(0.25);
+    expect(calc.counterRate(heavy)).toBe(0.5);
+    expect(calc.counterRate(hitPlain)).toBe(0.5);
   });
 
-  it('반격 피해 = 일반공격 피해 × 반격 비율', () => {
+  it('반격 피해 = 반격자가 계수 1로 친 피해 × 공격 기술의 반격 비율', () => {
     const base = calc.damage(makeUnit(), makeUnit(), hitPlain, 50);
-    expect(c.counterDamage(makeUnit({ unitType: 'inf' }), makeUnit(), hitPlain, 50)).toBe(Math.round(base * 1));
-    expect(c.counterDamage(makeUnit({ unitType: 'arc' }), makeUnit(), hitPlain, 50)).toBe(Math.round(base * 0.5));
+    expect(calc.counterDamage(makeUnit(), makeUnit(), hitPlain, quarter, 50)).toBe(Math.round(base * 0.25));
+    expect(calc.counterDamage(makeUnit(), makeUnit(), hitPlain, heavy, 50)).toBe(Math.round(base * 0.5));
   });
 
-  it('반격에는 방어 무시가 붙지 않는다', () => {
-    const pierceHit = data.skills.hit;
-    const attack = c.damage(makeUnit({ unitType: 'inf' }), makeUnit(), pierceHit, 50);
-    const counter = c.counterDamage(makeUnit({ unitType: 'inf' }), makeUnit(), pierceHit, 50);
-    expect(attack).toBeGreaterThan(counter); // 방어 무시가 있는 공격이 더 아프다 (반격 비율 1이어도)
-    expect(counter).toBe(calc.damage(makeUnit(), makeUnit(), hitPlain, 50));
+  it('반격자의 일반공격 계수와 방어 무시는 반격에 쓰지 않는다', () => {
+    const strongBasic = { ...hitPlain, power: 1.2, ignoreDefense: 2 };
+    expect(calc.counterDamage(makeUnit(), makeUnit(), strongBasic, quarter, 50)).toBe(calc.counterDamage(makeUnit(), makeUnit(), hitPlain, quarter, 50));
   });
 });
 
@@ -291,11 +280,68 @@ describe('병력 보정 방식 (troopFactor.mode)', () => {
     expect(new DamageCalculator(noMode, testData).damage(u, makeUnit(), hit, 50)).toBe(abs.damage(u, makeUnit(), hit, 50));
   });
 
-  it('반격도 같은 방식으로 계산된다 (맞은 뒤의 줄어든 병력 기준)', () => {
+  it('반격도 같은 방식으로 계산된다 (반격자에게 넘긴 병력 기준)', () => {
     const wounded = makeUnit({ troops: 500, maxTroops: 1000 });
     const attacker = makeUnit({ troops: 1000, maxTroops: 1000 });
     // 상대 비교: 반격하는 쪽(500)이 공격자(1000)를 친다 → 비율 0.5의 제곱근
-    expect(rel.counterDamage(wounded, attacker, hit, 50)).toBe(Math.round(Math.round(33.333 * Math.sqrt(0.5)) * 0.5));
+    expect(rel.counterDamage(wounded, attacker, hit, hit, 50)).toBe(Math.round(Math.round(33.333 * Math.sqrt(0.5)) * 0.5));
+  });
+});
+
+describe('원작식 피해 공식 (damage.formula = additive)', () => {
+  const additive = { ...testBalance, damage: { ...testBalance.damage, formula: 'additive' as const, additive: { ...DEFAULT_ADDITIVE } } };
+  const data = {
+    ...testData,
+    unitTypes: {
+      ...testData.unitTypes,
+      cav: { ...testData.unitTypes.cav, typeBonus: { physical: 50, magic: 5 }, vulnerability: { physical: 0, magic: 20 } },
+      str: { ...testData.unitTypes.str, typeBonus: { physical: 8, magic: 40 }, vulnerability: { physical: 20, magic: 0 } },
+    },
+  };
+  const c = new DamageCalculator(additive, data);
+
+  it('물리: (병종 보정 + 대상 취약 + 공격×10 − 방어×8) × 10 × 병력 보정', () => {
+    // 기병(보정 50) 공격 5 → 책사(취약 20) 방어 5: 50 + 20 + 50 − 40 = 80, × 10 × 1.0 = 800
+    expect(c.damage(makeUnit({ unitType: 'cav' }), makeUnit({ unitType: 'str' }), hit, 50)).toBe(800);
+    // 병력 500이면 절반
+    expect(c.damage(makeUnit({ unitType: 'cav', troops: 500 }), makeUnit({ unitType: 'str' }), hit, 50)).toBe(400);
+  });
+
+  it('책략: (책략 보정 + 대상 책략 취약 + 지력×10 − 대상 지력×7) × 10', () => {
+    // 책사(책략 보정 40) 지력 5 → 기병(책략 취약 20) 지력 5: 40 + 20 + 50 − 35 = 75 → 750
+    expect(c.damage(makeUnit({ unitType: 'str' }), makeUnit({ unitType: 'cav' }), mind, 50)).toBe(750);
+  });
+
+  it('기본값은 하한(10) 아래로 내려가지 않는다, 병종 보정이 없으면 0으로 본다', () => {
+    // 보정 없는 inf 공격 1 → 방어 10: 0 + 0 + 10 − 80 < 10 → 10 × 10 = 100
+    expect(c.damage(makeUnit({ stats: stats(1, 5, 5) }), makeUnit({ stats: stats(5, 10, 5) }), hit, 50)).toBe(100);
+  });
+
+  it('방어 무시는 방어에서 뺀 뒤 × 8 한다', () => {
+    const pierce = { ...hit, ignoreDefense: 2 };
+    expect(c.damage(makeUnit({ unitType: 'cav' }), makeUnit({ unitType: 'str' }), pierce, 50)).toBe(800 + 2 * 8 * 10);
+  });
+});
+
+describe('구간식 병력 보정 (troopFactor.mode = tiered)', () => {
+  const tiered = { ...testBalance, troopFactor: { ...testBalance.troopFactor, mode: 'tiered' as const, normalizeByScale: false, tiered: { ...DEFAULT_TIERED } } };
+  const calc = new DamageCalculator(tiered, testData);
+
+  it('1000명까지는 병력에 정비례한다', () => {
+    expect(calc.damage(makeUnit({ troops: 500 }), makeUnit(), hit, 50)).toBe(Math.round(33.333 * 0.5));
+    expect(calc.damage(makeUnit({ troops: 1000 }), makeUnit(), hit, 50)).toBe(33);
+  });
+
+  it('1000명을 넘으면 1명당 0.5로 센다 (1500명 → 1.25배)', () => {
+    expect(calc.damage(makeUnit({ troops: 1500, maxTroops: 1500 }), makeUnit(), hit, 50)).toBe(Math.round(33.333 * 1.25));
+  });
+
+  it('피해는 공격자의 현재 병력을 넘지 않는다 (capAtTroops)', () => {
+    // 병력 5명: 유효 병력은 하한(200)이라 피해 계산은 13이 나오지만, 5명이 5명보다 많이 죽일 수는 없다
+    const few = makeUnit({ stats: stats(10, 1, 1), troops: 5 });
+    expect(calc.damage(few, makeUnit(), hit, 50)).toBe(5);
+    const noCap = new DamageCalculator({ ...tiered, troopFactor: { ...tiered.troopFactor, tiered: { ...DEFAULT_TIERED, capAtTroops: false } } }, testData);
+    expect(noCap.damage(few, makeUnit(), hit, 50)).toBeGreaterThan(5);
   });
 });
 

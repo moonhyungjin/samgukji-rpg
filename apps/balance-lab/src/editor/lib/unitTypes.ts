@@ -21,7 +21,7 @@ export const MOD_FIELDS: { key: 'attack' | 'defense' | 'intellect' | 'speed' | '
   { key: 'action', label: '행동력' },
 ];
 
-const DEFAULT_GUARD: GuardConfig = { start: 50, gain: 70, decay: 40, damageTaken: 1 };
+const DEFAULT_GUARD: GuardConfig = { start: 50, gain: 0, gainPerIntellect: 20, decay: 40, damageTaken: 0.5 };
 
 /** 직렬화할 때 키 순서를 고정한다 (파일 비교가 쉽도록). 빠진 값은 기본값으로 채운다. */
 export function normalizeUnitType(u: UnitTypeData): UnitTypeData {
@@ -34,17 +34,21 @@ export function normalizeUnitType(u: UnitTypeData): UnitTypeData {
     allowedRows: [...u.allowedRows],
     range: Number(u.range),
     canCounter: u.canCounter,
-    counterRate: Number(u.counterRate ?? 0.5),
     basicSkillId: u.basicSkillId,
     extraSkillIds: [...u.extraSkillIds],
     promotesTo: [...u.promotesTo],
     traitIds: [...u.traitIds],
     troopScale: Number(u.troopScale ?? 1),
     baseAp: Number(u.baseAp ?? 0),
+    recruit: { reinforce: Number(u.recruit?.reinforce ?? 0), replenish: Number(u.recruit?.replenish ?? 0), dismiss: Number(u.recruit?.dismiss ?? 0) },
     damageTakenByType: { physical: Number(u.damageTakenByType?.physical ?? 1), magic: Number(u.damageTakenByType?.magic ?? 1) },
     damageDealtByRow: { front: Number(u.damageDealtByRow?.front ?? 1), back: Number(u.damageDealtByRow?.back ?? 1) },
+    typeBonus: { physical: Number(u.typeBonus?.physical ?? 0), magic: Number(u.typeBonus?.magic ?? 0) },
+    vulnerability: { physical: Number(u.vulnerability?.physical ?? 0), magic: Number(u.vulnerability?.magic ?? 0) },
     statMods: { attack: Number(mods.attack), defense: Number(mods.defense), intellect: Number(mods.intellect), speed: Number(mods.speed), action: Number(mods.action) },
-    ...(u.guard ? { guard: { start: Number(u.guard.start), gain: Number(u.guard.gain), decay: Number(u.guard.decay), damageTaken: Number(u.guard.damageTaken ?? 1) } } : {}),
+    ...(u.guard
+      ? { guard: { start: Number(u.guard.start), gain: Number(u.guard.gain), gainPerIntellect: Number(u.guard.gainPerIntellect ?? 0), decay: Number(u.guard.decay), damageTaken: Number(u.guard.damageTaken ?? 1) } }
+      : {}),
   };
 }
 
@@ -102,7 +106,10 @@ export function validateUnitTypes(list: readonly UnitTypeData[], data: GameData)
     else if (u.allowedRows.includes('back') && !u.allowedRows.includes('front') && u.range < 2) warn('후열 전용인데 사거리가 1이라 공격할 수 없습니다.');
     if (!Number.isFinite(u.troopScale ?? 1) || (u.troopScale ?? 1) <= 0) err('병력 배율은 0보다 커야 합니다.');
     if (!Number.isFinite(u.baseAp ?? 0) || (u.baseAp ?? 0) < 0) err('기본 AP는 0 이상이어야 합니다.');
-    if (u.canCounter && (!Number.isFinite(u.counterRate ?? 0) || (u.counterRate ?? 0) < 0)) err('반격 비율은 0 이상이어야 합니다.');
+    for (const key of ['reinforce', 'replenish', 'dismiss'] as const) {
+      const v = u.recruit?.[key] ?? 0;
+      if (!Number.isFinite(v) || v < 0) err('징병 단가(증원/보충/해고)는 0 이상이어야 합니다.');
+    }
     for (const key of ['physical', 'magic'] as const) {
       const v = u.damageTakenByType?.[key] ?? 1;
       if (!Number.isFinite(v) || v <= 0) err(`받는 피해 배수(${key === 'physical' ? '물리' : '책략'})는 0보다 커야 합니다.`);
@@ -118,7 +125,7 @@ export function validateUnitTypes(list: readonly UnitTypeData[], data: GameData)
     if (u.guard && !hasGuardSkill) err('가드를 켰다면 추가 스킬에 가드 스킬이 있어야 합니다.');
     if (!u.guard && hasGuardSkill) err('추가 스킬에 가드가 있다면 가드 설정(시작/상승/감소)을 켜야 합니다.');
     if (u.guard) {
-      if (u.guard.start < 0 || u.guard.gain < 0 || u.guard.decay < 0) err('가드의 시작/상승/감소는 0 이상이어야 합니다.');
+      if (u.guard.start < 0 || u.guard.gain < 0 || (u.guard.gainPerIntellect ?? 0) < 0 || u.guard.decay < 0) err('가드의 시작/상승/지력당 상승/감소는 0 이상이어야 합니다.');
       if (!Number.isFinite(u.guard.damageTaken ?? 1) || (u.guard.damageTaken ?? 1) <= 0) err('가드 중 받는 피해 배수는 0보다 커야 합니다.');
     }
     if (u.canCounter && skillKind(u.basicSkillId) !== 'attack') warn('반격할 수 있는데 일반공격이 공격 스킬이 아니라 반격이 일어나지 않습니다.');
@@ -159,7 +166,7 @@ export function applyUnitTypePatch(u: UnitTypeData, patch: Record<string, unknow
     if (key === 'guard') {
       if (value === null) delete next.guard;
       else next.guard = { ...(u.guard ?? {}), ...(value as object) };
-    } else if (key === 'statMods' || key === 'damageTakenByType' || key === 'damageDealtByRow') {
+    } else if (['statMods', 'damageTakenByType', 'damageDealtByRow', 'recruit', 'typeBonus', 'vulnerability'].includes(key)) {
       next[key] = { ...((u as unknown as Record<string, object>)[key] ?? {}), ...(value as object) };
     } else {
       next[key] = value;

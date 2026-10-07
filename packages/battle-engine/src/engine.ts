@@ -213,7 +213,7 @@ export class BattleEngine {
     }
     if (skill.kind === 'buff' && skill.buff) return { kind: 'buff', effect: skill.buff };
     if (skill.kind === 'guard') {
-      return { kind: 'guard', rateAfter: actor.guardRate + (data.unitTypes[actor.unitType].guard?.gain ?? 0) };
+      return { kind: 'guard', rateAfter: actor.guardRate + this.guardGain(actor) };
     }
 
     // 가드 유닛이 순서대로 판정하므로, 아무도 막지 못할 확률은 각자 못 막을 확률의 곱이다.
@@ -226,13 +226,12 @@ export class BattleEngine {
     const remaining = target.troops - damage;
     let counter = 0;
     const targetType = data.unitTypes[target.unitType];
-    if (skill.counterable && remaining > 0 && targetType.canCounter && this.calc.counterRate(target) > 0) {
+    if (skill.counterable && remaining > 0 && targetType.canCounter && this.calc.counterRate(skill) > 0) {
       const counterSkill = data.skills[targetType.basicSkillId];
       if (counterSkill.kind === 'attack') {
-        // 실제 처리에서는 피격으로 사기가 먼저 움직인 뒤 반격하므로, 같은 값으로 계산한다.
+        // 실제 처리에서는 피격으로 사기가 먼저 움직인 뒤 반격하므로, 같은 값으로 계산한다. 병력은 맞기 전 병력이다.
         const share = Math.max(0, this.moraleShare(target.side) - (damage > 0 ? balance.morale.onHit : 0));
-        const wounded = { ...target, troops: remaining };
-        counter = Math.min(this.calc.counterDamage(wounded, actor, counterSkill, share), actor.troops);
+        counter = Math.min(this.calc.counterDamage(target, actor, counterSkill, skill, share), actor.troops);
       }
     }
     return {
@@ -322,23 +321,26 @@ export class BattleEngine {
       if (guardian) {
         // 순서: 가드 발동 → 확률 감소 → 피해 (화면 연출이 이 순서로 재생된다)
         this.emit({ type: 'intercept', round: this.state.round, attacker: actor.uid, target: originalTarget.uid, guardian: guardian.uid });
-        const decay = this.input.data.unitTypes[guardian.unitType].guard?.decay ?? 0;
         this.report(guardian).blocks++;
-        this.setGuardRate(guardian, Math.max(0, guardian.guardRate - decay), 'block');
         target = guardian;
       }
     }
 
+    // 피해는 가드 상태(받는 피해 감소)로 먼저 계산하고, 가드 중에 맞으면 확률이 준다 (대신 맞든 직접 맞든, 원작 규칙).
     const amount = this.calc.damage(actor, target, skill, this.moraleShare(actor.side));
+    const guard = this.input.data.unitTypes[target.unitType].guard;
+    if (guard && target.guardRate > 0 && target.barrier === 0) this.setGuardRate(target, Math.max(0, target.guardRate - guard.decay), 'block');
+    const troopsBeforeHit = target.troops;
     this.skillStat(skill.id).damage += this.inflict(actor, target, amount, 'attack');
 
-    // 상호 피해: 근접 공격을 받은 대상이 살아 있으면 반격한다.
-    const { data, balance } = this.input;
+    // 상호 피해: 근접 공격을 받은 대상이 살아 있으면 반격한다. 반격의 세기는 맞기 전 병력으로 계산한다 (원작 규칙).
+    const { data } = this.input;
     const targetType = data.unitTypes[target.unitType];
     if (skill.counterable && !target.isDead && !actor.isDead && targetType.canCounter) {
       const counterSkill = data.skills[targetType.basicSkillId];
-      if (counterSkill.kind === 'attack' && this.calc.counterRate(target) > 0) {
-        const counter = this.calc.counterDamage(target, actor, counterSkill, this.moraleShare(target.side));
+      if (counterSkill.kind === 'attack' && this.calc.counterRate(skill) > 0) {
+        const counterer = { ...target, troops: troopsBeforeHit };
+        const counter = this.calc.counterDamage(counterer, actor, counterSkill, skill, this.moraleShare(target.side));
         if (counter > 0) this.inflict(target, actor, counter, 'counter');
       }
     }
@@ -347,7 +349,14 @@ export class BattleEngine {
   private performGuard(actor: CharacterState): void {
     const guard = this.input.data.unitTypes[actor.unitType].guard;
     if (!guard) throw new Error(`${actor.name} cannot guard`);
-    this.setGuardRate(actor, actor.guardRate + guard.gain, 'raise');
+    this.setGuardRate(actor, actor.guardRate + this.guardGain(actor), 'raise');
+  }
+
+  /** 가드 커맨드 한 번에 오르는 확률 = gain + 지력 × gainPerIntellect (버프로 오른 지력 포함) */
+  private guardGain(unit: CharacterState): number {
+    const guard = this.input.data.unitTypes[unit.unitType].guard;
+    if (!guard) return 0;
+    return Math.round(guard.gain + unit.stats.intellect * (guard.gainPerIntellect ?? 0));
   }
 
   private performBuff(actor: CharacterState, target: CharacterState, skill: SkillData): void {

@@ -10,6 +10,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const BASE = process.env.GAME_URL ?? 'http://localhost:5174/';
 const OUT = resolve(process.env.E2E_OUT ?? 'out/e2e');
@@ -233,6 +234,25 @@ try {
   await clickSkill();
   await waitFor(`document.querySelectorAll('.targets button').length > 0`, 5000);
   await shot('art-trial-targets');
+  const dockClear = await evalJs(`(() => {
+    const stage = document.querySelector('.stage').getBoundingClientRect();
+    const dock = document.querySelector('.command-dock').getBoundingClientRect();
+    return dock.left >= stage.left + stage.width * 470 / 1280 &&
+      dock.right <= stage.left + stage.width * 810 / 1280 &&
+      dock.bottom <= stage.bottom;
+  })()`);
+  check('중앙 지휘 패널이 양쪽 군단 카드를 가리지 않는다', dockClear);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
+  await sleep(400);
+  const mobileClear = await evalJs(`(() => {
+    const stage = document.querySelector('.stage').getBoundingClientRect();
+    const dock = document.querySelector('.command-dock').getBoundingClientRect();
+    return dock.top >= stage.bottom && document.documentElement.scrollWidth <= innerWidth;
+  })()`);
+  check('좁은 화면은 지휘 패널을 전장 아래에 놓고 가로 넘침이 없다', mobileClear);
+  await shot('art-trial-mobile');
+  await send('Emulation.clearDeviceMetricsOverride');
+  await sleep(400);
   const artLoads = await evalJs(`document.querySelector('.stage').dataset.artLoaded.split(',')`);
   check('전투 배경과 캐릭터 텍스처를 읽는다', ['field', 'liuBei', 'yellowSoldier', 'yellowCaptain', 'liuPortrait', 'yellowPortrait'].every(n => artLoads.includes(n)));
   const fieldPoint = await evalJs(`(() => { const r = document.querySelector('.stage canvas').getBoundingClientRect(); const s = Math.min(r.width / 1280, r.height / 900); return {x:r.left+(r.width-1280*s)/2+870*s,y:r.top+(r.height-900*s)/2+254*s}; })()`);
@@ -240,6 +260,131 @@ try {
   const armyClick = await waitFor(`!!document.querySelector('.log')?.textContent.includes('→ 방:황건 보병A')`, 8000).catch(() => false);
   check('전장의 황건 군단을 클릭해 공격한다', !!armyClick);
   await shot('art-trial-after-hit');
+
+  // Renderer fixture: replay explicit events without modifying game data or balancing outcomes.
+  await goto('');
+  await waitFor(`!!document.querySelector('.setup')`, 5000);
+  await evalJs(`(async () => {
+    const { BattleScene } = await import('/src/render/BattleScene.ts');
+    document.querySelector('.app').style.display = 'none';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'app';
+    wrapper.innerHTML = '<h2>원거리 연출 검토</h2><div class="stage"></div>';
+    document.body.appendChild(wrapper);
+    const ids = ['archer-shot', 'geomancer-shot', 'stratagem', 'poison-smoke'];
+    const names = ['화살 공격', '활 공격', '책략', '독연'];
+    const scene = await BattleScene.create(wrapper.querySelector('.stage'), {
+      data: { skills: Object.fromEntries(ids.map((id, i) => [id, { name: names[i] }])) }, maxTurns: 40,
+    });
+    const unit = (uid, name, side, family, row, slot) => ({
+      uid, name, side, family, unitType: family, row, slot, level: 1,
+      maxTroops: 1000, troops: 1000, ap: 4, maxAp: 4, guardRate: 0,
+      buffs: { attack: 0, defense: 0, intellect: 0, speed: 0 }, barrier: 0, dead: false,
+    });
+    const view = { round: 1, defenderMorale: 50, outcome: null, units: [
+      unit('left', '공격 군단', 'attacker', 'archer', 'back', 0),
+      unit('right', '원래 대상', 'defender', 'taoist', 'back', 0),
+      unit('guard', '대신 맞는 군단', 'defender', 'shield', 'back', 1),
+    ] };
+    window.effectReview = { scene, view, wrapper };
+  })()`);
+  for (const [skillId, kind, source, target] of [
+    ['archer-shot', 'arrow', 'left', 'guard'],
+    ['geomancer-shot', 'arrow', 'right', 'left'],
+    ['stratagem', 'sigil', 'left', 'right'],
+    ['poison-smoke', 'smoke', 'right', 'left'],
+  ]) {
+    await evalJs(`(async () => {
+      const review = window.effectReview, scene = review.scene;
+      scene.setState(review.view);
+      scene.setSpeed(0);
+      await scene.playEvent({ type: 'action', round: 1, actor: '${source}', skillId: '${skillId}', target: '${target === 'guard' ? 'right' : target}', apAfter: 3 });
+      ${target === 'guard' ? "await scene.playEvent({ type: 'intercept', round: 1, attacker: 'left', target: 'right', guardian: 'guard' });" : ''}
+      scene.setSpeed(0.25);
+      review.start = { ...scene.sprites.get('${source}').center };
+      review.playing = scene.playEvent({ type: 'damage', round: 1, kind: 'attack', source: '${source}', target: '${target}', amount: 100, troopsAfter: 900 });
+    })()`);
+    await sleep(600);
+    const flight = await evalJs(`(() => {
+      const { scene, start } = window.effectReview;
+      const effect = scene.effectsLayer.children.find(c => c.label === 'projectile-${kind}');
+      const source = scene.sprites.get('${source}').center;
+      const target = scene.sprites.get('${target}').center;
+      return !!effect && effect.alpha > 0 && source.x === start.x && source.y === start.y &&
+        effect.x > Math.min(start.x, target.x) && effect.x < Math.max(start.x, target.x);
+    })()`);
+    await shot(`effect-${skillId}`);
+    const applied = await evalJs(`(async () => {
+      const { scene, playing } = window.effectReview;
+      scene.setSpeed(0);
+      await playing;
+      return scene.sprites.get('${target}').troops === 900 &&
+        !scene.effectsLayer.children.some(c => c.label?.startsWith('projectile-') || c.label?.startsWith('impact-'));
+    })()`);
+    check(`${skillId}: 제자리 발사·비행·실제 피해 대상·즉시 모드 정리`, flight && applied);
+  }
+  const counterOk = await evalJs(`(async () => {
+    const { scene } = window.effectReview;
+    scene.setSpeed(0.25);
+    const playing = scene.playEvent({ type: 'damage', round: 1, kind: 'counter', source: 'right', target: 'left', amount: 25, troopsAfter: 875 });
+    const noProjectile = !scene.effectsLayer.children.some(c => c.label?.startsWith('projectile-'));
+    scene.setSpeed(0);
+    await playing;
+    return noProjectile && scene.sprites.get('left').troops === 875;
+  })()`);
+  check('원거리 공격 뒤 반격은 투사체 연출을 재사용하지 않는다', counterOk);
+  await evalJs(`(async () => {
+    const review = window.effectReview, scene = review.scene;
+    scene.setState(review.view);
+    scene.setSpeed(0);
+    await scene.playEvent({ type: 'action', round: 1, actor: 'left', skillId: 'archer-shot', target: 'right', apAfter: 3 });
+    await scene.playEvent({ type: 'barrier', round: 1, unit: 'right', charges: 0, reason: 'block' });
+    scene.setSpeed(0.5);
+    review.playing = scene.playEvent({ type: 'damage', round: 1, kind: 'attack', source: 'left', target: 'right', amount: 0, troopsAfter: 1000 });
+  })()`);
+  await waitFor(`window.effectReview.scene.effectsLayer.children.some(c => c.label === 'impact-arrow')`, 4000);
+  const blockedOk = await evalJs(`(async () => {
+    const { scene, playing } = window.effectReview;
+    const target = scene.sprites.get('right');
+    const unchanged = target.troops === 1000 && target.flashOverlay.alpha === 0;
+    scene.setSpeed(0);
+    await playing;
+    return unchanged;
+  })()`);
+  check('결계가 막은 화살은 병력 감소와 붉은 피격 점멸을 만들지 않는다', blockedOk);
+  const disposed = await evalJs(`(async () => {
+    const { scene, wrapper } = window.effectReview;
+    scene.setSpeed(0);
+    await scene.playEvent({ type: 'action', round: 1, actor: 'left', skillId: 'archer-shot', target: 'right', apAfter: 2 });
+    scene.setSpeed(1);
+    const playing = scene.playEvent({ type: 'damage', round: 1, kind: 'attack', source: 'left', target: 'right', amount: 0, troopsAfter: 875 });
+    scene.destroy();
+    await playing;
+    wrapper.remove();
+    delete window.effectReview;
+    return true;
+  })()`);
+  check('투사체 비행 중 화면 종료가 안전하게 완료된다', disposed);
+  // Optional local art-review page; no changes to runtime data or assets.
+  if (process.env.ART_REVIEW_PATH) {
+    await send('Page.navigate', { url: pathToFileURL(resolve(process.env.ART_REVIEW_PATH)).href });
+    await waitFor(`document.body.dataset.ready === 'true'`, 15000, '기마 아트 검토 이미지 로드');
+    check('기마 원본과 보병·배경을 비교 화면에 불러온다', await evalJs(`Object.keys(images).length === 5 && [...document.images].every(i => i.complete && i.naturalWidth > 0)`));
+    await shot('cavalry-review-116');
+    for (const height of [108, 124]) {
+      await evalJs(`document.querySelector('#scale').value = '${height}'; document.querySelector('#scale').dispatchEvent(new Event('change'))`);
+      check(`기마 검토 크기를 ${height}px로 바꾼다`, await evalJs(`document.body.dataset.scale === '${height}'`));
+      await shot(`cavalry-review-${height}`);
+    }
+    await evalJs(`document.querySelector('#flip').click(); document.querySelector('#background').value = '#ece2cf'; document.querySelector('#background').dispatchEvent(new Event('change'))`);
+    check('좌우 반전과 밝은 배경으로 외곽을 검토한다', await evalJs(`document.body.dataset.flipped === 'true' && getComputedStyle(document.documentElement).getPropertyValue('--review-bg').trim() === '#ece2cf'`));
+    await shot('cavalry-review-flipped');
+    await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
+    await sleep(300);
+    check('기마 검토 페이지가 좁은 화면에서 가로로 넘치지 않는다', await evalJs(`document.documentElement.scrollWidth <= innerWidth`));
+    await shot('cavalry-review-mobile');
+    await send('Emulation.clearDeviceMetricsOverride');
+  }
 } catch (e) {
   check('스크립트 실행', false, String(e.message ?? e));
 } finally {

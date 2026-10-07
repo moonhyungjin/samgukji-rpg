@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { DEFAULT_ADDITIVE, DEFAULT_TIERED } from '@samgukji/battle-engine';
 import { setIn } from '../lib/path';
 import { filesSnapshot, syncWithFiles } from '../lib/fileSync';
 import type { DataFiles } from '../lib/fileSync';
@@ -41,7 +42,7 @@ export function normalizeState(saved: LabState): LabState {
   const defaults = createDefaultState();
   // 이후 추가된 필드를 기본값으로 채운다 (예: 병종의 troopScale)
   const unitTypes = Object.fromEntries(
-    Object.entries(saved.data.unitTypes).map(([id, u]) => [id, { ...u, troopScale: u.troopScale ?? 1, baseAp: u.baseAp ?? 0, counterRate: u.counterRate ?? saved.balance.counter.rate, damageTakenByType: { physical: 1, magic: 1, ...u.damageTakenByType }, statMods: { attack: 0, defense: 0, intellect: 0, speed: 0, ...u.statMods } }]),
+    Object.entries(saved.data.unitTypes).map(([id, u]) => [id, { ...u, troopScale: u.troopScale ?? 1, baseAp: u.baseAp ?? 0, damageTakenByType: { physical: 1, magic: 1, ...u.damageTakenByType }, statMods: { attack: 0, defense: 0, intellect: 0, speed: 0, ...u.statMods } }]),
   );
   const characters = Object.fromEntries(
     Object.entries(saved.data.characters).map(([id, c]) => [id, { ...c, stats: { ...c.stats, action: c.stats.action ?? 0 } }]),
@@ -52,6 +53,11 @@ export function normalizeState(saved: LabState): LabState {
     // 값의 순서를 바꾸지 않도록 빠진 값만 채운다 (순서가 바뀌면 파일과 달라 보여 "저장 안 됨"이 된다)
     balance: {
       ...saved.balance,
+      damage: {
+        ...saved.balance.damage,
+        formula: saved.balance.damage.formula ?? 'divide',
+        additive: saved.balance.damage.additive ?? { ...DEFAULT_ADDITIVE },
+      },
       heal: saved.balance.heal.useTroopFactor === undefined ? { ...saved.balance.heal, useTroopFactor: false } : saved.balance.heal,
       action: saved.balance.action ?? { perAp: 2, cap: 10 },
       troopFactor: {
@@ -60,6 +66,7 @@ export function normalizeState(saved: LabState): LabState {
         normalizeByScale: saved.balance.troopFactor.normalizeByScale ?? true,
         relative: saved.balance.troopFactor.relative ?? { min: 0.5, max: 1.5, exponent: 0.5 },
         self: saved.balance.troopFactor.self ?? { min: 0.3, max: 1 },
+        tiered: saved.balance.troopFactor.tiered ?? { ...DEFAULT_TIERED },
       },
     },
     sim: { ...defaults.sim, ...saved.sim },

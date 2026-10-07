@@ -1,4 +1,4 @@
-import type { BalanceConfig } from './types';
+import type { BalanceConfig, TieredTroopFactor } from './types';
 
 /** 스탯 → 유효 스탯. statCurve로 변환하고, 곡선 범위를 넘으면 마지막 기울기로 연장한다. */
 export function effectiveStat(balance: BalanceConfig, stat: number): number {
@@ -53,6 +53,21 @@ export function relativeTroopFactor(balance: BalanceConfig, attackerTroops: numb
   const { min, max, exponent } = balance.troopFactor.relative ?? { min: 0.5, max: 1.5, exponent: 0.5 };
   const ratio = Math.max(attackerTroops, 0) / Math.max(defenderTroops, 1);
   return clamp(Math.pow(ratio, exponent), min, max);
+}
+
+export const DEFAULT_TIERED: TieredTroopFactor = { knee: 1000, knee2: 4000, rate2: 0.5, rate3: 0.25, floor: 200, capAtTroops: true };
+
+/** tiered 방식: 구간별 효율로 센 유효 병력 (최소 floor) */
+export function tieredTroops(balance: BalanceConfig, troops: number): number {
+  const { knee, knee2, rate2, rate3, floor } = balance.troopFactor.tiered ?? DEFAULT_TIERED;
+  const t = Math.max(0, troops);
+  const effective = Math.min(t, knee) + Math.max(0, Math.min(t, knee2) - knee) * rate2 + Math.max(0, t - knee2) * rate3;
+  return Math.max(floor, effective);
+}
+
+/** tiered 방식의 병력 보정: 유효 병력 ÷ reference */
+export function tieredTroopFactor(balance: BalanceConfig, troops: number): number {
+  return tieredTroops(balance, troops) / balance.troopFactor.reference;
 }
 
 /** relative 방식: 지력 기반 공격과 치유의 병력 보정. 상대는 보지 않고 내 최대 병력 대비 현재 병력만 본다. */

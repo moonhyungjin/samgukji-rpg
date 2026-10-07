@@ -46,12 +46,6 @@ export function BattleView({ config, onExit, artTrial = false }: Props) {
 
     (async () => {
       try {
-        scene = await BattleScene.create(host, { data: gameData, maxTurns: defaultBalance.maxTurns });
-        if (cancelled) {
-          scene.destroy();
-          scene = null;
-          return;
-        }
         const session = new PlaySession({
           data: gameData,
           balance: defaultBalance,
@@ -62,6 +56,14 @@ export function BattleView({ config, onExit, artTrial = false }: Props) {
           seed: config.seed,
           playerSide: config.control === 'watch' ? null : config.control,
         });
+        scene = await BattleScene.create(host, {
+          data: gameData, maxTurns: defaultBalance.maxTurns, artUnits: session.initialUnits,
+        });
+        if (cancelled) {
+          scene.destroy();
+          scene = null;
+          return;
+        }
         controller = new BattleController(session, scene, gameData, setSnapshot);
         controllerRef.current = controller;
         controller.setSpeed(speedRef.current);
@@ -104,23 +106,24 @@ export function BattleView({ config, onExit, artTrial = false }: Props) {
         </button>
       </div>
 
-      <div ref={hostRef} className="stage" />
+      <div className="battle-board">
+        <div ref={hostRef} className="stage" />
+        {snapshot && (
+          <div className="command-dock">
+            <CommandPanel
+              snapshot={snapshot}
+              onSelectSkill={(id) => controller()?.selectSkill(id)}
+              onSubmit={(command) => void controller()?.submit(command)}
+              onAutoplay={() => void controller()?.autoplayRest()}
+              onSkip={() => controller()?.skip()}
+              onRestart={() => setRunId((n) => n + 1)}
+              onExit={onExit}
+            />
+          </div>
+        )}
+      </div>
       {loadError && <div className="error">화면을 만들지 못했습니다: {loadError}</div>}
-
-      {snapshot && (
-        <div className="panels">
-          <CommandPanel
-            snapshot={snapshot}
-            onSelectSkill={(id) => controller()?.selectSkill(id)}
-            onSubmit={(command) => void controller()?.submit(command)}
-            onAutoplay={() => void controller()?.autoplayRest()}
-            onSkip={() => controller()?.skip()}
-            onRestart={() => setRunId((n) => n + 1)}
-            onExit={onExit}
-          />
-          <LogPanel lines={snapshot.log} />
-        </div>
-      )}
+      {snapshot && <div className="battle-log"><LogPanel lines={snapshot.log} /></div>}
     </div>
   );
 }

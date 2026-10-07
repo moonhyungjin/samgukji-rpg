@@ -57,8 +57,9 @@ function targetList(command: CommandOption, onSubmit: Props['onSubmit']) {
 export function CommandPanel({ snapshot, onSelectSkill, onSubmit, onAutoplay, onSkip, onRestart, onExit }: Props) {
   if (snapshot.phase === 'playing') {
     return (
-      <section className="panel command">
-        <p className="status">진행 중…</p>
+      <section className="panel command" aria-label="전투 지휘">
+        <p className="command-eyebrow">전투 지휘</p>
+        <p className="status" role="status">진행 중…</p>
         <button type="button" onClick={onSkip}>
           건너뛰기
         </button>
@@ -69,7 +70,7 @@ export function CommandPanel({ snapshot, onSelectSkill, onSubmit, onAutoplay, on
   if (snapshot.phase === 'finished') {
     const result = snapshot.result;
     return (
-      <section className="panel command">
+      <section className="panel command" aria-label="전투 결과">
         <h3>전투 종료</h3>
         {result && (
           <>
@@ -98,7 +99,8 @@ export function CommandPanel({ snapshot, onSelectSkill, onSubmit, onAutoplay, on
   const selected = waiting.commands.find((c) => c.skillId === snapshot.selectedSkillId) ?? null;
 
   return (
-    <section className="panel command">
+    <section className="panel command" aria-label="전투 지휘">
+      <p className="command-eyebrow">전투 지휘</p>
       <h3>
         {waiting.name}의 차례 <small>{FAMILY_LABEL[waiting.family]} · AP {waiting.ap}/{waiting.maxAp} · 병력 {waiting.troops}/{waiting.maxTroops}</small>
       </h3>
@@ -108,6 +110,7 @@ export function CommandPanel({ snapshot, onSelectSkill, onSubmit, onAutoplay, on
             key={c.skillId}
             type="button"
             className={c.skillId === snapshot.selectedSkillId ? 'primary' : ''}
+            aria-pressed={c.kind === 'guard' ? undefined : c.skillId === snapshot.selectedSkillId}
             onClick={() => {
               // 가드는 자기 자신에게만 쓰므로 대상을 고르지 않고 바로 실행한다
               if (c.kind === 'guard') onSubmit({ kind: 'skill', skillId: c.skillId, targetUid: c.targets[0].uid });
@@ -129,7 +132,7 @@ export function CommandPanel({ snapshot, onSelectSkill, onSubmit, onAutoplay, on
       ) : (
         <p className="note">스킬을 고르면 대상과 예상 결과가 나옵니다.</p>
       )}
-      {snapshot.error && <p className="error">{snapshot.error}</p>}
+      {snapshot.error && <p className="error" role="alert">{snapshot.error}</p>}
       <div className="row">
         <button type="button" onClick={onAutoplay}>
           남은 전투를 AI에게 맡기기

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultBalance, gameData, presetLabels, presetList, presets } from '@samgukji/game-data';
 import type { PresetDef } from '@samgukji/game-data';
+import { maxTroops } from '@samgukji/battle-engine';
 import {
   arePresetsDirty,
   changedPresetIds,
@@ -117,7 +118,8 @@ describe('편성 요약과 변경 비교', () => {
     const s = summarizeLineup(presets.shuStart, gameData, defaultBalance);
     expect(s.composition).toBe('방패병 · 보병 · 기병 / -');
     expect(s.units).toBe(3);
-    expect(s.troops).toBe(1000 + 1000 + 800);
+    const expected = presets.shuStart.reduce((sum, e) => { const c = gameData.characters[e.characterId]; return sum + Math.round(maxTroops(defaultBalance, e.level ?? c.level) * (gameData.unitTypes[c.unitType].troopScale ?? 1)); }, 0);
+    expect(s.troops).toBe(expected);
     expect(summarizeLineup(presets.yellowHard, gameData, defaultBalance).composition).toBe('방패병 · 보병 · 보병 / 궁병');
   });
 

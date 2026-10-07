@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>관우·기병 아트 검토</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101b1e;color:#eee3cc;font:15px/1.6 system-ui,sans-serif}main{max-width:1328px;margin:auto;padding:24px}h1{font-size:26px;margin:0}h2{font-size:18px;margin:0 0 12px}p{color:#b9c4be}a{color:#e2bd76}.tag{color:#dfc58e;font-size:12px;letter-spacing:.15em}.controls{position:sticky;top:0;z-index:1;display:flex;gap:20px;flex-wrap:wrap;align-items:center;background:#152527f5;border:1px solid #766441;padding:12px;margin:20px 0}select,button{background:#213638;color:#fff;border:1px solid #988050;padding:8px;font:inherit}input{accent-color:#d3b579}label{display:flex;gap:8px;align-items:center}button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid #ffe1a1;outline-offset:3px}.assets{display:grid;grid-template-columns:1fr 1fr;gap:16px}article,section{border:1px solid #766441;background:#152527;padding:16px;margin-bottom:20px}.source{width:100%;height:340px;object-fit:contain;background:var(--review-bg,#526056)}canvas{display:block;width:100%;height:auto;background:var(--review-bg,#526056)}.note{font-size:12px;color:#abb8b1}.status{color:#dfc58e}@media(max-width:650px){main{padding:12px}.assets{grid-template-columns:1fr}.source{height:260px}.controls{position:static;gap:12px}}
+</style>
+<main>
+<p class="tag">전투 아트 · 검토용 v1</p>
+<h1>관우와 공용 기병</h1>
+<p>기존 보병과 같은 화풍의 기마 시안입니다. 아래 크기는 검토용이며, 게임의 병종·장수 데이터에는 반영하지 않았습니다.</p>
+<div class="controls">
+  <label>기마 크기 <select id="scale"><option value="108">작게 · 108px</option><option value="116" selected>중간 · 116px</option><option value="124">크게 · 124px</option></select></label>
+  <label>검토 배경 <select id="background"><option value="#526056">중간색</option><option value="#102025">어두운 색</option><option value="#ece2cf">밝은 색</option></select></label>
+  <label><input id="flip" type="checkbox">방향 반전</label>
+  <label><input id="guides" type="checkbox" checked>지면 기준선</label>
+</div>
+<section><h2>보병과 크기 비교</h2><p class="note">유비 86px / 관우 선택 크기 / 공용 기병은 관우의 약 79%. 머리부터 지면까지 기준이며 긴 무기는 포함하지 않습니다.</p><canvas id="comparison" width="1280" height="230" aria-label="유비와 관우, 공용 기병의 동일 지면 크기 비교"></canvas></section>
+<section><h2>6대6 전장 배치 검토</h2><p class="note">실제 전장의 96px 행 간격과 장수 1명 + 병사 3명 배치를 사용합니다. 가운데 전열에 관우 군단을 두어 인접 군단과 겹침을 비교합니다. 나머지 군단은 간격 검토용 반복 배치입니다.</p><canvas id="battle" width="1280" height="460" aria-label="기병과 보병이 배치된 전장 크기 검토"></canvas></section>
+<div class="assets">
+<article><h2>관우 · 기마 기본 자세</h2><img class="source" src="sprites/guan-yu-mounted-v1.png" alt="녹색 전포와 긴 수염의 관우가 언월도를 들고 적갈색 말을 탄 모습"><p class="note">녹색 전포·긴 수염·언월도·적갈색 말은 이번 시안의 해석입니다.</p></article>
+<article><h2>공용 기병 · 기본 자세</h2><img class="source" src="sprites/shu-cavalry-mounted-v1.png" alt="투구와 갑옷을 착용한 공용 기병이 창을 들고 갈색 말을 탄 모습"><p class="note">일반 기병은 투구·창으로 장수와 구분합니다. 말과 장비 색은 최종 확정 전입니다.</p></article>
+</div>
+<p id="status" class="status" role="status">그림을 불러오는 중…</p>
+<p><a href="README.md">규격·검토 항목</a> · <a href="prompts.json">제작 프롬프트</a> · <a href="../first-batch/preview-v2.html">기존 보병 비교</a></p>
+</main>
+<script>
+const specs = {
+  liu: {src:'../first-batch/sprites/liu-bei-idle-v1.png',head:100,ground:[760,1007]},
+  foot: {src:'../first-batch/sprites/shu-infantry-idle-v1.png',head:120,ground:[580,1168]},
+  guan: {src:'sprites/guan-yu-mounted-v1.png',head:64,ground:[754,1008]},
+  horse: {src:'sprites/shu-cavalry-mounted-v1.png',head:70,ground:[754,1008]},
+  field: {src:'../../../apps/game/public/art/battle/plain-v1.png'},
+};
+const images = {};
+const control = id => document.getElementById(id);
+function figure(ctx,key,x,y,height,flip=false){
+  const spec=specs[key],im=images[key],scale=height/(spec.ground[1]-spec.head);
+  ctx.save();ctx.translate(x,y);ctx.scale(flip?-scale:scale,scale);
+  ctx.drawImage(im,-spec.ground[0],-spec.ground[1]);ctx.restore();
+}
+function text(ctx,label,x,y){ctx.font='14px system-ui';ctx.textAlign='center';ctx.fillStyle='#fff0d0';ctx.strokeStyle='#152321';ctx.lineWidth=4;ctx.strokeText(label,x,y);ctx.fillText(label,x,y)}
+function line(ctx,y){ctx.save();ctx.strokeStyle='#ecd095';ctx.lineWidth=1;ctx.setLineDash([7,6]);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(1280,y);ctx.stroke();ctx.restore()}
+function army(ctx,mounted,x,y,flip){
+  const height=Number(control('scale').value),direction=flip?-1:1;
+  for(const [dx,dy] of [[-70,-24],[-42,-14],[-78,0]]) figure(ctx,mounted?'horse':'foot',x+dx*direction,y+dy,mounted?height*68/86:68,flip);
+  figure(ctx,mounted?'guan':'liu',x+8*direction,y,mounted?height:86,flip);
+}
+function paint(){
+  if(!images.field)return;
+  const height=Number(control('scale').value),flip=control('flip').checked,guides=control('guides').checked;
+  const comparison=control('comparison').getContext('2d');comparison.clearRect(0,0,1280,230);
+  if(guides)line(comparison,178);
+  figure(comparison,'liu',250,178,86,flip);figure(comparison,'guan',640,178,height,flip);figure(comparison,'horse',1030,178,height*68/86,flip);
+  text(comparison,'유비 · 86px',250,211);text(comparison,'관우 · '+height+'px',640,211);text(comparison,'공용 기병 · '+Math.round(height*68/86)+'px',1030,211);
+  const battle=control('battle').getContext('2d');battle.clearRect(0,0,1280,460);
+  const field=images.field,s=Math.max(1280/field.width,412/field.height);battle.drawImage(field,0,-84,field.width*s,field.height*s);
+  if(guides)for(const y of [190,286,382])line(battle,y);
+  for(const y of [190,286,382])for(const x of [175,410,870,1105]){
+    const mounted=y===286&&(x===410||x===870);army(battle,mounted,x,y,(x>640)!==flip);
+    if(mounted)text(battle,x<640?'관우 군단':'반대 진영 표시',x,y+20);
+  }
+  document.body.dataset.scale=height;document.body.dataset.flipped=flip;
+}
+async function start(){
+  await Promise.all(Object.entries(specs).map(([key,spec])=>new Promise((resolve,reject)=>{
+    const im=new Image();im.onload=()=>{images[key]=im;resolve()};im.onerror=()=>reject(new Error(spec.src));im.src=spec.src;
+  })));
+  paint();document.body.dataset.ready='true';control('status').textContent='이미지 5종 로드 완료 · 크기와 좌우 배치를 바꿔 비교할 수 있습니다.';
+}
+for(const id of ['scale','flip','guides'])control(id).addEventListener('change',paint);
+control('background').addEventListener('change',event=>document.documentElement.style.setProperty('--review-bg',event.target.value));
+start().catch(error=>{document.body.dataset.ready='error';control('status').textContent='이미지 로드 실패: '+error.message});
+</script>
+</html>

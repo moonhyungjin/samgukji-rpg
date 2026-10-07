@@ -7,6 +7,7 @@
     "power": 1,
     "apCost": 1,
     "counterable": true,
+    "counterRate": 0.25,
     "guardable": true,
     "ignoreDefense": 0
   },
@@ -18,6 +19,7 @@
     "power": 1.2,
     "apCost": 1,
     "counterable": true,
+    "counterRate": 0.25,
     "guardable": true,
     "ignoreDefense": 1
   },

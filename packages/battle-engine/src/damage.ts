@@ -1,5 +1,7 @@
-import { effectiveStat, moraleMultiplier, relativeTroopFactor, selfTroopFactor, troopFactor } from './stats';
-import type { BalanceConfig, CharacterState, GameData, SkillData, TraitData } from './types';
+import { effectiveStat, moraleMultiplier, relativeTroopFactor, selfTroopFactor, tieredTroopFactor, troopFactor } from './stats';
+import type { AdditiveDamage, BalanceConfig, CharacterState, GameData, SkillData, TraitData } from './types';
+
+export const DEFAULT_ADDITIVE: AdditiveDamage = { attackMul: 10, defenseMul: 8, intellectMul: 10, resistMul: 7, min: 10, scale: 10 };
 
 function traitApplies(trait: TraitData, other: CharacterState): boolean {
   // versus가 없거나 조건 목록이 비어 있으면 모든 상대에게 적용된다.
@@ -45,7 +47,9 @@ export class DamageCalculator {
    */
   troopMultiplier(attacker: CharacterState, defender: CharacterState, physical: boolean): number {
     const b = this.balance;
-    if ((b.troopFactor.mode ?? 'absolute') === 'relative') {
+    const mode = b.troopFactor.mode ?? 'absolute';
+    if (mode === 'tiered') return tieredTroopFactor(b, this.strength(attacker));
+    if (mode === 'relative') {
       return physical ? relativeTroopFactor(b, this.strength(attacker), this.strength(defender)) : selfTroopFactor(b, attacker.troops, attacker.maxTroops);
     }
     return troopFactor(b, this.strength(attacker));
@@ -80,19 +84,36 @@ export class DamageCalculator {
     return this.data.unitTypes[defender.unitType]?.guard?.damageTaken ?? 1;
   }
 
+  /**
+   * 스탯과 병종으로 정해지는 핵심 피해 (스킬 계수 포함, 병력·열·가드 등 배수 전).
+   * divide: 기준 스탯 × attackScale × 스킬 계수 ÷ (1 + 방어 × scale)
+   * additive(원작 방식): (병종 보정 + 대상 취약 보정 + 공격 × attackMul − 방어 × defenseMul, 최소 min) × scale × 스킬 계수
+   */
+  core(attacker: CharacterState, defender: CharacterState, skill: SkillData): { base: number; mitigation: number } {
+    const b = this.balance;
+    const physical = skill.scalesWith === 'attack';
+    const attackStat = physical ? attacker.stats.attack : attacker.stats.intellect;
+    const defenseStat = physical ? Math.max(0, defender.stats.defense - (skill.ignoreDefense ?? 0)) : defender.stats.intellect;
+
+    if (b.damage.formula === 'additive') {
+      const a = b.damage.additive ?? DEFAULT_ADDITIVE;
+      const key = physical ? 'physical' : 'magic';
+      const typeBonus = this.data.unitTypes[attacker.unitType]?.typeBonus?.[key] ?? 0;
+      const vulnerability = this.data.unitTypes[defender.unitType]?.vulnerability?.[key] ?? 0;
+      const statPart = effectiveStat(b, attackStat) * (physical ? a.attackMul : a.intellectMul) - effectiveStat(b, defenseStat) * (physical ? a.defenseMul : a.resistMul);
+      return { base: Math.max(a.min, typeBonus + vulnerability + statPart) * a.scale * skill.power, mitigation: 1 };
+    }
+
+    // divide: 곱하는 순서를 예전과 같게 두려고 경감(mitigation)은 따로 돌려주고 마지막에 곱한다 (반올림 결과 보존)
+    const scale = physical ? b.damage.defenseScale : b.damage.resistScale;
+    return { base: effectiveStat(b, attackStat) * b.damage.attackScale * skill.power, mitigation: 1 / (1 + effectiveStat(b, defenseStat) * scale) };
+  }
+
   damage(attacker: CharacterState, defender: CharacterState, skill: SkillData, attackerMoraleShare: number): number {
     const b = this.balance;
     const physical = skill.scalesWith === 'attack';
 
-    const attackStat = physical ? attacker.stats.attack : attacker.stats.intellect;
-    const base = effectiveStat(b, attackStat) * b.damage.attackScale * skill.power;
-
-    const defenseStat = physical
-      ? Math.max(0, defender.stats.defense - (skill.ignoreDefense ?? 0))
-      : defender.stats.intellect;
-    const scale = physical ? b.damage.defenseScale : b.damage.resistScale;
-    const mitigation = 1 / (1 + effectiveStat(b, defenseStat) * scale);
-
+    const { base, mitigation } = this.core(attacker, defender, skill);
     const raw =
       base *
       this.traitMultiplier(attacker, defender) *
@@ -103,18 +124,29 @@ export class DamageCalculator {
       moraleMultiplier(b, attackerMoraleShare) *
       mitigation;
 
-    return Math.max(b.damage.minDamage, Math.round(raw));
+    const amount = Math.max(b.damage.minDamage, Math.round(raw));
+    return this.capAtTroops() ? Math.min(amount, Math.max(attacker.troops, b.damage.minDamage)) : amount;
   }
 
-  /** 반격 비율. 병종의 counterRate가 있으면 그것을, 없으면 balance.counter.rate를 쓴다. */
-  counterRate(counterer: CharacterState): number {
-    return this.data.unitTypes[counterer.unitType]?.counterRate ?? this.balance.counter.rate;
+  /** tiered 방식이고 capAtTroops이면 공격 피해가 공격자의 현재 병력을 넘지 않는다 (원작 규칙) */
+  private capAtTroops(): boolean {
+    const t = this.balance.troopFactor;
+    return t.mode === 'tiered' && (t.tiered?.capAtTroops ?? true);
   }
 
-  /** 반격 피해. 반격자의 일반공격 피해에 반격 비율을 곱한다. 방어 무시는 반격에는 붙지 않는다. */
-  counterDamage(counterer: CharacterState, target: CharacterState, skill: SkillData, countererMoraleShare: number): number {
-    const plain = skill.ignoreDefense ? { ...skill, ignoreDefense: 0 } : skill;
-    return Math.round(this.damage(counterer, target, plain, countererMoraleShare) * this.counterRate(counterer));
+  /** 반격 비율. 공격한 쪽 기술의 counterRate (원작처럼 기술마다 다르다). 없으면 balance.counter.rate */
+  counterRate(attackSkill: SkillData): number {
+    return attackSkill.counterRate ?? this.balance.counter.rate;
+  }
+
+  /**
+   * 반격 피해 = 반격자가 공격자를 기본 계수(1)로 친 피해 × 공격 기술의 반격 비율.
+   * 반격자의 일반공격 스킬은 계산 종류(공격/지력)만 쓰고, 계수와 방어 무시는 쓰지 않는다.
+   * 반격자의 병력은 호출하는 쪽이 정한다 (엔진은 맞기 전 병력을 넘긴다).
+   */
+  counterDamage(counterer: CharacterState, target: CharacterState, counterSkill: SkillData, attackSkill: SkillData, countererMoraleShare: number): number {
+    const plain = { ...counterSkill, power: 1, ignoreDefense: 0 };
+    return Math.round(this.damage(counterer, target, plain, countererMoraleShare) * this.counterRate(attackSkill));
   }
 
   /** 병사 회복량. 기본은 병력 보정과 사기 보정을 받지 않고, heal.useTroopFactor를 켜면 시전자의 병력 보정을 곱한다. */
@@ -122,7 +154,9 @@ export class DamageCalculator {
     const b = this.balance;
     const base = effectiveStat(b, healer.stats.intellect) * b.heal.scale * skill.power;
     if (!b.heal.useTroopFactor) return Math.round(base);
-    const factor = (b.troopFactor.mode ?? 'absolute') === 'relative' ? selfTroopFactor(b, healer.troops, healer.maxTroops) : troopFactor(b, this.strength(healer));
+    const mode = b.troopFactor.mode ?? 'absolute';
+    const factor =
+      mode === 'relative' ? selfTroopFactor(b, healer.troops, healer.maxTroops) : mode === 'tiered' ? tieredTroopFactor(b, this.strength(healer)) : troopFactor(b, this.strength(healer));
     return Math.round(base * factor);
   }
 }

@@ -152,12 +152,85 @@ button.big {
 
 a { color: #e2bd76; }
 
-.panels {
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  gap: 14px;
+.battle-board {
+  position: relative;
+}
+
+/* 카드의 논리 X 470~810 사이, Y 510~874 안에 지휘 패널을 둔다. */
+.command-dock {
+  position: absolute;
+  left: 38%;
+  width: 24%;
+  top: 56.6667%;
+  bottom: 2.8889%;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel);
+}
+
+.command-dock .command {
+  border: 0;
+  border-radius: 0;
+  padding: 12px;
+  background: linear-gradient(145deg, #203632, #111f22);
+  min-height: 100%;
+}
+
+.command-eyebrow {
+  color: #dfc58e;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  margin: 0 0 8px;
+}
+
+.command-dock h3 {
+  color: #f1e6cf;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.command-dock h3 small {
+  display: block;
+  margin: 4px 0 0;
+  font-weight: normal;
+}
+
+.command-dock .row > button {
+  flex: 1 1 100%;
+  text-align: left;
+}
+
+.command-dock button {
+  min-height: 36px;
+  border-radius: 3px;
+}
+
+.command-dock button.primary {
+  background: #d3b579;
+  color: #152321;
+  border-color: #f2d69b;
+  font-weight: 600;
+}
+
+button:focus-visible {
+  outline: 2px solid #ffe1a1;
+  outline-offset: 3px;
+}
+
+.command-dock .targets button {
+  grid-template-columns: 1fr;
+  gap: 2px;
+}
+
+.command-dock .target-preview {
+  font-size: 12px;
+}
+
+.battle-log {
   margin-top: 14px;
-  align-items: start;
 }
 
 .row {
@@ -235,10 +308,20 @@ strong.defender {
   white-space: pre;
 }
 
-@media (max-width: 900px) {
-  .panels {
-    grid-template-columns: 1fr;
+@media (max-width: 1100px) {
+  .command-dock {
+    position: static;
+    width: 100%;
+    margin-top: 12px;
+    overflow: visible;
   }
+  .command-dock .row > button {
+    flex: 0 1 auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .top { flex-wrap: wrap; gap: 4px; }
   .targets button {
     grid-template-columns: 1fr;
   }

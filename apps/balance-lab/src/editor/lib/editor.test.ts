@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defaultBalance, gameData, presets } from '@samgukji/game-data';
+import { maxTroops } from '@samgukji/battle-engine';
 import type { CharacterData } from '@samgukji/battle-engine';
 import { changedIds, derive, duplicateCharacter, isDirty, newCharacter, parseCharacters, presetsUsing, serialize, validate } from './editor';
 
@@ -49,7 +50,7 @@ describe('장수 편집기 로직', () => {
     expect(d.finalStats.attack).toBe(zhangFei.stats.attack - 1); // 방패병 공격 -1
     expect(d.finalStats.speed).toBe(zhangFei.stats.speed - 1); // 방패병 속도 -1
     expect(d.totalAp).toBe(5); // 기본 3 + 행동력 3(+2)
-    expect(d.troops).toBe(1000);
+    expect(d.troops).toBe(Math.round(maxTroops(defaultBalance, zhangFei.level) * (gameData.unitTypes.shield.troopScale ?? 1)));
     expect(d.sampleDamage).toBeGreaterThan(0);
     expect(derive({ ...zhangFei, unitType: 'nothing' }, gameData, defaultBalance)).toBeNull();
   });

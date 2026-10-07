@@ -71,6 +71,7 @@ export function DataTab() {
                 </td>
                 <td>
                   <CheckField label="반격 발생" path={`data.skills.${s.id}.counterable`} />
+                  {s.counterable ? <NumberField label="반격 비율" path={`data.skills.${s.id}.counterRate`} step={0.05} min={0} hint="맞은 쪽이 공격자를 계수 1로 친 피해 × 이 값 (맞기 전 병력)" /> : null}
                 </td>
                 <td>
                   <CheckField label="막을 수 있음" path={`data.skills.${s.id}.guardable`} />

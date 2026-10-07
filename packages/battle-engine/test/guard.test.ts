@@ -197,12 +197,29 @@ describe('가드: 막기만 하거나 공격만 해야 한다', () => {
     expect(engine.events.some((e) => e.type === 'guardChange')).toBe(false);
   });
 
-  it('반격은 공격 커맨드가 아니므로 가드를 풀지 않는다', () => {
+  it('반격은 공격 커맨드가 아니므로 가드를 풀지 않는다 (직접 맞아서 decay만큼만 준다)', () => {
     const engine = new BattleEngine(input([front('cav')], [front('shield')]));
     const shield = unit(engine, 'defender:0');
     shield.guardRate = 120;
     engine.perform(unit(engine, 'attacker:0'), hit('defender:0')); // 방패병 본인이 맞고 반격한다
-    expect(shield.guardRate).toBe(120);
+    expect(shield.guardRate).toBe(80);
+  });
+
+  it('가드 중에 직접 맞아도 decay만큼 준다 (원작 규칙)', () => {
+    const engine = new BattleEngine(input([front('cav')], [front('shield')]));
+    const shield = unit(engine, 'defender:0');
+    expect(shield.guardRate).toBe(50);
+    engine.perform(unit(engine, 'attacker:0'), hit('defender:0'));
+    expect(shield.guardRate).toBe(10);
+    expect(engine.events.find((e) => e.type === 'guardChange')).toMatchObject({ unit: 'defender:0', rate: 10, reason: 'block' });
+  });
+
+  it('가드 상승 = gain + 지력 × gainPerIntellect', () => {
+    const data = { ...testData, unitTypes: { ...testData.unitTypes, shield: { ...testData.unitTypes.shield, guard: { start: 0, gain: 5, gainPerIntellect: 20, decay: 40 } } } };
+    const engine = new BattleEngine({ ...input([front('shield')], [front('inf')]), data });
+    const shield = unit(engine, 'attacker:0');
+    engine.perform(shield, { kind: 'skill', skillId: 'guard', targetUid: shield.uid });
+    expect(shield.guardRate).toBe(5 + shield.stats.intellect * 20);
   });
 
   it('가드가 없는 군단이 공격해도 가드 이벤트가 생기지 않는다', () => {

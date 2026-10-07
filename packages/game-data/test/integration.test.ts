@@ -171,22 +171,23 @@ describe('숫자를 바꾸면 결과가 달라진다', () => {
 
   it('반격 비율을 0으로 하면 평균 전투 진행이 달라진다', () => {
     const base = sim(defaultBalance);
-    // 병종마다 counterRate가 있으므로 전 병종의 값을 0으로 만든다
+    // 반격 비율은 기술마다 있으므로 모든 기술의 값을 0으로 만든다
     const noCounterData = {
       ...gameData,
-      unitTypes: Object.fromEntries(Object.entries(gameData.unitTypes).map(([id, u]) => [id, { ...u, counterRate: 0 }])),
+      skills: Object.fromEntries(Object.entries(gameData.skills).map(([id, s]) => [id, { ...s, counterRate: 0 }])),
     };
     const noCounter = sim(defaultBalance, noCounterData);
     expect(noCounter.averageDestroyed).not.toEqual(base.averageDestroyed);
   });
 
-  it('특정 캐릭터의 스탯을 올리면 그 캐릭터의 피해량이 늘어난다', () => {
-    const boosted = {
+  // 올리는 쪽은 한 방 피해가 대상의 남은 병력을 넘어 포화될 수 있어서(원작식 공식), 내리는 쪽으로 확인한다
+  it('특정 캐릭터의 공격을 내리면 그 캐릭터의 피해량이 줄어든다', () => {
+    const weakened = {
       ...gameData,
-      characters: { ...gameData.characters, guanYu: { ...gameData.characters.guanYu, stats: { ...gameData.characters.guanYu.stats, attack: 15 } } },
+      characters: { ...gameData.characters, guanYu: { ...gameData.characters.guanYu, stats: { ...gameData.characters.guanYu.stats, attack: 1 } } },
     };
     const before = BattleSimulator.run({ data: gameData, balance: defaultBalance, teamA: presets.shu, teamB: presets.wei, iterations: 400, seed: 3 });
-    const after = BattleSimulator.run({ data: boosted, balance: defaultBalance, teamA: presets.shu, teamB: presets.wei, iterations: 400, seed: 3 });
-    expect(after.characterStats['A:guanYu'].averageDamageDealt).toBeGreaterThan(before.characterStats['A:guanYu'].averageDamageDealt);
+    const after = BattleSimulator.run({ data: weakened, balance: defaultBalance, teamA: presets.shu, teamB: presets.wei, iterations: 400, seed: 3 });
+    expect(after.characterStats['A:guanYu'].averageDamageDealt).toBeLessThan(before.characterStats['A:guanYu'].averageDamageDealt);
   });
 });
