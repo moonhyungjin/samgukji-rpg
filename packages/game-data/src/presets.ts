@@ -10,6 +10,15 @@ export const presets: Record<string, LineupEntry[]> = {
     { characterId: 'zhugeLiang', row: 'back' },
     { characterId: 'pangTong', row: 'back' },
   ],
+  // 평범한 장수들 (황건적)
+  yellow: [
+    { characterId: 'ytShieldA', row: 'front' },
+    { characterId: 'ytInfantryA', row: 'front' },
+    { characterId: 'ytCavalryA', row: 'front' },
+    { characterId: 'ytArcherA', row: 'back' },
+    { characterId: 'ytStrategistA', row: 'back' },
+    { characterId: 'ytTaoistA', row: 'back' },
+  ],
   wei: [
     { characterId: 'xuChu', row: 'front' },
     { characterId: 'xiahouDun', row: 'front' },

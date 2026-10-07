@@ -155,7 +155,7 @@ describe('BattleEngine: 전열 전멸 시 후열 이동', () => {
     throw new Error('rowAdvance not emitted');
   });
 
-  it('후열만 있는 진영은 후열 유닛이 쓰러져도 이동 이벤트가 없다', () => {
+  it('후열만 있는 진영은 시작할 때 후열이 전열이 되고, 이후 쓰러져도 추가 이동 이벤트가 없다', () => {
     const result = runBattle(
       input({
         balance: strong,
@@ -167,7 +167,25 @@ describe('BattleEngine: 전열 전멸 시 후열 이동', () => {
         recordEvents: true,
       }),
     );
-    expect(result.events!.some((e) => e.type === 'rowAdvance')).toBe(false);
+    const advances = result.events!.filter((e) => e.type === 'rowAdvance');
+    // 시작할 때 양쪽 진영이 한 번씩만 이동한다 (전투 중에는 이동 이벤트가 더 없다)
+    expect(advances).toHaveLength(2);
+    expect(advances.every((e) => e.round === 0)).toBe(true);
+  });
+
+  it('후열에 선 사거리 1 병종은 전열이 살아 있어도 공격할 수 없다', () => {
+    const engine = new BattleEngine(
+      input({
+        attacker: [
+          { characterId: 'inf', row: 'front' },
+          { characterId: 'inf', row: 'back' },
+        ],
+        defender: [{ characterId: 'inf', row: 'front' }],
+      }),
+    );
+    // 보병(사거리 1)이 후열에 서 있으면 대상이 없다
+    expect(engine.getLegalCommands(engine.state.units[1]).find((c) => c.skillId === 'hit')).toBeUndefined();
+    expect(engine.getLegalCommands(engine.state.units[0]).find((c) => c.skillId === 'hit')?.targetUids).toEqual(['defender:0']);
   });
 });
 
@@ -197,7 +215,7 @@ describe('BattleEngine: 사기와 회복', () => {
 
 describe('BattleEngine: 편성 검증', () => {
   it('허용되지 않은 열에는 배치할 수 없다', () => {
-    expect(() => runBattle(input({ attacker: [{ characterId: 'arc', row: 'front' }] }))).toThrow(/cannot be placed/);
+    expect(() => runBattle(input({ attacker: [{ characterId: 'str', row: 'front' }] }))).toThrow(/cannot be placed/);
   });
 
   it('열당 3군단을 넘을 수 없다', () => {

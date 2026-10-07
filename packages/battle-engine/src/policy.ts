@@ -91,7 +91,7 @@ export function createDefaultPolicy(options: DefaultPolicyOptions = {}): Command
 
     const attack = skills.find((s) => s.kind === 'attack');
     if (attack) {
-      const targets = TargetSelector.getValidTargets(actor, state, unitType.targetRule);
+      const targets = TargetSelector.getValidTargets(actor, state, unitType.range);
       if (targets.length > 0) {
         const moraleShare = actor.side === 'defender' ? state.defenderMorale : 100 - state.defenderMorale;
         const calc = targetPolicy === 'highest-damage' ? new DamageCalculator(balance, data) : null;

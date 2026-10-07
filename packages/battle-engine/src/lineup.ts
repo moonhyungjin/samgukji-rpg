@@ -1,6 +1,7 @@
 import { maxTroops, totalAp } from './stats';
 import type { Rng } from './rng';
-import type { BalanceConfig, CharacterState, GameData, LineupEntry, Row, Side, Stats, UnitTypeData } from './types';
+import { canAttackFromRow } from './targeting';
+import type { BalanceConfig, CharacterPool, CharacterState, GameData, LineupEntry, Row, Side, Stats, UnitTypeData } from './types';
 
 export const ROW_CAPACITY = 3;
 export const MAX_UNITS_PER_SIDE = 6;
@@ -9,8 +10,8 @@ export const MAX_UNITS_PER_SIDE = 6;
  * 무작위 편성. 캐릭터를 섞은 뒤 허용된 열에 하나씩 배치한다 (열당 최대 3군단).
  * 병종별/캐릭터별 승률을 편성 편향 없이 보기 위한 용도다.
  */
-export function generateRandomLineup(data: GameData, rng: Rng, size = MAX_UNITS_PER_SIDE): LineupEntry[] {
-  const ids = Object.keys(data.characters);
+export function generateRandomLineup(data: GameData, rng: Rng, size = MAX_UNITS_PER_SIDE, pool: CharacterPool = 'elite'): LineupEntry[] {
+  const ids = Object.keys(data.characters).filter((id) => pool === 'all' || (data.characters[id].rank ?? 'elite') === pool);
   for (let i = ids.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [ids[i], ids[j]] = [ids[j], ids[i]];
@@ -20,7 +21,11 @@ export function generateRandomLineup(data: GameData, rng: Rng, size = MAX_UNITS_
   for (const id of ids) {
     if (lineup.length >= size) break;
     const unitType = data.unitTypes[data.characters[id].unitType];
-    const rows = unitType.allowedRows.filter((r) => count[r] < ROW_CAPACITY);
+    // 사거리 1 병종은 후열에서 아무도 못 치므로 공격할 수 있는 열에만, 사거리 3 병종(궁병 등)은 후열에 둔다 (보통의 운용)
+    const rangedBack = unitType.range >= 3 && unitType.allowedRows.includes('back');
+    const rows = rangedBack
+      ? (['back'] as Row[]).filter((r) => count[r] < ROW_CAPACITY)
+      : unitType.allowedRows.filter((r) => count[r] < ROW_CAPACITY && canAttackFromRow(unitType.range, r));
     if (rows.length === 0) continue;
     const row = rows[Math.floor(rng() * rows.length)];
     count[row]++;

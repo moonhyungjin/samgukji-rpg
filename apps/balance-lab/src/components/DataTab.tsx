@@ -126,7 +126,7 @@ export function DataTab() {
               <th>받는 피해 배수 (물리 / 책략)</th>
               <th>스탯 보정 (공 / 방 / 지 / 속)</th>
               <th>시작 배치 가능 열</th>
-              <th>대상 규칙</th>
+              <th>사거리</th>
               <th>반격</th>
               <th>반격 비율</th>
               <th>일반공격</th>
@@ -170,13 +170,7 @@ export function DataTab() {
                   <CheckGroup path={`data.unitTypes.${u.id}.allowedRows`} options={ROW_OPTIONS} />
                 </td>
                 <td>
-                  <SelectField
-                    path={`data.unitTypes.${u.id}.targetRule`}
-                    options={[
-                      { value: 'front-first', label: '전열 우선' },
-                      { value: 'any', label: '전열/후열 모두' },
-                    ]}
-                  />
+                  <NumberField path={`data.unitTypes.${u.id}.range`} step={1} min={1} />
                 </td>
                 <td>
                   <CheckField label="반격함" path={`data.unitTypes.${u.id}.canCounter`} />

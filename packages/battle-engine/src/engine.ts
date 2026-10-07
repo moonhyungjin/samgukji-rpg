@@ -117,6 +117,10 @@ export class BattleEngine {
         blocks: 0,
       });
     }
+
+    // 시작할 때 전열이 비어 있는 진영은 후열이 전열이 된다 (사거리 1 병종이 칠 상대가 항상 있도록)
+    this.advanceRows('attacker');
+    this.advanceRows('defender');
   }
 
   get finished(): boolean {
@@ -191,7 +195,7 @@ export class BattleEngine {
       if (skill.kind === 'heal') targets = TargetSelector.getAllies(actor, this.state);
       else if (skill.kind === 'buff') targets = TargetSelector.getAllies(actor, this.state).filter((u) => canBuff(u, skill));
       else if (skill.kind === 'guard') targets = unitType.guard ? [actor] : []; // 가드는 자기 자신에게 쓴다
-      else targets = TargetSelector.getValidTargets(actor, this.state, unitType.targetRule);
+      else targets = TargetSelector.getValidTargets(actor, this.state, unitType.range);
       if (targets.length > 0) commands.push({ skillId: id, targetUids: targets.map((t) => t.uid) });
     }
     return commands;

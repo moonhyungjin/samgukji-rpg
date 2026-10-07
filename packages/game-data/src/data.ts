@@ -35,20 +35,21 @@ const skillList: SkillData[] = [
 // damageTakenByType: 공격 종류별 받는 피해 배수. 방패병/보병/기병/궁병은 물리 ×1, 책략 ×1.1, 책사/도사/풍수사는 물리 ×1.1, 책략 ×0.8.
 // statMods: 병종 스탯 보정 (캐릭터 기본 스탯에 더해진다). 방패병 공-1 속-1, 기병 공/방/속 +1, 궁병 방-1 속-1, 책사 지+1, 도사 속+1, 보병/풍수사 없음.
 // 보병과 방패병이 가장 표준적인 병종이다. 가드는 방패병만 쓴다 (시작 50%p, 가드 +70%p, 막을 때마다 -40%p, 가드 중 받는 피해 ×0.75 (25%만 줄인다)).
-// 기병은 일단 전열만 공격한다 (targetRule: front-first). 후열 저격은 나중에 승급 병종(경기병 등)이나 스킬로 다시 정한다.
+// 사거리(range): 방패병/보병/기병 1, 궁병/책사/도사/풍수사 3. 사거리 1은 전열에서만 적의 전열을 칠 수 있다. 방/보/기/궁은 전열과 후열 어디에든 배치할 수 있고, 책사/도사/풍수사는 후열 전용.
+// (후열 저격은 나중에 승급 병종이나 스킬로 다시 정한다)
 
 const unitTypeList: UnitTypeData[] = [
-  { id: 'infantry', name: '보병', family: 'infantry', tier: 1, allowedRows: ['front'], targetRule: 'front-first', canCounter: true, counterRate: 0.5, basicSkillId: 'infantry-attack', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 1, baseAp: 2, damageTakenByType: { physical: 1, magic: 1.1 }, statMods: { attack: 0, defense: 0, intellect: 0, speed: 0 } },
+  { id: 'infantry', name: '보병', family: 'infantry', tier: 1, allowedRows: ['front', 'back'], range: 1, canCounter: true, counterRate: 0.5, basicSkillId: 'infantry-attack', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 1, baseAp: 2, damageTakenByType: { physical: 1, magic: 1.1 }, statMods: { attack: 0, defense: 0, intellect: 0, speed: 0 } },
   {
-    id: 'shield', name: '방패병', family: 'shield', tier: 1, allowedRows: ['front'], targetRule: 'front-first', canCounter: true, counterRate: 0.5,
+    id: 'shield', name: '방패병', family: 'shield', tier: 1, allowedRows: ['front', 'back'], range: 1, canCounter: true, counterRate: 0.5,
     basicSkillId: 'infantry-attack', extraSkillIds: ['guard'], promotesTo: [], traitIds: [], troopScale: 1, baseAp: 3, damageTakenByType: { physical: 1, magic: 1.1 }, statMods: { attack: -1, defense: 0, intellect: 0, speed: -1 },
     guard: { start: 50, gain: 70, decay: 40, damageTaken: 0.75 },
   },
-  { id: 'cavalry', name: '기병', family: 'cavalry', tier: 1, allowedRows: ['front'], targetRule: 'front-first', canCounter: true, counterRate: 0.6, basicSkillId: 'cavalry-charge', extraSkillIds: [], promotesTo: [], traitIds: ['cavalry-tough'], troopScale: 0.8, baseAp: 2, damageTakenByType: { physical: 1, magic: 1.1 }, statMods: { attack: 1, defense: 1, intellect: 0, speed: 1 } },
-  { id: 'archer', name: '궁병', family: 'archer', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: true, counterRate: 0.25, basicSkillId: 'archer-shot', extraSkillIds: [], promotesTo: [], traitIds: ['archer-vs-front'], troopScale: 0.85, baseAp: 2, damageTakenByType: { physical: 1, magic: 1.1 }, statMods: { attack: 0, defense: -1, intellect: 0, speed: -1 } },
-  { id: 'strategist', name: '책사', family: 'strategist', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, counterRate: 0.5, basicSkillId: 'stratagem', extraSkillIds: ['inspire'], promotesTo: [], traitIds: [], troopScale: 0.8, baseAp: 2, damageTakenByType: { physical: 1.1, magic: 0.8 }, statMods: { attack: 0, defense: 0, intellect: 1, speed: 0 } },
-  { id: 'taoist', name: '도사', family: 'taoist', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, counterRate: 0.5, basicSkillId: 'poison-smoke', extraSkillIds: ['ward'], promotesTo: [], traitIds: [], troopScale: 0.8, baseAp: 2, damageTakenByType: { physical: 1.1, magic: 0.8 }, statMods: { attack: 0, defense: 0, intellect: 0, speed: 1 } },
-  { id: 'geomancer', name: '풍수사', family: 'geomancer', tier: 1, allowedRows: ['back'], targetRule: 'any', canCounter: false, counterRate: 0.5, basicSkillId: 'heal', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 0.6, baseAp: 2, damageTakenByType: { physical: 1.1, magic: 0.8 }, statMods: { attack: 0, defense: 0, intellect: 0, speed: 0 } },
+  { id: 'cavalry', name: '기병', family: 'cavalry', tier: 1, allowedRows: ['front', 'back'], range: 1, canCounter: true, counterRate: 0.6, basicSkillId: 'cavalry-charge', extraSkillIds: [], promotesTo: [], traitIds: ['cavalry-tough'], troopScale: 0.8, baseAp: 2, damageTakenByType: { physical: 1, magic: 1.1 }, statMods: { attack: 1, defense: 1, intellect: 0, speed: 1 } },
+  { id: 'archer', name: '궁병', family: 'archer', tier: 1, allowedRows: ['front', 'back'], range: 3, canCounter: true, counterRate: 0.25, basicSkillId: 'archer-shot', extraSkillIds: [], promotesTo: [], traitIds: ['archer-vs-front'], troopScale: 0.85, baseAp: 2, damageTakenByType: { physical: 1, magic: 1.1 }, statMods: { attack: 0, defense: -1, intellect: 0, speed: -1 } },
+  { id: 'strategist', name: '책사', family: 'strategist', tier: 1, allowedRows: ['back'], range: 3, canCounter: false, counterRate: 0.5, basicSkillId: 'stratagem', extraSkillIds: ['inspire'], promotesTo: [], traitIds: [], troopScale: 0.8, baseAp: 2, damageTakenByType: { physical: 1.1, magic: 0.8 }, statMods: { attack: 0, defense: 0, intellect: 1, speed: 0 } },
+  { id: 'taoist', name: '도사', family: 'taoist', tier: 1, allowedRows: ['back'], range: 3, canCounter: false, counterRate: 0.5, basicSkillId: 'poison-smoke', extraSkillIds: ['ward'], promotesTo: [], traitIds: [], troopScale: 0.8, baseAp: 2, damageTakenByType: { physical: 1.1, magic: 0.8 }, statMods: { attack: 0, defense: 0, intellect: 0, speed: 1 } },
+  { id: 'geomancer', name: '풍수사', family: 'geomancer', tier: 1, allowedRows: ['back'], range: 3, canCounter: false, counterRate: 0.5, basicSkillId: 'heal', extraSkillIds: [], promotesTo: [], traitIds: [], troopScale: 0.6, baseAp: 2, damageTakenByType: { physical: 1.1, magic: 0.8 }, statMods: { attack: 0, defense: 0, intellect: 0, speed: 0 } },
 ];
 
 // ---------- 캐릭터 (이름만 삼국지, 수치는 모두 임시) ----------
@@ -84,6 +85,19 @@ const characterList: CharacterData[] = [
   { id: 'xunYu', name: '순욱', unitType: 'strategist', stats: s(2, 3, 9, 5, 1), level: 15 },
   { id: 'dianWei', name: '전위', unitType: 'infantry', stats: s(9, 7, 3, 5, 3), level: 15 },
   { id: 'guoJia', name: '곽가', unitType: 'taoist', stats: s(1, 3, 10, 6, 1), level: 15 },
+  // 평범한 장수 (황건적 같은 일반 병력). 네임드 장수보다 스탯이 전반적으로 낮다. 무작위 편성은 기본으로 네임드 장수만 쓰고, 이쪽은 pool: 'normal'로 쓴다.
+  { id: 'ytShieldA', name: '황건 방패병A', rank: 'normal', unitType: 'shield', stats: s(5, 5, 2, 3, 3), level: 15 },
+  { id: 'ytShieldB', name: '황건 방패병B', rank: 'normal', unitType: 'shield', stats: s(4, 6, 2, 3, 3), level: 15 },
+  { id: 'ytInfantryA', name: '황건 보병A', rank: 'normal', unitType: 'infantry', stats: s(5, 4, 2, 4, 3), level: 15 },
+  { id: 'ytInfantryB', name: '황건 보병B', rank: 'normal', unitType: 'infantry', stats: s(6, 4, 2, 4, 3), level: 15 },
+  { id: 'ytCavalryA', name: '황건 기병A', rank: 'normal', unitType: 'cavalry', stats: s(5, 4, 2, 5, 3), level: 15 },
+  { id: 'ytCavalryB', name: '황건 기병B', rank: 'normal', unitType: 'cavalry', stats: s(6, 4, 2, 6, 3), level: 15 },
+  { id: 'ytArcherA', name: '황건 궁병A', rank: 'normal', unitType: 'archer', stats: s(5, 3, 3, 4, 3), level: 15 },
+  { id: 'ytArcherB', name: '황건 궁병B', rank: 'normal', unitType: 'archer', stats: s(6, 3, 3, 4, 3), level: 15 },
+  { id: 'ytStrategistA', name: '황건 책사A', rank: 'normal', unitType: 'strategist', stats: s(2, 3, 6, 4, 1), level: 15 },
+  { id: 'ytStrategistB', name: '황건 책사B', rank: 'normal', unitType: 'strategist', stats: s(2, 3, 5, 4, 1), level: 15 },
+  { id: 'ytTaoistA', name: '황건 도사A', rank: 'normal', unitType: 'taoist', stats: s(1, 3, 6, 4, 1), level: 15 },
+  { id: 'ytTaoistB', name: '황건 도사B', rank: 'normal', unitType: 'taoist', stats: s(2, 3, 5, 4, 1), level: 15 },
 ];
 
 const toRecord = <T extends { id: string }>(list: T[]): Record<string, T> => Object.fromEntries(list.map((x) => [x.id, x]));

@@ -62,6 +62,7 @@ export function useSimulation(state: LabState): SimulationHook {
       targetPolicy: s.sim.targetPolicy,
       guardMode: s.sim.guardMode,
       buffMode: s.sim.buffMode,
+      pool: s.sim.pool,
     };
     worker.postMessage(request);
   }, []);

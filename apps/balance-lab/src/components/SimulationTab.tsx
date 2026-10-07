@@ -62,6 +62,15 @@ export function SimulationTab({ sim, pinned, setPinned }: Props) {
             ]}
           />
           <SelectField
+            label="무작위 편성 후보"
+            path="sim.pool"
+            options={[
+              { value: 'elite', label: '네임드 장수 (기본)' },
+              { value: 'normal', label: '평범한 장수 (황건적)' },
+              { value: 'all', label: '모두' },
+            ]}
+          />
+          <SelectField
             label="버프(책사/도사) AI"
             path="sim.buffMode"
             options={[

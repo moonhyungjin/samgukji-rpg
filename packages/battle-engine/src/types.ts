@@ -9,8 +9,6 @@ export type Side = 'attacker' | 'defender';
 export type StatKey = 'attack' | 'defense' | 'intellect' | 'speed' | 'action' | 'diplomacy' | 'politics' | 'charm';
 export type Stats = Record<StatKey, number>;
 
-/** 적 대상 선택 규칙. front-first: 전열이 남아 있으면 전열만, any: 전열/후열 모두 */
-export type TargetRule = 'front-first' | 'any';
 export type SkillKind = 'attack' | 'heal' | 'guard' | 'buff';
 
 // ---------- 정적 데이터 ----------
@@ -84,7 +82,11 @@ export interface UnitTypeData {
   family: Family;
   tier: number;
   allowedRows: Row[];
-  targetRule: TargetRule;
+  /**
+   * 사거리. 공격자와 대상 사이의 거리(전열↔전열 1, 후열↔전열 또는 전열↔후열 2, 후열↔후열 3)가 사거리 이하여야 공격할 수 있다.
+   * 사거리 1은 자기가 전열에 있을 때 적의 전열만 칠 수 있고 (후열에 있으면 아무도 못 친다), 사거리 3은 어느 열에서든 모든 열을 칠 수 있다.
+   */
+  range: number;
   /** 공격받았을 때 반격할 수 있는가 */
   canCounter: boolean;
   /** 반격 피해 = 반격자의 일반공격 피해 × 이 값. 생략하면 balance.counter.rate. 반격에는 방어 무시(ignoreDefense)가 붙지 않는다 */
@@ -113,9 +115,15 @@ export interface UnitTypeData {
   guard?: GuardConfig;
 }
 
+export type CharacterRank = 'elite' | 'normal';
+/** 무작위 편성의 후보 풀. elite: 네임드 장수만, normal: 평범한 장수만, all: 모두 */
+export type CharacterPool = CharacterRank | 'all';
+
 export interface CharacterData {
   id: string;
   name: string;
+  /** elite: 네임드 장수(기본), normal: 평범한 장수(황건적 같은 일반 병력). 무작위 편성의 후보 풀을 고르는 데 쓴다 */
+  rank?: CharacterRank;
   unitType: string;
   /** 기본 스탯 0~10 (아이템 등으로 초과 가능) */
   stats: Stats;

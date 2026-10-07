@@ -1,11 +1,44 @@
 import { describe, expect, it } from 'vitest';
-import { BattleSimulator, FAMILIES, runBattle, totalAp } from '@samgukji/battle-engine';
+import { BattleSimulator, createRng, FAMILIES, generateRandomLineup, runBattle, totalAp } from '@samgukji/battle-engine';
 import type { BalanceConfig, CharacterData } from '@samgukji/battle-engine';
 import { defaultBalance, gameData, presets } from '../src';
 
 /** 병종 보정까지 반영한 최대 AP */
 const maxApOf = (c: CharacterData) =>
   totalAp(defaultBalance, gameData.unitTypes[c.unitType].baseAp, c.stats.action + (gameData.unitTypes[c.unitType].statMods?.action ?? 0));
+
+describe('평범한 장수 (황건적)와 무작위 편성 풀', () => {
+  const normal = Object.values(gameData.characters).filter((c) => c.rank === 'normal');
+  const elite = Object.values(gameData.characters).filter((c) => (c.rank ?? 'elite') === 'elite');
+  const avgStat = (list: typeof normal, key: 'attack' | 'defense' | 'intellect') => list.reduce((sum, c) => sum + c.stats[key], 0) / list.length;
+
+  it('병종마다 평범한 장수가 둘 이상 있고, 네임드 장수보다 스탯이 낮다', () => {
+    for (const id of ['shield', 'infantry', 'cavalry', 'archer', 'strategist', 'taoist']) {
+      expect(normal.filter((c) => c.unitType === id).length, id).toBeGreaterThanOrEqual(2);
+    }
+    expect(avgStat(normal, 'attack')).toBeLessThan(avgStat(elite, 'attack'));
+    expect(avgStat(normal, 'intellect')).toBeLessThan(avgStat(elite, 'intellect'));
+  });
+
+  it('무작위 편성은 기본으로 네임드 장수만 쓰고, pool로 평범한 장수만/모두를 고를 수 있다', () => {
+    const ids = (pool?: 'elite' | 'normal' | 'all') =>
+      new Set(Array.from({ length: 50 }, (_, i) => generateRandomLineup(gameData, createRng(i + 1), 6, pool)).flat().map((e) => e.characterId));
+    for (const id of ids()) expect(gameData.characters[id].rank ?? 'elite').toBe('elite');
+    for (const id of ids('normal')) expect(gameData.characters[id].rank).toBe('normal');
+    const all = ids('all');
+    expect([...all].some((id) => gameData.characters[id].rank === 'normal')).toBe(true);
+    expect([...all].some((id) => (gameData.characters[id].rank ?? 'elite') === 'elite')).toBe(true);
+  });
+
+  it('무작위 편성에서 사거리 3 병종은 후열에, 사거리 1 병종은 전열에 선다', () => {
+    for (let i = 1; i <= 100; i++) {
+      for (const e of generateRandomLineup(gameData, createRng(i), 6, 'all')) {
+        const range = gameData.unitTypes[gameData.characters[e.characterId].unitType].range;
+        expect(e.row, e.characterId).toBe(range >= 3 ? 'back' : 'front');
+      }
+    }
+  });
+});
 
 describe('게임 데이터 무결성', () => {
   it('캐릭터는 존재하는 병종을, 병종은 존재하는 스킬/특성을 참조한다', () => {
@@ -60,7 +93,7 @@ describe('게임 데이터 무결성', () => {
     expect(mods('taoist')).toEqual({ attack: 0, defense: 0, intellect: 0, speed: 1 });
     expect(mods('geomancer')).toEqual({ attack: 0, defense: 0, intellect: 0, speed: 0 });
     const apOf = (id: string) => Object.values(characters).filter((c) => c.unitType === id).map(maxApOf);
-    expect(apOf('shield')).toEqual([5, 5]);
+    expect(new Set(apOf('shield'))).toEqual(new Set([5]));
     for (const [id, ap] of [['infantry', 4], ['cavalry', 4], ['archer', 4], ['strategist', 3], ['taoist', 3]] as const) {
       expect(new Set(apOf(id)), id).toEqual(new Set([ap]));
     }
@@ -72,7 +105,10 @@ describe('게임 데이터 무결성', () => {
     expect(unitTypes.archer.traitIds).toContain('archer-vs-front');
     expect(gameData.traits['archer-vs-front']).toMatchObject({ kind: 'damage-dealt', multiplier: 0.8, versus: { rows: ['front'] } });
     expect(unitTypes.shield.extraSkillIds).toContain('guard');
-    expect(unitTypes.cavalry.targetRule).toBe('front-first');
+    // 사거리: 방패병/보병/기병 1, 궁병/책사/도사/풍수사 3. 방/보/기/궁은 전열과 후열 모두 배치 가능, 지력 계열은 후열 전용
+    expect(Object.fromEntries(Object.entries(unitTypes).map(([id, u]) => [id, u.range]))).toEqual({ infantry: 1, shield: 1, cavalry: 1, archer: 3, strategist: 3, taoist: 3, geomancer: 3 });
+    for (const id of ['infantry', 'shield', 'cavalry', 'archer']) expect(unitTypes[id].allowedRows, id).toEqual(['front', 'back']);
+    for (const id of ['strategist', 'taoist', 'geomancer']) expect(unitTypes[id].allowedRows, id).toEqual(['back']);
     expect(characters.guoJia.unitType).toBe('taoist');
     expect(maxApOf(characters.guoJia)).toBe(3);
     // 책사는 공격 버프(독려), 도사는 방어 버프(결계)를 쓴다

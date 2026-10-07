@@ -1,31 +1,58 @@
 import { describe, expect, it } from 'vitest';
-import { chooseTarget, createRng, judge, TargetSelector } from '../src';
+import { canAttackFromRow, chooseTarget, createRng, judge, rowDistance, TargetSelector } from '../src';
 import { makeState, makeUnit } from './fixtures';
 
 const actor = makeUnit({ uid: 'attacker:0', side: 'attacker' });
 const eFront = makeUnit({ uid: 'defender:0', side: 'defender', row: 'front' });
 const eBack = makeUnit({ uid: 'defender:1', side: 'defender', row: 'back' });
 
-describe('TargetSelector.getValidTargets', () => {
-  it('front-first: 전열이 있으면 전열만 대상이다', () => {
-    const state = makeState([actor, eFront, eBack]);
-    expect(TargetSelector.getValidTargets(actor, state, 'front-first').map((u) => u.uid)).toEqual(['defender:0']);
+describe('TargetSelector.getValidTargets (사거리)', () => {
+  const frontActor = makeUnit({ uid: 'attacker:0', side: 'attacker', row: 'front' });
+  const backActor = makeUnit({ uid: 'attacker:1', side: 'attacker', row: 'back' });
+
+  it('사거리 1: 전열에서 적의 전열만 칠 수 있다', () => {
+    const state = makeState([frontActor, eFront, eBack]);
+    expect(TargetSelector.getValidTargets(frontActor, state, 1).map((u) => u.uid)).toEqual(['defender:0']);
   });
 
-  it('front-first: 전열이 전멸하면 후열이 대상이 된다', () => {
-    const state = makeState([actor, { ...eFront, isDead: true, troops: 0 }, eBack]);
-    expect(TargetSelector.getValidTargets(actor, state, 'front-first').map((u) => u.uid)).toEqual(['defender:1']);
+  it('사거리 1: 후열에 있으면 아무도 칠 수 없다', () => {
+    const state = makeState([backActor, eFront, eBack]);
+    expect(TargetSelector.getValidTargets(backActor, state, 1)).toEqual([]);
   });
 
-  it('any: 전열/후열 모두 대상이다 (기병, 궁병)', () => {
-    const state = makeState([actor, eFront, eBack]);
-    expect(TargetSelector.getValidTargets(actor, state, 'any').map((u) => u.uid)).toEqual(['defender:0', 'defender:1']);
+  it('사거리 2: 후열에서 적의 전열을, 전열에서 적의 후열을 칠 수 있지만 후열↔후열은 못 친다', () => {
+    const state = makeState([frontActor, backActor, eFront, eBack]);
+    expect(TargetSelector.getValidTargets(frontActor, state, 2).map((u) => u.uid)).toEqual(['defender:0', 'defender:1']);
+    expect(TargetSelector.getValidTargets(backActor, state, 2).map((u) => u.uid)).toEqual(['defender:0']);
+  });
+
+  it('사거리 3: 어느 열에서든 모든 열을 칠 수 있다 (궁병, 책사)', () => {
+    const state = makeState([frontActor, backActor, eFront, eBack]);
+    for (const a of [frontActor, backActor]) {
+      expect(TargetSelector.getValidTargets(a, state, 3).map((u) => u.uid)).toEqual(['defender:0', 'defender:1']);
+    }
   });
 
   it('죽은 적과 아군은 대상이 아니다', () => {
-    const ally = makeUnit({ uid: 'attacker:1' });
-    const state = makeState([actor, ally, { ...eFront, isDead: true, troops: 0 }]);
-    expect(TargetSelector.getValidTargets(actor, state, 'any')).toEqual([]);
+    const ally = makeUnit({ uid: 'attacker:2' });
+    const state = makeState([frontActor, ally, { ...eFront, isDead: true, troops: 0 }]);
+    expect(TargetSelector.getValidTargets(frontActor, state, 3)).toEqual([]);
+  });
+});
+
+describe('rowDistance / canAttackFromRow', () => {
+  it('거리: 전열↔전열 1, 후열↔전열 2, 후열↔후열 3', () => {
+    expect(rowDistance('front', 'front')).toBe(1);
+    expect(rowDistance('back', 'front')).toBe(2);
+    expect(rowDistance('front', 'back')).toBe(2);
+    expect(rowDistance('back', 'back')).toBe(3);
+  });
+
+  it('사거리 1은 후열에서 공격할 수 없고, 사거리 2부터는 후열에서도 공격한다', () => {
+    expect(canAttackFromRow(1, 'front')).toBe(true);
+    expect(canAttackFromRow(1, 'back')).toBe(false);
+    expect(canAttackFromRow(2, 'back')).toBe(true);
+    expect(canAttackFromRow(3, 'back')).toBe(true);
   });
 });
 

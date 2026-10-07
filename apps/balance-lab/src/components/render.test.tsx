@@ -47,6 +47,7 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(html).toContain('가드로 막힘');
     // 병종 기본 AP, 스탯 보정, 방어 무시, 버프 설정
     expect(html).toContain('기본 AP');
+    expect(html).toContain('사거리');
     expect(html).toContain('반격 비율');
     expect(html).toContain('받는 피해 배수 (물리 / 책략)');
     expect(html).toContain('스탯 보정');

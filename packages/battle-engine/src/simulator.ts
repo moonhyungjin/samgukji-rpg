@@ -2,7 +2,7 @@ import { runBattle } from './engine';
 import { generateRandomLineup, MAX_UNITS_PER_SIDE } from './lineup';
 import { createRng, deriveSeed } from './rng';
 import type { CommandPolicy } from './policy';
-import type { BalanceConfig, BattleResult, Family, GameData, LineupEntry, Side } from './types';
+import type { BalanceConfig, BattleResult, CharacterPool, Family, GameData, LineupEntry, Side } from './types';
 
 export type RoleMode = 'A-attacks' | 'B-attacks' | 'alternate';
 /** fixed: teamA/teamB를 그대로 사용 / random: 전투마다 양측을 무작위로 편성 (병종·캐릭터별 승률 확인용) */
@@ -21,6 +21,8 @@ export interface SimulationInput {
   lineups?: LineupMode;
   /** random 모드의 진영당 군단 수 */
   lineupSize?: number;
+  /** random 모드의 후보 풀 (기본 elite: 네임드 장수만) */
+  pool?: CharacterPool;
   policy?: CommandPolicy;
 }
 
@@ -128,8 +130,8 @@ export class BattleSimulator {
       let teamB = input.teamB ?? [];
       if (mode === 'random') {
         const lineupRng = createRng(deriveSeed(seed ^ 0x9e3779b9, i));
-        teamA = generateRandomLineup(data, lineupRng, size);
-        teamB = generateRandomLineup(data, lineupRng, size);
+        teamA = generateRandomLineup(data, lineupRng, size, input.pool);
+        teamB = generateRandomLineup(data, lineupRng, size, input.pool);
       }
 
       const aAttacks = roles === 'A-attacks' || (roles === 'alternate' && i % 2 === 0);

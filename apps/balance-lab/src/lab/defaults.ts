@@ -27,6 +27,7 @@ export function createDefaultState(): LabState {
       targetPolicy: 'highest-damage',
       guardMode: 'protect',
       buffMode: 'first',
+      pool: 'elite',
       autoRun: true,
       autoRunIterations: 1000,
     },
