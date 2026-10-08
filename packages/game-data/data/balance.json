@@ -26,7 +26,7 @@
     "formula": "additive",
     "additive": {
       "attackMul": 10,
-      "defenseMul": 5,
+      "defenseMul": 6,
       "intellectMul": 10,
       "resistMul": 6,
       "min": 10,

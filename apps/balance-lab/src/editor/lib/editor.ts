@@ -1,4 +1,4 @@
-import { DamageCalculator, applyStatMods, buildUnits, maxTroops, totalAp } from '@samgukji/battle-engine';
+import { DamageCalculator, applyStatMods, buildUnits, maxTroops, promotionBonusTotal, totalAp } from '@samgukji/battle-engine';
 import type { BalanceConfig, CharacterData, CharacterRank, GameData, LineupEntry, Stats } from '@samgukji/battle-engine';
 
 /** 편집기가 다루는 스탯과 표시 이름. 순서는 characters.json의 순서와 같다. */
@@ -78,7 +78,7 @@ export function validate(list: readonly CharacterData[], data: GameData, balance
 
 export interface Derived {
   unitTypeName: string;
-  /** 병종 보정까지 반영한 실제 전투 스탯 */
+  /** 병종 보정과 승급 보너스까지 반영한 실제 전투 스탯 */
   finalStats: Stats;
   totalAp: number;
   troops: number;
@@ -91,7 +91,16 @@ export interface Derived {
 export function derive(c: CharacterData, data: GameData, balance: BalanceConfig): Derived | null {
   const unitType = data.unitTypes[c.unitType];
   if (!unitType) return null;
-  const finalStats = applyStatMods(c.stats, unitType.statMods);
+  // 실제 스탯 = 초기 스탯 + 병종 보정 + 지금 병종까지 오는 길의 승급 보너스 누적 (엔진 buildUnits와 같다)
+  const bonus = promotionBonusTotal(data.unitTypes, unitType.id);
+  const mods = unitType.statMods ?? {};
+  const finalStats = applyStatMods(c.stats, {
+    attack: (mods.attack ?? 0) + bonus.attack,
+    defense: (mods.defense ?? 0) + bonus.defense,
+    intellect: (mods.intellect ?? 0) + bonus.intellect,
+    speed: (mods.speed ?? 0) + bonus.speed,
+    action: (mods.action ?? 0) + bonus.action,
+  });
   const troops = Math.max(1, Math.round(maxTroops(balance, c.level) * (unitType.troopScale ?? 1)));
   const skill = data.skills[unitType.basicSkillId];
   let sampleDamage: number | null = null;

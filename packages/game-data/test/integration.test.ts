@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BattleSimulator, createRng, FAMILIES, generateRandomLineup, runBattle, totalAp } from '@samgukji/battle-engine';
+import { BattleSimulator, createRng, FAMILIES, generateRandomLineup, promotionChain, runBattle, totalAp } from '@samgukji/battle-engine';
 import type { BalanceConfig, CharacterData } from '@samgukji/battle-engine';
 import { defaultBalance, gameData, presets } from '../src';
 
@@ -122,12 +122,14 @@ describe('게임 데이터 무결성', () => {
   });
 
   it('초반 시나리오: 촉은 유관장(보병/방패병/기병)으로, 황건적은 보보방 / 보방궁 / 보보방+궁으로 싸운다', () => {
-    const families = (name: string) => presets[name].map((e) => gameData.unitTypes[gameData.characters[e.characterId].unitType].family).sort();
-    expect(families('shuStart')).toEqual(['cavalry', 'infantry', 'shield']);
+    // 편성에서 지금 맡은 병종(승급 단계)을 기준으로 센다. 촉 초반은 세 명 모두 승급 전(0차) 병종이다 (관우도 보병)
+    const families = (name: string) => presets[name].map((e) => gameData.unitTypes[e.unitType ?? gameData.characters[e.characterId].unitType].family).sort();
+    expect(families('shuStart')).toEqual(['infantry', 'infantry', 'shield']);
     expect(families('yellowEasy')).toEqual(['infantry', 'infantry', 'shield']);
     expect(families('yellowNormal')).toEqual(['archer', 'infantry', 'shield']);
     expect(families('yellowHard')).toEqual(['archer', 'infantry', 'infantry', 'shield']);
-    expect(gameData.characters.liuBei.unitType).toBe('infantry');
+    // 유비는 보병계 승급 트리의 장수다 (뿌리가 보병)
+    expect(promotionChain(gameData.unitTypes, gameData.characters.liuBei.unitType)[0].id).toBe('infantry');
   });
 });
 
@@ -145,7 +147,7 @@ describe('실제 데이터로 6 vs 6', () => {
     expect(report.teamAWins + report.teamBWins).toBe(1000);
     expect(Object.keys(report.characterStats)).toHaveLength(12);
     expect(report.averageRounds).toBeGreaterThan(0);
-  });
+  }, 30000); // 전체 테스트가 병렬로 돌 때 느려질 수 있어 제한을 넉넉히 둔다
 
   it('무작위 편성 1,000회에서 캐릭터가 있는 모든 병종 계열의 통계가 나온다', () => {
     const report = BattleSimulator.run({ data: gameData, balance: defaultBalance, iterations: 1000, seed: 1, lineups: 'random' });

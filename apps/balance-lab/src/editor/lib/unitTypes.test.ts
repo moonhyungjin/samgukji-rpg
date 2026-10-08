@@ -2,13 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { defaultBalance, gameData } from '@samgukji/game-data';
 import type { UnitTypeData } from '@samgukji/battle-engine';
 import {
+  applyUnitTypePatch,
   areUnitTypesDirty,
   changedUnitTypeIds,
   charactersUsing,
+  groupByPromotion,
   newUnitType,
   normalizeUnitType,
   parseUnitTypes,
+  rootIdOf,
+  promotionPathLabel,
   serializeUnitTypes,
+  unitTypeTrees,
   unitTypeSummary,
   validateUnitTypes,
 } from './unitTypes';
@@ -92,7 +97,9 @@ describe('병종 검사', () => {
   });
 
   it('병종을 쓰는 장수를 알려 준다 (삭제 방지)', () => {
-    expect(charactersUsing('shield', Object.values(gameData.characters))).toEqual(expect.arrayContaining(['장비', '허저']));
+    // 장비는 승급 트리의 최종 병종(철벽대), 허저는 방패병(0차)이다
+    expect(charactersUsing(gameData.characters.zhangFei.unitType, Object.values(gameData.characters))).toContain('장비');
+    expect(charactersUsing('shield', Object.values(gameData.characters))).toContain('허저');
     expect(charactersUsing('geomancer', Object.values(gameData.characters))).toEqual([]);
   });
 });
@@ -115,5 +122,78 @@ describe('병종 요약과 변경 비교', () => {
     expect(diff.removed).toEqual(['geomancer']);
     expect(diff.added).toHaveLength(1);
     expect(areUnitTypesDirty(list, added)).toBe(true);
+  });
+});
+
+describe('승급 트리와 승급 스탯 보너스 (promotionBonus)', () => {
+  const infantry = normalizeUnitType(gameData.unitTypes.infantry);
+
+  it('저장 형식에는 승급 보너스가 5개 스탯 모두 항상 들어간다 (statMods 바로 다음)', () => {
+    const n = normalizeUnitType({ ...infantry, promotionBonus: { attack: 1 } });
+    expect(n.promotionBonus).toEqual({ attack: 1, defense: 0, intellect: 0, speed: 0, action: 0 });
+    const keys = Object.keys(n);
+    expect(keys.indexOf('promotionBonus')).toBe(keys.indexOf('statMods') + 1);
+  });
+
+  it('카드에서 한 칸을 고쳐도 다른 칸은 그대로다', () => {
+    const base = normalizeUnitType({ ...infantry, promotionBonus: { attack: 2, speed: 1 } });
+    const next = applyUnitTypePatch(base, { promotionBonus: { attack: 3 } });
+    expect(next.promotionBonus).toMatchObject({ attack: 3, speed: 1 });
+  });
+
+  it('음수 보너스와 없는 승급 대상은 오류다', () => {
+    const bad = normalizeUnitType({ ...infantry, promotionBonus: { attack: -1 } });
+    expect(validateUnitTypes([bad], gameData).filter((i) => i.level === 'error' && i.message.includes('승급 보너스'))).toHaveLength(1);
+    const ghost = normalizeUnitType({ ...infantry, promotesTo: ['nope'] });
+    expect(validateUnitTypes([ghost], gameData).some((i) => i.level === 'error' && i.message.includes('승급 대상'))).toBe(true);
+  });
+
+  it('승급 차수별로 묶는다: 뿌리는 0차, 승급 대상은 한 차수씩 늘어난다', () => {
+    const mk = (id: string, promotesTo: string[]) => normalizeUnitType({ ...infantry, id, name: id, promotesTo });
+    const list = [mk('base', ['a', 'b']), mk('a', ['a2']), mk('b', ['b2']), mk('a2', []), mk('b2', []), mk('solo', [])];
+    const groups = groupByPromotion(list);
+    expect(groups.map((g) => g.depth)).toEqual([0, 1, 2]);
+    expect(groups[0].items.map((u) => u.id)).toEqual(['base', 'solo']);
+    expect(groups[1].items.map((u) => u.id)).toEqual(['a', 'b']);
+    expect(groups[2].items.map((u) => u.id)).toEqual(['a2', 'b2']);
+    expect(groups[1].label).toBe('1차 승급');
+    expect(promotionPathLabel(list, 'b2')).toBe('base → b → b2');
+  });
+
+  it('지금 데이터: 승급 보너스는 모두 0 이상이고 승급 대상은 모두 있는 병종이다', () => {
+    for (const u of Object.values(gameData.unitTypes)) {
+      for (const v of Object.values(u.promotionBonus ?? {})) expect(v).toBeGreaterThanOrEqual(0);
+      for (const id of u.promotesTo) expect(gameData.unitTypes[id]).toBeDefined();
+    }
+  });
+});
+
+describe('승급 트리 목록 (unitTypeTrees)', () => {
+  const mk = (id: string, promotesTo: string[]) => normalizeUnitType({ ...normalizeUnitType(gameData.unitTypes.infantry), id, name: id, promotesTo });
+
+  it('승급 대상이 아닌 병종이 뿌리이고 승급 대상이 자식으로 이어진다', () => {
+    const list = [mk('base', ['a', 'b']), mk('a', ['a2']), mk('b', []), mk('a2', []), mk('solo', [])];
+    const trees = unitTypeTrees(list);
+    expect(trees.map((t) => t.unit.id)).toEqual(['base', 'solo']);
+    expect(trees[0].children.map((c) => c.unit.id)).toEqual(['a', 'b']);
+    expect(trees[0].children[0].children.map((c) => c.unit.id)).toEqual(['a2']);
+    expect(rootIdOf(list, 'a2')).toBe('base');
+    expect(rootIdOf(list, 'solo')).toBe('solo');
+  });
+
+  it('순환이 있어도 모든 병종이 어느 트리엔가 들어가고 멈춘다', () => {
+    const list = [mk('x', ['y']), mk('y', ['x'])];
+    const trees = unitTypeTrees(list);
+    const ids = new Set<string>();
+    const walk = (n: (typeof trees)[number]) => { ids.add(n.unit.id); n.children.forEach(walk); };
+    trees.forEach(walk);
+    expect([...ids].sort()).toEqual(['x', 'y']);
+  });
+
+  it('지금 데이터: 기병/보병/방패병/궁병은 트리(1+2+2)이고 책사/도사/풍수사는 혼자다', () => {
+    const trees = unitTypeTrees(Object.values(gameData.unitTypes));
+    const size = (n: (typeof trees)[number]): number => 1 + n.children.reduce((s, c) => s + size(c), 0);
+    for (const root of ['infantry', 'shield', 'cavalry', 'archer']) expect(size(trees.find((t) => t.unit.id === root)!), root).toBe(5);
+    for (const root of ['strategist', 'taoist', 'geomancer']) expect(size(trees.find((t) => t.unit.id === root)!), root).toBe(1);
   });
 });

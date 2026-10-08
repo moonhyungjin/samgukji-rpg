@@ -96,6 +96,13 @@ const clickButton = (label) =>
 
 
 const tabs = async (label) => evalJs(`(() => { const b = [...document.querySelectorAll('button.tab')].find(b => b.textContent.trim() === ${JSON.stringify(label)}); if (!b) return false; b.click(); return true; })()`);
+/** 병종 탭에서 계열 탭과 트리 노드를 눌러 병종을 고른다 (카드는 선택한 병종 하나만 그린다) */
+const selectUnit = async (rootId, id = rootId) => {
+  await evalJs(`document.querySelector('button.family-tab[data-root="${rootId}"]')?.click()`);
+  await sleep(150);
+  await evalJs(`document.querySelector('button.tree-node[data-node="${id}"]')?.click()`);
+  await sleep(200);
+};
 const setValue = (selector, value) =>
   evalJs(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return 'missing'; const proto = el.tagName === 'SELECT' ? HTMLSelectElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, ${JSON.stringify(String(value))}); el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); return 'ok'; })()`);
 
@@ -143,12 +150,28 @@ try {
   check('밸런스 탭: 지금 값이 들어간 피해 공식이 식으로 나온다', bal.includes('지금 피해 공식') && bal.includes('최종 피해') && bal.includes('병력 보정'));
   await shot('lab-balance', true);
 
+  await tabs('피해 계산기');
+  await sleep(300);
+  const calcText = await text('main');
+  check('피해 계산기 탭: 값의 출처 표와 계산 과정이 나온다', ['공식에 들어가는 값과 출처', '병종 보정', '대상 취약', '수정하러 가기', '계산 과정', '최종 피해'].every((k) => calcText.includes(k)));
+  await shot('lab-calc', true);
+  // "수정하러 가기"를 누르면 병종 · 스킬 탭으로 이동한다
+  await evalJs(`[...document.querySelectorAll('button.goto')].find((b) => b.closest('tr').textContent.includes('병종 보정')).click()`);
+  await sleep(500);
+  check('수정하러 가기: 병종 · 스킬 탭의 해당 병종 카드로 이동한다', (await evalJs(`document.querySelector('button.tab.active').textContent`)) === '병종 · 스킬' && !!(await evalJs(`document.querySelector('[data-unittype].flash') ? true : false`)));
+
   await tabs('병종 · 스킬');
   await sleep(300);
   const data = await text('main');
-  check('병종 탭: 병종 카드, 스킬 표(계수, 방어 무시, 버프)', ['기본 AP', '사거리', '받는 피해 배수', '반격 비율', '가드로 막힘', '방어 무시', '피해 무시 횟수', '무작위 가짓수'].every((k) => data.includes(k)));
+  check('병종 탭: 병종 카드, 스킬 표(계수, 방어 무시, 버프)', ['기본 AP', '사거리', '받는 물리', '반격 비율', '가드로 막힘', '방어 무시', '피해 무시 횟수', '무작위 가짓수'].every((k) => data.includes(k)));
   check('병종 탭: 비어 있거나 NaN인 입력란이 없다', !(await evalJs(`[...document.querySelectorAll('main input[type=number]')].some(i => i.value === 'NaN' || i.value === '')`)));
-  await shot('lab-unittypes');
+  const treeInfo = await evalJs(`JSON.stringify({ tabs: document.querySelectorAll('button.family-tab').length, nodes: [...document.querySelectorAll('button.tree-node')].map(n => n.dataset.node) })`);
+  check('병종 탭: 계열 탭(7)과 승급 트리(보병 계열 5종)가 나온다', JSON.parse(treeInfo).tabs === 7 && JSON.parse(treeInfo).nodes.length === 5, treeInfo);
+  await selectUnit('cavalry', 'heavy-cavalry');
+  check('트리에서 중기병을 누르면 그 병종 카드가 나온다 (스킬도 카드 안에 있다)', (await evalJs(`!!document.querySelector('section[data-unittype="heavy-cavalry"] [data-skills-of="heavy-cavalry"] table.skill-table')`)) === true && !(await evalJs(`!!document.querySelector('section[data-unittype="cavalry"]')`)));
+  check('같이 쓰는 스킬에는 "이 병종 전용으로 복제"가 있다', (await text('[data-skills-of="heavy-cavalry"]')).includes('이 병종 전용으로 복제'));
+  await selectUnit('infantry');
+  await evalJs('window.scrollTo(0, 0)'); await shot('lab-unittypes', true);
 
   // 스킬 계수 입력란 (값은 Lab에서 계속 바뀌므로 지금 값에서 출발한다)
   const chargeBefore = readData('skills').find((s) => s.id === 'cavalry-charge').power;
@@ -228,6 +251,7 @@ try {
   // ---- 4. 병종 카드: 수정 → 저장 → 장수 탭의 계산값이 따라 바뀐다 ----
   await tabs('병종 · 스킬');
   await sleep(300);
+  await selectUnit('cavalry');
   const cavBefore = readData('unitTypes').find((u) => u.id === 'cavalry').troopScale;
   const cavNew = cavBefore === 0.75 ? 0.85 : 0.75;
   const balanceNow = readData('balance');
@@ -238,7 +262,9 @@ try {
   check(`병력 배율을 고치면 카드의 병력 요약이 바뀐다 (${cavBefore} → ${cavNew}, 병력 ${cavTroops})`, (await text('section[data-unittype="cavalry"] .badge')).includes(`병력 ${cavTroops}`));
   await tabs('장수');
   await sleep(300);
-  check(`장수 탭의 관우 병력이 새 배율을 바로 반영한다 (저장 전, ${cavTroops})`, String(await evalJs(`document.querySelector('tr[data-id="guanYu"]').textContent`)).includes(String(cavTroops)));
+  // 기병(0차)을 쓰는 장수로 확인한다 (관우는 승급 트리의 호표기라 기병 배율을 받지 않는다)
+  const cavalryChar = readData('characters').find((c) => c.unitType === 'cavalry').id;
+  check(`장수 탭의 기병 장수(${cavalryChar}) 병력이 새 배율을 바로 반영한다 (저장 전, ${cavTroops})`, String(await evalJs(`document.querySelector('tr[data-id="${cavalryChar}"]').textContent`)).includes(String(cavTroops)));
   await tabs('병종 · 스킬');
   await sleep(200);
   await setValue('input[aria-label="cavalry 사거리"]', 0);
@@ -259,7 +285,8 @@ try {
   await tabs('기본 편성');
   await sleep(300);
   check('기본 편성 탭에 편성 카드가 나온다', (await evalJs(`document.querySelectorAll('section.preset').length`)) === JSON.parse(originals.presets).length);
-  check('편성 카드에 구성이 나온다 (유관장: 방패병 · 보병 · 기병)', (await text('section[data-preset="shuStart"] .preset-summary')).includes('방패병 · 보병 · 기병'));
+  const startTypes = readData('presets').find((p) => p.id === 'shuStart').lineup.map((e) => readData('unitTypes').find((u) => u.id === (e.unitType ?? readData('characters').find((c) => c.id === e.characterId).unitType)).name);
+  check(`편성 카드에 구성이 나온다 (유관장: ${startTypes.join(' · ')})`, (await text('section[data-preset="shuStart"] .preset-summary')).includes(startTypes.join(' · ')));
   await shot('lab-presets');
   await setValue('select[aria-label="shuStart 후열 1"]', 'huangZhong');
   await sleep(300);

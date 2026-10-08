@@ -12,7 +12,10 @@
     "canCounter": true,
     "basicSkillId": "infantry-attack",
     "extraSkillIds": [],
-    "promotesTo": [],
+    "promotesTo": [
+      "light-infantry",
+      "heavy-infantry"
+    ],
     "traitIds": [],
     "troopScale": 1,
     "baseAp": 2,
@@ -43,6 +46,13 @@
       "intellect": 0,
       "speed": 0,
       "action": 0
+    },
+    "promotionBonus": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
     }
   },
   {
@@ -60,7 +70,10 @@
     "extraSkillIds": [
       "guard"
     ],
-    "promotesTo": [],
+    "promotesTo": [
+      "escort",
+      "heavy-shield"
+    ],
     "traitIds": [],
     "troopScale": 1.5,
     "baseAp": 3,
@@ -92,6 +105,13 @@
       "speed": -1,
       "action": 0
     },
+    "promotionBonus": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    },
     "guard": {
       "start": 50,
       "gain": 0,
@@ -110,10 +130,13 @@
       "back"
     ],
     "range": 2,
-    "canCounter": false,
+    "canCounter": true,
     "basicSkillId": "cavalry-charge",
     "extraSkillIds": [],
-    "promotesTo": [],
+    "promotesTo": [
+      "light-cavalry",
+      "heavy-cavalry"
+    ],
     "traitIds": [],
     "troopScale": 0.9,
     "baseAp": 2,
@@ -144,6 +167,13 @@
       "intellect": 0,
       "speed": 1,
       "action": 0
+    },
+    "promotionBonus": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
     }
   },
   {
@@ -159,7 +189,10 @@
     "canCounter": false,
     "basicSkillId": "archer-shot",
     "extraSkillIds": [],
-    "promotesTo": [],
+    "promotesTo": [
+      "strong-bow",
+      "long-bow"
+    ],
     "traitIds": [],
     "troopScale": 0.8,
     "baseAp": 2,
@@ -189,6 +222,13 @@
       "defense": 0,
       "intellect": 0,
       "speed": -1,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 0,
       "action": 0
     }
   },
@@ -236,6 +276,13 @@
       "attack": 0,
       "defense": 0,
       "intellect": 1,
+      "speed": 0,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
       "speed": 0,
       "action": 0
     }
@@ -286,6 +333,13 @@
       "intellect": 0,
       "speed": 1,
       "action": 0
+    },
+    "promotionBonus": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
     }
   },
   {
@@ -333,6 +387,913 @@
       "defense": -1,
       "intellect": 0,
       "speed": 0,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    }
+  },
+  {
+    "id": "light-cavalry",
+    "name": "경기병",
+    "family": "cavalry",
+    "tier": 2,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 2,
+    "canCounter": true,
+    "basicSkillId": "cavalry-charge",
+    "extraSkillIds": [],
+    "promotesTo": [
+      "horse-archer"
+    ],
+    "traitIds": [],
+    "troopScale": 0.9,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 30,
+      "replenish": 2,
+      "dismiss": 2
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 0.8
+    },
+    "typeBonus": {
+      "physical": 30,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    }
+  },
+  {
+    "id": "heavy-cavalry",
+    "name": "중기병",
+    "family": "cavalry",
+    "tier": 2,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 2,
+    "canCounter": true,
+    "basicSkillId": "cavalry-charge",
+    "extraSkillIds": [],
+    "promotesTo": [
+      "tiger-cavalry"
+    ],
+    "traitIds": [],
+    "troopScale": 0.9,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 30,
+      "replenish": 2,
+      "dismiss": 2
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 0.8
+    },
+    "typeBonus": {
+      "physical": 30,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 1,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    }
+  },
+  {
+    "id": "horse-archer",
+    "name": "궁기병",
+    "family": "cavalry",
+    "tier": 3,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 2,
+    "canCounter": true,
+    "basicSkillId": "cavalry-charge",
+    "extraSkillIds": [],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 0.9,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 30,
+      "replenish": 2,
+      "dismiss": 2
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 0.8
+    },
+    "typeBonus": {
+      "physical": 30,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 1,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    }
+  },
+  {
+    "id": "tiger-cavalry",
+    "name": "호표기",
+    "family": "cavalry",
+    "tier": 3,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 2,
+    "canCounter": true,
+    "basicSkillId": "cavalry-charge",
+    "extraSkillIds": [],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 0.9,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 30,
+      "replenish": 2,
+      "dismiss": 2
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 0.8
+    },
+    "typeBonus": {
+      "physical": 30,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    }
+  },
+  {
+    "id": "light-infantry",
+    "name": "경보병",
+    "family": "infantry",
+    "tier": 2,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [],
+    "promotesTo": [
+      "assault-infantry"
+    ],
+    "traitIds": [],
+    "troopScale": 1,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 24,
+      "replenish": 2,
+      "dismiss": 2
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 10,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    }
+  },
+  {
+    "id": "heavy-infantry",
+    "name": "중보병",
+    "family": "infantry",
+    "tier": 2,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [],
+    "promotesTo": [
+      "royal-guard"
+    ],
+    "traitIds": [],
+    "troopScale": 1,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 24,
+      "replenish": 2,
+      "dismiss": 2
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 10,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 1,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    }
+  },
+  {
+    "id": "assault-infantry",
+    "name": "돌격병",
+    "family": "infantry",
+    "tier": 3,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 1,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 24,
+      "replenish": 2,
+      "dismiss": 2
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 10,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 1,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    }
+  },
+  {
+    "id": "royal-guard",
+    "name": "근위대",
+    "family": "infantry",
+    "tier": 3,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 1,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 24,
+      "replenish": 2,
+      "dismiss": 2
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 10,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    }
+  },
+  {
+    "id": "escort",
+    "name": "호위병",
+    "family": "shield",
+    "tier": 2,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [
+      "guard"
+    ],
+    "promotesTo": [
+      "armored-guard"
+    ],
+    "traitIds": [],
+    "troopScale": 1.5,
+    "baseAp": 3,
+    "recruit": {
+      "reinforce": 12,
+      "replenish": 1,
+      "dismiss": 1
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 0,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": -1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": -1,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    },
+    "guard": {
+      "start": 50,
+      "gain": 0,
+      "gainPerIntellect": 20,
+      "decay": 40,
+      "damageTaken": 0.5
+    }
+  },
+  {
+    "id": "heavy-shield",
+    "name": "중방패병",
+    "family": "shield",
+    "tier": 2,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [
+      "guard"
+    ],
+    "promotesTo": [
+      "iron-wall"
+    ],
+    "traitIds": [],
+    "troopScale": 1.5,
+    "baseAp": 3,
+    "recruit": {
+      "reinforce": 12,
+      "replenish": 1,
+      "dismiss": 1
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 0,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": -1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": -1,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 1,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    },
+    "guard": {
+      "start": 50,
+      "gain": 0,
+      "gainPerIntellect": 20,
+      "decay": 40,
+      "damageTaken": 0.5
+    }
+  },
+  {
+    "id": "armored-guard",
+    "name": "귀갑병",
+    "family": "shield",
+    "tier": 3,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [
+      "guard"
+    ],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 1.5,
+    "baseAp": 3,
+    "recruit": {
+      "reinforce": 12,
+      "replenish": 1,
+      "dismiss": 1
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 0,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": -1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": -1,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 1,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    },
+    "guard": {
+      "start": 50,
+      "gain": 0,
+      "gainPerIntellect": 20,
+      "decay": 40,
+      "damageTaken": 0.5
+    }
+  },
+  {
+    "id": "iron-wall",
+    "name": "철벽대",
+    "family": "shield",
+    "tier": 3,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [
+      "guard"
+    ],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 1.5,
+    "baseAp": 3,
+    "recruit": {
+      "reinforce": 12,
+      "replenish": 1,
+      "dismiss": 1
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 0,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": -1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": -1,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    },
+    "guard": {
+      "start": 50,
+      "gain": 0,
+      "gainPerIntellect": 20,
+      "decay": 40,
+      "damageTaken": 0.5
+    }
+  },
+  {
+    "id": "strong-bow",
+    "name": "강궁병",
+    "family": "archer",
+    "tier": 2,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 3,
+    "canCounter": false,
+    "basicSkillId": "archer-shot",
+    "extraSkillIds": [],
+    "promotesTo": [
+      "elite-archer"
+    ],
+    "traitIds": [],
+    "troopScale": 0.8,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 18,
+      "replenish": 2,
+      "dismiss": 1.5
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 0.8,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 10,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": -1,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    }
+  },
+  {
+    "id": "long-bow",
+    "name": "장궁병",
+    "family": "archer",
+    "tier": 2,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 3,
+    "canCounter": false,
+    "basicSkillId": "archer-shot",
+    "extraSkillIds": [],
+    "promotesTo": [
+      "crossbow"
+    ],
+    "traitIds": [],
+    "troopScale": 0.8,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 18,
+      "replenish": 2,
+      "dismiss": 1.5
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 0.8,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 10,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": -1,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 1,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    }
+  },
+  {
+    "id": "elite-archer",
+    "name": "신궁대",
+    "family": "archer",
+    "tier": 3,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 3,
+    "canCounter": false,
+    "basicSkillId": "archer-shot",
+    "extraSkillIds": [],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 0.8,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 18,
+      "replenish": 2,
+      "dismiss": 1.5
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 0.8,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 10,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": -1,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 1,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    }
+  },
+  {
+    "id": "crossbow",
+    "name": "연노병",
+    "family": "archer",
+    "tier": 3,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 3,
+    "canCounter": false,
+    "basicSkillId": "archer-shot",
+    "extraSkillIds": [],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 0.8,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 18,
+      "replenish": 2,
+      "dismiss": 1.5
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 0.8,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 10,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 0
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": -1,
+      "action": 0
+    },
+    "promotionBonus": {
+      "attack": 1,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
       "action": 0
     }
   }

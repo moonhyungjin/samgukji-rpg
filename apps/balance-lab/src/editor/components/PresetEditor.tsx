@@ -13,13 +13,15 @@ interface Props {
   balance: BalanceConfig;
   onEdit: (id: string, patch: Partial<Pick<PresetDef, 'id' | 'label'>>) => void;
   onSetSlot: (id: string, index: number, characterId: string) => void;
+  /** 칸의 병종(승급 단계). undefined이면 장수의 병종 */
+  onSetUnitType: (id: string, index: number, unitType: string | undefined) => void;
   onDuplicate: (id: string) => void;
   onRevert: (id: string) => void;
   onRemove: (id: string) => void;
 }
 
 /** 기본 편성 목록. 칸마다 장수를 골라 전열 3 + 후열 3을 짠다. */
-export function PresetEditor({ presets, savedIds, changed, issues, characters, data, balance, onEdit, onSetSlot, onDuplicate, onRevert, onRemove }: Props) {
+export function PresetEditor({ presets, savedIds, changed, issues, characters, data, balance, onEdit, onSetSlot, onSetUnitType, onDuplicate, onRevert, onRemove }: Props) {
   const bad = new Set(issues.filter((i) => i.level === 'error' && i.id !== undefined).map((i) => i.id));
   const typeName = (c: CharacterData) => data.unitTypes[c.unitType]?.name ?? c.unitType;
 
@@ -69,18 +71,34 @@ export function PresetEditor({ presets, savedIds, changed, issues, characters, d
                   <span className="row-name">{row === 'front' ? '전열' : '후열'}</span>
                   {Array.from({ length: ROW_CAPACITY }, (_, i) => {
                     const index = (row === 'front' ? 0 : ROW_CAPACITY) + i;
+                    const slot = slots[index];
+                    const slotChar = slot ? characters.find((c) => c.id === slot.characterId) : undefined;
                     return (
-                      <select key={index} aria-label={`${p.id} ${row === 'front' ? '전열' : '후열'} ${i + 1}`} value={slots[index]?.characterId ?? ''} onChange={(e) => onSetSlot(p.id, index, e.target.value)}>
-                        <option value="">(비움)</option>
-                        {characters.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name} · {typeName(c)}
-                          </option>
-                        ))}
-                        {slots[index] && !characters.some((c) => c.id === slots[index]!.characterId) && (
-                          <option value={slots[index]!.characterId}>{slots[index]!.characterId} (없음)</option>
+                      <div className="slot-cell" key={index}>
+                        <select aria-label={`${p.id} ${row === 'front' ? '전열' : '후열'} ${i + 1}`} value={slot?.characterId ?? ''} onChange={(e) => onSetSlot(p.id, index, e.target.value)}>
+                          <option value="">(비움)</option>
+                          {characters.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name} · {typeName(c)}
+                            </option>
+                          ))}
+                          {slot && !slotChar && <option value={slot.characterId}>{slot.characterId} (없음)</option>}
+                        </select>
+                        {slot && (
+                          <div className="slot-extra">
+                            <select aria-label={`${p.id} ${row === 'front' ? '전열' : '후열'} ${i + 1} 병종`} title="이 편성에서 지금 맡은 병종 (승급 단계). 기본은 장수의 병종" value={slot.unitType ?? ''} onChange={(e) => onSetUnitType(p.id, index, e.target.value || undefined)}>
+                              <option value="">장수 병종 (기본)</option>
+                              {Object.values(data.unitTypes)
+                                .filter((u) => u.allowedRows.includes(row))
+                                .map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.name}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
                         )}
-                      </select>
+                      </div>
                     );
                   })}
                 </div>

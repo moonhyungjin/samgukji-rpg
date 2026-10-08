@@ -90,6 +90,9 @@ export interface TraitData {
   multiplier: number;
 }
 
+/** 승급으로 오르는 스탯 (양수) */
+export type StatBonus = Partial<Pick<Stats, 'attack' | 'defense' | 'intellect' | 'speed' | 'action'>>;
+
 export interface UnitTypeData {
   id: string;
   name: string;
@@ -134,6 +137,12 @@ export interface UnitTypeData {
   vulnerability?: { physical: number; magic: number };
   /** 병종 스탯 보정. 캐릭터의 기본 스탯에 더해진다 (0 아래로는 내려가지 않는다). 승급 병종은 자기 보정을 따로 가진다 */
   statMods?: Partial<Pick<Stats, 'attack' | 'defense' | 'intellect' | 'speed' | 'action'>>;
+  /**
+   * 승급 스탯 보너스: 승급해서 이 병종이 될 때 오르는 스탯 (양수, 생략하면 0).
+   * 병종은 promotesTo로 이어진 승급 트리를 이룬다 (예: 기병 → 경기병/중기병 → 궁기병/호표기).
+   * 장수의 스탯은 초기(0차) 스탯이고, 지금 병종까지 오는 길의 승급 보너스가 누적되어 더해진다.
+   */
+  promotionBonus?: StatBonus;
   /** 가드를 쓸 수 있는 병종 (스킬 목록에 kind: 'guard' 스킬도 있어야 한다) */
   guard?: GuardConfig;
 }
@@ -282,6 +291,11 @@ export interface LineupEntry {
   row: Row;
   /** Balance Lab에서 레벨을 덮어쓸 때 사용 */
   level?: number;
+  /**
+   * 이 편성에서 장수가 지금 맡은 병종. 생략하면 장수의 병종(character.unitType).
+   * 승급 단계를 나타낸다: 승급 트리에서 어느 병종인지에 따라 누적 승급 보너스가 달라진다.
+   */
+  unitType?: string;
 }
 
 export interface CharacterState {

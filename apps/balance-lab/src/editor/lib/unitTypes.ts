@@ -1,5 +1,5 @@
-import { FAMILIES, maxTroops } from '@samgukji/battle-engine';
-import type { BalanceConfig, CharacterData, Family, GameData, GuardConfig, Row, UnitTypeData } from '@samgukji/battle-engine';
+import { FAMILIES, maxTroops, promotionChain } from '@samgukji/battle-engine';
+import type { BalanceConfig, CharacterData, Family, GameData, GuardConfig, Row, StatBonus, UnitTypeData } from '@samgukji/battle-engine';
 import type { Issue } from './editor';
 
 export const FAMILY_LABEL: Record<Family, string> = {
@@ -24,6 +24,8 @@ export const MOD_FIELDS: { key: 'attack' | 'defense' | 'intellect' | 'speed' | '
 const DEFAULT_GUARD: GuardConfig = { start: 50, gain: 0, gainPerIntellect: 20, decay: 40, damageTaken: 0.5 };
 
 /** 직렬화할 때 키 순서를 고정한다 (파일 비교가 쉽도록). 빠진 값은 기본값으로 채운다. */
+const bonus5 = (b?: StatBonus) => ({ attack: Number(b?.attack ?? 0), defense: Number(b?.defense ?? 0), intellect: Number(b?.intellect ?? 0), speed: Number(b?.speed ?? 0), action: Number(b?.action ?? 0) });
+
 export function normalizeUnitType(u: UnitTypeData): UnitTypeData {
   const mods = { attack: 0, defense: 0, intellect: 0, speed: 0, action: 0, ...u.statMods };
   return {
@@ -46,6 +48,7 @@ export function normalizeUnitType(u: UnitTypeData): UnitTypeData {
     typeBonus: { physical: Number(u.typeBonus?.physical ?? 0), magic: Number(u.typeBonus?.magic ?? 0) },
     vulnerability: { physical: Number(u.vulnerability?.physical ?? 0), magic: Number(u.vulnerability?.magic ?? 0) },
     statMods: { attack: Number(mods.attack), defense: Number(mods.defense), intellect: Number(mods.intellect), speed: Number(mods.speed), action: Number(mods.action) },
+    promotionBonus: bonus5(u.promotionBonus),
     ...(u.guard
       ? { guard: { start: Number(u.guard.start), gain: Number(u.guard.gain), gainPerIntellect: Number(u.guard.gainPerIntellect ?? 0), decay: Number(u.guard.decay), damageTaken: Number(u.guard.damageTaken ?? 1) } }
       : {}),
@@ -118,6 +121,11 @@ export function validateUnitTypes(list: readonly UnitTypeData[], data: GameData)
       const v = u.damageDealtByRow?.[key] ?? 1;
       if (!Number.isFinite(v) || v <= 0) err(`주는 피해 배수(대상이 ${key === 'front' ? '전열' : '후열'})는 0보다 커야 합니다.`);
     }
+    for (const v of Object.values(u.promotionBonus ?? {})) if (!Number.isFinite(v) || v < 0) err('승급 보너스는 0 이상이어야 합니다.');
+    for (const id of u.promotesTo) {
+      if (id === u.id) err('자기 자신으로 승급할 수 없습니다.');
+      else if (!data.unitTypes[id] && !list.some((x) => x.id === id)) err(`승급 대상이 없는 병종입니다 (${id}).`);
+    }
     if (!data.skills[u.basicSkillId]) err(`없는 일반공격 스킬입니다 (${u.basicSkillId}).`);
     for (const id of u.extraSkillIds) if (!data.skills[id]) err(`없는 추가 스킬입니다 (${id}).`);
     for (const id of u.traitIds) if (!data.traits[id]) err(`없는 특성입니다 (${id}).`);
@@ -131,6 +139,62 @@ export function validateUnitTypes(list: readonly UnitTypeData[], data: GameData)
     if (u.canCounter && skillKind(u.basicSkillId) !== 'attack') warn('반격할 수 있는데 일반공격이 공격 스킬이 아니라 반격이 일어나지 않습니다.');
   }
   return issues;
+}
+
+/** 승급 차수: 뿌리(승급 트리의 시작)가 0차, 승급할 때마다 1씩 늘어난다. 승급 트리에 없으면 0 */
+export function promotionDepth(list: readonly UnitTypeData[], id: string): number {
+  const map = unitTypeRecord(list);
+  return Math.max(0, promotionChain(map, id).length - 1);
+}
+
+export const DEPTH_LABEL = (depth: number) => (depth === 0 ? '기본 병종' : `${depth}차 승급`);
+
+/** 병종 목록을 승급 차수별로 묶는다. 같은 차수 안에서는 승급 트리 순서(부모 순서)를 따르고 나머지는 목록 순서다. */
+export function groupByPromotion(list: readonly UnitTypeData[]): { depth: number; label: string; items: UnitTypeData[] }[] {
+  const order = new Map(list.map((u, i) => [u.id, i]));
+  const depthOf = new Map(list.map((u) => [u.id, promotionDepth(list, u.id)]));
+  const rootOf = (id: string) => promotionChain(unitTypeRecord(list), id)[0]?.id ?? id;
+  const depths = [...new Set(depthOf.values())].sort((a, b) => a - b);
+  return depths.map((depth) => ({
+    depth,
+    label: DEPTH_LABEL(depth),
+    items: list
+      .filter((u) => depthOf.get(u.id) === depth)
+      .sort((a, b) => (order.get(rootOf(a.id)) ?? 0) - (order.get(rootOf(b.id)) ?? 0) || (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)),
+  }));
+}
+
+export interface TreeNode {
+  unit: UnitTypeData;
+  children: TreeNode[];
+}
+
+/** 승급 트리들: 승급 대상(promotesTo)이 아닌 병종이 뿌리이고, 뿌리마다 승급 대상을 자식으로 이어 붙인다. 목록 순서를 따른다. */
+export function unitTypeTrees(list: readonly UnitTypeData[]): TreeNode[] {
+  const byId = new Map(list.map((u) => [u.id, u]));
+  const children = new Set(list.flatMap((u) => u.promotesTo.filter((id) => id !== u.id && byId.has(id))));
+  const build = (u: UnitTypeData, seen: Set<string>): TreeNode => ({
+    unit: u,
+    children: u.promotesTo.filter((id) => byId.has(id) && !seen.has(id)).map((id) => build(byId.get(id)!, new Set([...seen, id]))),
+  });
+  // 순환만 있는 병종도 빠지지 않도록, 뿌리가 없는데 아직 어느 트리에도 안 든 병종은 뿌리로 본다
+  const roots = list.filter((u) => !children.has(u.id));
+  const trees = roots.map((u) => build(u, new Set([u.id])));
+  const covered = new Set<string>();
+  const mark = (n: TreeNode) => { covered.add(n.unit.id); n.children.forEach(mark); };
+  trees.forEach(mark);
+  for (const u of list) if (!covered.has(u.id)) { const t = build(u, new Set([u.id])); mark(t); trees.push(t); }
+  return trees;
+}
+
+/** 이 병종이 속한 트리의 뿌리 id (트리에 없으면 자기 자신) */
+export function rootIdOf(list: readonly UnitTypeData[], id: string): string {
+  return promotionChain(unitTypeRecord(list), id)[0]?.id ?? id;
+}
+
+/** "기병 → 중기병 → 호표기" 같은 승급 길 */
+export function promotionPathLabel(list: readonly UnitTypeData[], id: string): string {
+  return promotionChain(unitTypeRecord(list), id).map((u) => u.name).join(' → ');
 }
 
 /** 병종 카드에 보여 줄 계산값: 레벨 15 기준 최대 병력과 총 AP(행동력 0 기준 = 기본 AP) */
@@ -166,7 +230,7 @@ export function applyUnitTypePatch(u: UnitTypeData, patch: Record<string, unknow
     if (key === 'guard') {
       if (value === null) delete next.guard;
       else next.guard = { ...(u.guard ?? {}), ...(value as object) };
-    } else if (['statMods', 'damageTakenByType', 'damageDealtByRow', 'recruit', 'typeBonus', 'vulnerability'].includes(key)) {
+    } else if (['statMods', 'promotionBonus', 'damageTakenByType', 'damageDealtByRow', 'recruit', 'typeBonus', 'vulnerability'].includes(key)) {
       next[key] = { ...((u as unknown as Record<string, object>)[key] ?? {}), ...(value as object) };
     } else {
       next[key] = value;

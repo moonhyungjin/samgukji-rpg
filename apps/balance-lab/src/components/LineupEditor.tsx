@@ -32,6 +32,29 @@ export function LineupEditor({ teamKey, title }: Props) {
           {slot && !options.some((c) => c.id === slot.characterId) && <option value={slot.characterId}>⚠ {slot.characterId} (이 열에 배치 불가)</option>}
         </select>
         {slot && (
+          <span className="slot-extra">
+            <select
+              aria-label={`${teamKey} ${index + 1} 병종`}
+              title="이 편성에서 지금 맡은 병종 (승급 단계). 기본은 장수의 병종"
+              value={slot.unitType ?? ''}
+              onChange={(e) => {
+                const { unitType: _drop, ...rest } = slot;
+                void _drop;
+                set(`${teamKey}.${index}`, e.target.value ? { ...rest, unitType: e.target.value } : rest);
+              }}
+            >
+              <option value="">장수 병종 (기본)</option>
+              {Object.values(state.data.unitTypes)
+                .filter((u) => u.allowedRows.includes(row))
+                .map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+            </select>
+          </span>
+        )}
+        {slot && (
           <label className="level">
             Lv
             <input
@@ -41,7 +64,9 @@ export function LineupEditor({ teamKey, title }: Props) {
               value={slot.level ?? ''}
               onChange={(e) => {
                 const level = e.target.value === '' ? undefined : Math.max(1, parseInt(e.target.value, 10) || 1);
-                set(`${teamKey}.${index}`, level === undefined ? { characterId: slot.characterId } : { ...slot, level });
+                const { level: _drop, ...rest } = slot;
+                void _drop;
+                set(`${teamKey}.${index}`, level === undefined ? rest : { ...rest, level });
               }}
             />
           </label>

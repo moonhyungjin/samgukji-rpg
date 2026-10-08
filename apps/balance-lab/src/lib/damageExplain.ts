@@ -1,9 +1,14 @@
 import { DEFAULT_ADDITIVE, DEFAULT_GAP, DamageCalculator, buildUnits, effectiveStat, moraleMultiplier, tieredTroops } from '@samgukji/battle-engine';
+import { promotionBonusTotal, promotionChain } from '@samgukji/battle-engine';
 import type { BalanceConfig, CharacterState, GameData, Row } from '@samgukji/battle-engine';
+import type { LabTab } from '../lab/NavContext';
 
 export interface ExplainInput {
   attackerId: string;
+  /** 이 계산에서 공격자가 맡는 병종 (승급 단계). 생략하면 장수의 병종 */
+  attackerUnitType?: string;
   defenderId: string;
+  defenderUnitType?: string;
   skillId: string;
   /** 병력 (최대 병력 대비 %) */
   attackerPct: number;
@@ -20,8 +25,24 @@ export interface ExplainRow {
   value: string;
 }
 
+/** 공식에 들어가는 값 하나와 그 출처 */
+export interface SourceRow {
+  label: string;
+  value: string;
+  /** 어느 탭의 어느 칸에서 가져오는지 */
+  where: string;
+  tab: LabTab;
+  /** 수정하러 갈 때 스크롤할 요소의 CSS 선택자 */
+  anchor?: string;
+  /** 지금 설정에서 실제 계산에 쓰이는가 */
+  used: boolean;
+  /** 어떻게 쓰이는지, 또는 왜 안 쓰이는지 */
+  note: string;
+}
+
 export interface DamageExplanation {
   rows: ExplainRow[];
+  sources: SourceRow[];
   /** 엔진이 실제로 계산하는 최종 피해 (일반공격/책략이 한 번 맞을 때) */
   damage: number;
   counter: number;
@@ -33,11 +54,10 @@ export type ExplainResult = { ok: true; explanation: DamageExplanation } | { ok:
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 export const fmt = (n: number) => String(round3(n));
 
-function makeUnit(data: GameData, balance: BalanceConfig, side: 'attacker' | 'defender', characterId: string, row: Row | null, pct: number, guarding: boolean): CharacterState {
-  const character = data.characters[characterId];
-  const type = data.unitTypes[character.unitType];
+function makeUnit(data: GameData, balance: BalanceConfig, side: 'attacker' | 'defender', characterId: string, unitTypeId: string, row: Row | null, pct: number, guarding: boolean): CharacterState {
+  const type = data.unitTypes[unitTypeId];
   // 배치 가능한 열로 만든 뒤 계산할 열로 덮어쓴다 (열 제한은 편성 규칙이고 피해 계산과는 무관하다)
-  const [unit] = buildUnits(side, [{ characterId, row: type.allowedRows[0] }], data, balance);
+  const [unit] = buildUnits(side, [{ characterId, row: type.allowedRows[0], unitType: unitTypeId }], data, balance);
   if (row) unit.row = row;
   unit.troops = Math.max(1, Math.round((unit.maxTroops * Math.min(100, Math.max(1, pct))) / 100));
   unit.guardRate = guarding && type.guard ? Math.max(1, type.guard.start) : 0;
@@ -51,12 +71,12 @@ export function explainDamage(data: GameData, balance: BalanceConfig, input: Exp
   const skill = data.skills[input.skillId];
   if (!attackerChar || !defenderChar) return { ok: false, reason: '공격자와 방어자를 고르세요.' };
   if (!skill || skill.kind !== 'attack') return { ok: false, reason: '공격 스킬을 고르세요.' };
-  const aType = data.unitTypes[attackerChar.unitType];
-  const dType = data.unitTypes[defenderChar.unitType];
+  const aType = data.unitTypes[input.attackerUnitType ?? attackerChar.unitType];
+  const dType = data.unitTypes[input.defenderUnitType ?? defenderChar.unitType];
   if (!aType || !dType) return { ok: false, reason: '병종을 찾을 수 없습니다.' };
 
-  const attacker = makeUnit(data, balance, 'attacker', input.attackerId, null, input.attackerPct, false);
-  const defender = makeUnit(data, balance, 'defender', input.defenderId, input.defenderRow, input.defenderPct, input.defenderGuarding);
+  const attacker = makeUnit(data, balance, 'attacker', input.attackerId, aType.id, null, input.attackerPct, false);
+  const defender = makeUnit(data, balance, 'defender', input.defenderId, dType.id, input.defenderRow, input.defenderPct, input.defenderGuarding);
   const calc = new DamageCalculator(balance, data);
   const physical = skill.scalesWith === 'attack';
   const share = 50;
@@ -73,12 +93,15 @@ export function explainDamage(data: GameData, balance: BalanceConfig, input: Exp
   const defKey = physical ? 'defense' : 'intellect';
   const statLabel = (k: 'attack' | 'defense' | 'intellect') => ({ attack: '공격', defense: '방어', intellect: '지력' })[k];
   const modOf = (type: typeof aType, k: 'attack' | 'defense' | 'intellect') => type.statMods?.[k] ?? 0;
+  const aBonus = promotionBonusTotal(data.unitTypes, aType.id);
+  const dBonus = promotionBonusTotal(data.unitTypes, dType.id);
+  const bonusText = (b: number, type: typeof aType) => (b > 0 ? ` + 승급 보너스 ${b} (${promotionChain(data.unitTypes, type.id).map((u) => u.name).join(' → ')})` : '');
   const aStat = attacker.stats[statKey];
   const ignore = physical ? (skill.ignoreDefense ?? 0) : 0;
   const dStatFull = defender.stats[defKey];
   const dStat = Math.max(0, dStatFull - ignore);
-  add('스탯', `공격자 ${statLabel(statKey)}`, `장수 ${attackerChar.stats[statKey]} + 병종 보정 ${modOf(aType, statKey)}`, fmt(aStat));
-  add('스탯', `방어자 ${physical ? '방어' : '지력 (책략은 지력으로 저항)'}`, `장수 ${defenderChar.stats[defKey]} + 병종 보정 ${modOf(dType, defKey)}${ignore > 0 ? ` − 방어 무시 ${ignore}` : ''}`, fmt(dStat));
+  add('스탯', `공격자 ${statLabel(statKey)}`, `장수 ${attackerChar.stats[statKey]} + 병종 보정 ${modOf(aType, statKey)}${bonusText(aBonus[statKey], aType)}`, fmt(aStat));
+  add('스탯', `방어자 ${physical ? '방어' : '지력 (책략은 지력으로 저항)'}`, `장수 ${defenderChar.stats[defKey]} + 병종 보정 ${modOf(dType, defKey)}${bonusText(dBonus[defKey], dType)}${ignore > 0 ? ` − 방어 무시 ${ignore}` : ''}`, fmt(dStat));
 
   // ---- 기본 피해 ----
   const core = calc.core(attacker, defender, skill);
@@ -165,5 +188,50 @@ export function explainDamage(data: GameData, balance: BalanceConfig, input: Exp
     add('반격', '공격자 병력 변화', `${attacker.troops} − ${Math.min(counter, attacker.troops)}`, `${Math.max(0, attacker.troops - counter)} / ${attacker.maxTroops}`);
   }
 
-  return { ok: true, explanation: { rows, damage, counter, critical } };
+  // ---- 공식에 들어가는 값과 출처 ----
+  const sources: SourceRow[] = [];
+  const unitAnchor = (id: string) => `[data-unittype="${id}"]`;
+  const gapCfg = balance.damage.gap ?? DEFAULT_GAP;
+  const typeBonusUsed = formula === 'additive' || (formula === 'gap' && gapCfg.bonusDiv > 0);
+  const typeBonusNote = typeBonusUsed
+    ? formula === 'additive'
+      ? '원작식: 기본값에 더해집니다'
+      : `격차식: (병종 보정 + 대상 취약) ÷ ${gapCfg.bonusDiv}만큼 격차에 더해집니다`
+    : formula === 'gap'
+      ? '격차식에서는 "병종 보정 나누기"가 0이라 쓰지 않습니다'
+      : '처음 공식에서는 쓰지 않습니다';
+  const kindName = physical ? '물리' : '책략';
+  const src = (row: SourceRow) => sources.push(row);
+
+  src({ label: `병종 보정 ${kindName} (공격 병종: ${aType.name})`, value: fmt(aType.typeBonus?.[key] ?? 0), where: `병종 · 스킬 탭 > ${aType.name} 카드 > 피해 배수 · 반격 > 병종 보정 ${kindName}`, tab: 'data', anchor: unitAnchor(aType.id), used: typeBonusUsed, note: typeBonusNote });
+  src({ label: `대상 취약 ${kindName} (방어 병종: ${dType.name})`, value: fmt(dType.vulnerability?.[key] ?? 0), where: `병종 · 스킬 탭 > ${dType.name} 카드 > 피해 배수 · 반격 > 취약 ${kindName}`, tab: 'data', anchor: unitAnchor(dType.id), used: typeBonusUsed, note: typeBonusUsed ? '맞는 쪽 병종의 값이 더해집니다 (공격 병종의 것이 아닙니다)' : typeBonusNote });
+  src({ label: `스탯 보정 (${aType.name})`, value: (['attack', 'defense', 'intellect', 'speed', 'action'] as const).map((k) => `${({ attack: '공', defense: '방', intellect: '지', speed: '속', action: '행' })[k]}${aType.statMods?.[k] ?? 0}`).join(' '), where: `병종 · 스킬 탭 > ${aType.name} 카드 > 스탯 보정`, tab: 'data', anchor: unitAnchor(aType.id), used: true, note: '장수 스탯에 더해집니다 (병종마다 따로이고 승급해도 이어지지 않습니다)' });
+  src({
+    label: `승급 보너스 누적 (${aType.name})`,
+    value: (['attack', 'defense', 'intellect', 'speed', 'action'] as const).filter((k) => aBonus[k] > 0).map((k) => `${({ attack: '공', defense: '방', intellect: '지', speed: '속', action: '행' })[k]}+${aBonus[k]}`).join(' ') || '없음',
+    where: `병종 · 스킬 탭 > 승급 길(${promotionChain(data.unitTypes, aType.id).map((u) => u.name).join(' → ')})의 각 카드 > 승급 보너스`,
+    tab: 'data',
+    anchor: unitAnchor(aType.id),
+    used: true,
+    note: '장수의 초기 스탯에 더해집니다. 0차 병종은 0입니다',
+  });
+  src({ label: `주는 피해: 대상 ${input.defenderRow === 'front' ? '전열' : '후열'} (공격 병종: ${aType.name})`, value: `× ${fmt(rowMul)}`, where: `병종 · 스킬 탭 > ${aType.name} 카드 > 피해 배수 · 반격 > 주는 피해 대상 ${input.defenderRow === 'front' ? '전열' : '후열'}`, tab: 'data', anchor: unitAnchor(aType.id), used: true, note: '맞는 쪽이 있는 열에 따라 곱합니다' });
+  src({ label: `받는 피해 ${kindName} (방어 병종: ${dType.name})`, value: `× ${fmt(type)}`, where: `병종 · 스킬 탭 > ${dType.name} 카드 > 피해 배수 · 반격 > 받는 ${kindName}`, tab: 'data', anchor: unitAnchor(dType.id), used: true, note: '공격 종류(물리/책략)에 따라 곱합니다' });
+  if (dType.guard) src({ label: `가드 중 받는 피해 (방어 병종: ${dType.name})`, value: `× ${fmt(dType.guard.damageTaken ?? 1)}`, where: `병종 · 스킬 탭 > ${dType.name} 카드 > 가드 > 가드 피해 배수`, tab: 'data', anchor: unitAnchor(dType.id), used: input.defenderGuarding, note: input.defenderGuarding ? '방어자가 가드 중이라 곱합니다' : '방어자가 가드 중일 때만 곱합니다 (지금은 가드 중이 아님)' });
+  src({ label: `스킬 계수 (${skill.name})`, value: fmt(skill.power), where: `병종 · 스킬 탭 > 스킬 표 > ${skill.name} > 계수`, tab: 'data', anchor: `[data-skill="${skill.id}"]`, used: true, note: '기본 피해에 곱합니다' });
+  if (physical && (skill.ignoreDefense ?? 0) > 0) src({ label: `방어 무시 (${skill.name})`, value: fmt(skill.ignoreDefense ?? 0), where: `병종 · 스킬 탭 > 스킬 표 > ${skill.name} > 방어 무시`, tab: 'data', anchor: `[data-skill="${skill.id}"]`, used: true, note: '방어자의 방어에서 그만큼 뺍니다' });
+  if (skill.counterable) src({ label: `반격 비율 (${skill.name})`, value: fmt(skill.counterRate ?? balance.counter.rate), where: `병종 · 스킬 탭 > 스킬 표 > ${skill.name} > 반격 비율`, tab: 'data', anchor: `[data-skill="${skill.id}"]`, used: dType.canCounter, note: dType.canCounter ? '방어자가 반격할 때 곱합니다' : `${dType.name}은(는) 반격하지 않습니다 (병종 카드의 "반격함")` });
+  src({
+    label: '공식 계수',
+    value: formula === 'gap' ? `공격 계수 ${balance.damage.attackScale}, 격차 1점당 ${gapCfg.perPoint}, 하한 ${gapCfg.min}` : formula === 'additive' ? `공격 ×${(balance.damage.additive ?? DEFAULT_ADDITIVE).attackMul}, 방어 ×${(balance.damage.additive ?? DEFAULT_ADDITIVE).defenseMul}` : `공격 계수 ${balance.damage.attackScale}, 방어 계수 ${balance.damage.defenseScale}`,
+    where: '밸런스 수치 탭 > 피해 공식 값',
+    tab: 'balance',
+    used: true,
+    note: formula === 'gap' ? '격차식' : formula === 'additive' ? '원작식' : '처음 공식',
+  });
+  src({ label: '병력 보정 방식', value: mode === 'tiered' ? '구간식' : mode === 'relative' ? '상대 비교' : '절대', where: '밸런스 수치 탭 > 병력', tab: 'balance', used: true, note: balance.troopFactor.normalizeByScale === false ? '피해는 실제 병력 수로 계산합니다 (병력이 많은 병종이 더 셉니다)' : '병종 병력 배율은 피해에 영향을 주지 않습니다 (환산 병력)' });
+  src({ label: `병력 배율 (${aType.name})`, value: `× ${fmt(aType.troopScale ?? 1)}`, where: `병종 · 스킬 탭 > ${aType.name} 카드 > 병력 배율`, tab: 'data', anchor: unitAnchor(aType.id), used: true, note: balance.troopFactor.normalizeByScale === false ? '최대 병력을 정하고, 실제 병력이 많으면 피해도 큽니다' : '최대 병력(HP)만 정하고 피해에는 영향이 없습니다' });
+  if (balance.critical && balance.critical.chance > 0) src({ label: '크리티컬', value: `${balance.critical.chance}% 확률로 ×${balance.critical.multiplier}`, where: '밸런스 수치 탭 > 치명타', tab: 'balance', used: true, note: '반격과 치유에는 적용되지 않습니다' });
+
+  return { ok: true, explanation: { rows, sources, damage, counter, critical } };
 }

@@ -8,6 +8,7 @@ import type { SimulationHook } from '../lab/useSimulation';
 import { BalanceTab } from './BalanceTab';
 import { BattleTab } from './BattleTab';
 import { CharactersTab } from './CharactersTab';
+import { DamageCalculatorPanel } from './DamageCalculatorPanel';
 import { DataTab } from './DataTab';
 import { LineupEditor } from './LineupEditor';
 import { PresetsTab } from './PresetsTab';
@@ -68,29 +69,39 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(labels).not.toContain('치명타 확률 % (0이면 꺼짐)');
   });
 
-  it('병종 · 스킬 탭 맨 위에 피해 계산기가 단계별로 나온다', () => {
-    const html = render(<DataTab />);
+  it('피해 계산기: 병종 중심으로 값의 출처와 계산 과정이 나온다', () => {
+    const html = render(<DamageCalculatorPanel />);
     expectClean(html);
     expect(html).toContain('피해 계산기');
-    for (const label of ['한 번 맞는 피해', '최종 피해', '병력 보정', '받는 피해 배수', '반격']) expect(html).toContain(label);
+    for (const label of ['한 번 맞는 피해', '최종 피해', '병력 보정', '받는 피해 배수', '반격', '공식에 들어가는 값과 출처', '어디서 가져오나', '수정하러 가기', '공격 병종', '방어 병종']) expect(html).toContain(label);
+    // 병종 보정/대상 취약의 출처 칸이 보인다
+    expect(html).toContain('병종 보정');
+    expect(html).toContain('대상 취약');
+    expect(html).toContain('병종 · 스킬 탭 &gt;');
   });
 
-  it('병종 · 스킬 탭에 병종 카드와 스킬 표가 보인다', () => {
+  it('병종 · 스킬 탭: 계열 탭과 승급 트리, 선택한 병종의 카드, 카드 안의 스킬이 보인다', () => {
     const html = render(<DataTab />);
     expectClean(html);
     expect(html).toContain('보병');
     // 특성은 나중에 추가하기로 해서 화면에서 뺐다
     expect(html).not.toContain('병종 특성');
     expect(html).not.toContain('근접에 취약');
-    expect(html).toContain('책략');
-    // 병종 카드: 기본 AP, 사거리, 반격 비율, 받는 피해 배수, 스탯 보정, 가드 설정
-    for (const label of ['기본 AP', '사거리', '반격 비율', '받는 피해 배수', '스탯 보정', '줄 때 전열', '줄 때 후열', '가드 (같은 열 아군을 대신 맞을 확률)', '추가 스킬']) expect(html).toContain(label);
-    for (const id of Object.keys(state.data.unitTypes)) expect(html).toContain(`data-unittype="${id}"`);
-    // 스킬 표: 가드로 막힘, 방어 무시, 버프 설정
-    expect(html).toContain('가드로 막힘');
-    expect(html).toContain('방어 무시');
-    expect(html).toContain('피해 무시 횟수');
-    expect(html).toContain('>가드<');
+    // 계열 탭: 승급 트리의 뿌리마다 하나. 트리 그림에는 그 계열의 모든 병종이 있다
+    expect(html).toContain('role="tablist"');
+    for (const root of ['infantry', 'shield', 'cavalry', 'archer', 'strategist', 'taoist', 'geomancer']) expect(html).toContain(`data-root="${root}"`);
+    for (const id of ['infantry', 'light-infantry', 'heavy-infantry', 'assault-infantry', 'royal-guard']) expect(html).toContain(`data-node="${id}"`);
+    // 선택한 병종(처음에는 첫 병종)의 카드만 그린다: 기본 AP, 사거리, 스탯 보정, 승급 보너스, 피해 배수, 가드, 스킬
+    expect(html).toContain('data-unittype="infantry"');
+    expect(html).not.toContain('data-unittype="light-infantry"');
+    for (const label of ['기본 AP', '사거리', '스탯 보정', '승급 보너스', '줄 때 전열', '줄 때 후열', '가드 (같은 열 아군을 대신 맞을 확률)', '추가 스킬', '스킬 (이 병종이 쓰는 것)']) expect(html).toContain(label);
+    // 카드 안의 스킬 표: 이 병종의 스킬만 있고, 같이 쓰는 병종이 있으면 복제 버튼이 나온다
+    expect(html).toContain('data-skills-of="infantry"');
+    expect(html).toContain('이 병종 전용으로 복제');
+    // 전체 스킬 표(접혀 있음)에는 모든 스킬과 버프 설정이 있다
+    expect(html).toContain('전체 스킬 표');
+    for (const id of Object.keys(state.data.skills)) expect(html).toContain(`data-skill="${id}"`);
+    for (const label of ['가드로 막힘', '방어 무시', '피해 무시 횟수']) expect(html).toContain(label);
   });
 
   it('캐릭터 탭에 모든 캐릭터가 보인다', () => {
@@ -131,7 +142,9 @@ describe('Balance Lab 화면 렌더링', () => {
     expectClean(html);
     expect(html).toContain('전열');
     expect(html).toContain('후열');
-    expect(html.match(/<select/g)).toHaveLength(6);
+    expect(html.match(/class="slot"/g)).toHaveLength(6);
+    // 칸마다 지금 맡은 병종(승급 단계)을 고를 수 있다
+    expect(html).toContain('장수 병종 (기본)');
   });
 
   it('전투 1회 탭', () => {

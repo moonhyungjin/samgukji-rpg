@@ -28,7 +28,7 @@
     "name": "화살 공격",
     "kind": "attack",
     "scalesWith": "attack",
-    "power": 0.95,
+    "power": 0.9,
     "apCost": 1,
     "counterable": false,
     "guardable": true,

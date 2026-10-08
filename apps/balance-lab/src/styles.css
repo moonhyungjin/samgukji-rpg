@@ -1002,3 +1002,226 @@ h4.sub {
   text-align: right !important;
   white-space: nowrap;
 }
+
+.slot-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.slot-extra {
+  display: flex;
+  gap: 4px;
+}
+
+.slot-extra select {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.promo-note {
+  margin-top: 4px;
+}
+
+.calc-sides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 1000px) {
+  .calc-sides {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.calc-side .sub {
+  margin-top: 4px;
+}
+
+.sources-table thead th {
+  color: var(--muted);
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sources-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sources-table .calc-value {
+  width: auto;
+  text-align: left !important;
+  white-space: normal;
+}
+
+.sources-table .src-unused {
+  opacity: 0.45;
+}
+
+button.goto {
+  font-size: 12px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.flash {
+  animation: flash-bg 1.8s ease-out;
+}
+
+@keyframes flash-bg {
+  0% {
+    box-shadow: 0 0 0 3px #ffd166;
+    background: rgba(255, 209, 102, 0.12);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.sources-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 1000px;
+}
+
+.sources-table td,
+.sources-table th {
+  overflow-wrap: anywhere;
+  white-space: normal; /* 전역 td 규칙의 nowrap을 끈다 */
+}
+
+.sources-table .calc-label {
+  white-space: normal;
+}
+
+.sources-table .calc-value {
+  white-space: normal;
+}
+
+.sources-table td:last-child {
+  white-space: nowrap;
+}
+
+/* ---- 병종: 계열 탭 + 승급 트리 ---- */
+.unit-tree {
+  margin: 8px 0 14px;
+}
+
+.family-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.family-tab {
+  position: relative;
+}
+
+.family-tab.active {
+  background: var(--accent, #3b6fd8);
+  border-color: var(--accent, #3b6fd8);
+  color: #fff;
+}
+
+.family-tab .dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #ffd166;
+}
+
+.tree-root,
+.tree-root ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 26px;
+  position: relative;
+}
+
+.tree-root {
+  padding-left: 0;
+}
+
+.tree-root ul::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 0;
+  bottom: 14px;
+  border-left: 1px solid var(--border);
+}
+
+.tree-root li {
+  position: relative;
+  padding: 4px 0;
+}
+
+.tree-root ul > li::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 17px;
+  width: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.tree-node {
+  min-width: 150px;
+  text-align: left;
+}
+
+.tree-node .tier {
+  display: inline-block;
+  min-width: 30px;
+  margin-right: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.tree-node.active {
+  border-color: var(--accent, #3b6fd8);
+  box-shadow: 0 0 0 2px rgba(59, 111, 216, 0.5);
+  font-weight: 700;
+}
+
+.tree-node.changed {
+  border-color: #ffd166;
+}
+
+.tree-node.added {
+  border-color: #59e08a;
+}
+
+.tree-node.invalid {
+  border-color: #ff5a5a;
+}
+
+.usection-block .skill-table {
+  margin: 4px 0 6px;
+}
+
+.usection-block .skill-table td {
+  vertical-align: top;
+}
+
+.note.shared {
+  color: #ffd166;
+}
+
+details.all-skills > summary {
+  cursor: pointer;
+}
+
+details.all-skills > summary h3 {
+  display: inline;
+}

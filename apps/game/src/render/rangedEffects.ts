@@ -7,7 +7,9 @@ type Point = { x: number; y: number };
 
 /** Visual mapping only. Unknown attacks retain the existing melee presentation. */
 export function rangedEffectFor(skillId: string): RangedEffect | null {
-  switch (skillId) {
+  // Lab에서 병종 전용으로 복제한 스킬은 id가 "<병종 id>-<원래 스킬 id>"이므로 끝부분이 같으면 같은 연출을 쓴다
+  const base = ['archer-shot', 'geomancer-shot', 'stratagem', 'poison-smoke'].find((id) => skillId === id || skillId.endsWith(`-${id}`)) ?? skillId;
+  switch (base) {
     case 'archer-shot':
     case 'geomancer-shot': return 'arrow';
     case 'stratagem': return 'sigil';

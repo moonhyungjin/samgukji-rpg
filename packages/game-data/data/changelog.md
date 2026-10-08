@@ -278,3 +278,27 @@ Balance Lab의 "파일에 저장"을 누를 때마다 자동으로 덧붙는다 
 ## 2026-10-08 08:43 — 스킬 · 밸런스 수치
 - skills.cavalry-charge.power: 1.2 → 1.25
 - balance.troopFactor.tiered.floor: 300 → 500
+
+## 2026-10-08 09:22 — 스킬 · 병종
+- skills.archer-shot.power: 0.95 → 0.9
+- unitTypes.cavalry.canCounter: false → true
+
+## 2026-10-08 09:24 — 밸런스 수치
+- balance.damage.additive.defenseMul: 5 → 6
+
+## 2026-10-08 — 병종 · 장수 · 기본 편성
+메모: 승급 트리 도입 (기병 → 경기병/중기병 → 궁기병/호표기, 임시값). 관우는 최종을 호표기로 두고 초기 스탯을 낮춤. 촉 초반 편성에서 관우는 보병.
+- unitTypes: 승급 보너스(promotionBonus) 칸 추가, cavalry.promotesTo: [] → [light-cavalry, heavy-cavalry]
+- unitTypes: + light-cavalry, heavy-cavalry, horse-archer, tiger-cavalry (기병 복사, 승급 보너스 임시값)
+- characters.guanYu: unitType cavalry → tiger-cavalry, stats 공9 방7 속6 → 공7 방6 속5 (호표기에서 공9 방7 속7)
+- presets.shuStart: 관우 병종을 보병으로 (승급 전)
+
+## 2026-10-08 — 병종 · 장수 · 기본 편성
+메모: 보병/방패병/궁병 승급 트리 추가 (임시값). 유비는 최종을 근위대, 장비는 철벽대로 두고 초기 스탯을 낮춤. 촉 초반은 세 명 모두 승급 전 병종.
+- unitTypes: + light-infantry, heavy-infantry, assault-infantry, royal-guard (보병 복사)
+- unitTypes: + escort, heavy-shield, armored-guard, iron-wall (방패병 복사)
+- unitTypes: + strong-bow, long-bow, elite-archer, crossbow (궁병 복사)
+- unitTypes: infantry/shield/archer.promotesTo 연결
+- characters.liuBei: unitType infantry → royal-guard, stats 공7 방6 속5 → 공5 방5 속4 (근위대에서 공7 방6 속5)
+- characters.zhangFei: unitType shield → iron-wall, stats 공8 방9 속5 → 공6 방8 속4 (철벽대에서 공7 방9 속4)
+- presets.shuStart: 유비 보병, 장비 방패병, 관우 보병 (모두 승급 전)

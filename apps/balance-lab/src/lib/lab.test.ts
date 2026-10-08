@@ -68,9 +68,10 @@ describe('Lab 상태', () => {
   });
 
   it('기본 상태를 수정해도 game-data 원본은 바뀌지 않는다', () => {
+    const before = gameData.characters.guanYu.stats.attack;
     const state = createDefaultState();
     state.data.characters.guanYu.stats.attack = 15;
-    expect(gameData.characters.guanYu.stats.attack).toBe(9);
+    expect(gameData.characters.guanYu.stats.attack).toBe(before);
   });
 
   it('이후 추가된 설정이 없는 저장 데이터는 기본값으로 채운다', () => {

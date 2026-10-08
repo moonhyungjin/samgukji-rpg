@@ -95,15 +95,18 @@
     "lineup": [
       {
         "characterId": "zhangFei",
-        "row": "front"
+        "row": "front",
+        "unitType": "shield"
       },
       {
         "characterId": "liuBei",
-        "row": "front"
+        "row": "front",
+        "unitType": "infantry"
       },
       {
         "characterId": "guanYu",
-        "row": "front"
+        "row": "front",
+        "unitType": "infantry"
       }
     ]
   },

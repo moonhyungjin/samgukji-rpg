@@ -1,10 +1,11 @@
 import { FAMILIES } from '@samgukji/battle-engine';
-import type { BalanceConfig, Family, GameData, Row, UnitTypeData } from '@samgukji/battle-engine';
+import type { BalanceConfig, Family, GameData, Row, StatBonus, UnitTypeData } from '@samgukji/battle-engine';
 import type { Issue } from '../lib/editor';
-import { DEFAULT_GUARD, FAMILY_LABEL, MOD_FIELDS, charactersUsing, unitTypeSummary } from '../lib/unitTypes';
+import { DEFAULT_GUARD, FAMILY_LABEL, MOD_FIELDS, charactersUsing, groupByPromotion, promotionDepth, promotionPathLabel, unitTypeSummary } from '../lib/unitTypes';
 
-type Patch = Partial<Omit<UnitTypeData, 'statMods' | 'damageTakenByType' | 'damageDealtByRow' | 'guard' | 'recruit' | 'typeBonus' | 'vulnerability'>> & {
+type Patch = Partial<Omit<UnitTypeData, 'promotionBonus' | 'statMods' | 'damageTakenByType' | 'damageDealtByRow' | 'guard' | 'recruit' | 'typeBonus' | 'vulnerability'>> & {
   statMods?: Partial<NonNullable<UnitTypeData['statMods']>>;
+  promotionBonus?: Partial<StatBonus>;
   typeBonus?: Partial<NonNullable<UnitTypeData['typeBonus']>>;
   vulnerability?: Partial<NonNullable<UnitTypeData['vulnerability']>>;
   recruit?: Partial<NonNullable<UnitTypeData['recruit']>>;
@@ -14,8 +15,15 @@ type Patch = Partial<Omit<UnitTypeData, 'statMods' | 'damageTakenByType' | 'dama
   guard?: Partial<NonNullable<UnitTypeData['guard']>> | null;
 };
 
+const DEPTH_NAME = (depth: number) => (depth === 0 ? '0차' : `${depth}차`);
+
 interface Props {
+  /** 그릴 병종들 */
   unitTypes: readonly UnitTypeData[];
+  /** 승급 길과 승급 대상 이름을 찾을 전체 병종 (생략하면 unitTypes) */
+  all?: readonly UnitTypeData[];
+  /** 병종 카드 안에 넣을 스킬 영역 (Lab 상태가 필요해서 바깥에서 주입한다) */
+  renderSkills?: (unit: UnitTypeData) => React.ReactNode;
   savedIds: ReadonlySet<string>;
   changed: ReadonlySet<string>;
   issues: readonly Issue[];
@@ -33,14 +41,27 @@ interface Props {
 const num = (value: string) => (value === '' ? 0 : Number(value));
 
 /** 병종 목록. 카드마다 병력, AP, 사거리, 보정, 받는 피해, 반격, 스킬, 가드를 고친다. */
-export function UnitTypeEditor({ unitTypes, savedIds, changed, issues, characters, data, balance, onEdit, onDuplicate, onRevert, onRemove }: Props) {
+export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed, issues, characters, data, balance, onEdit, onDuplicate, onRevert, onRemove }: Props) {
   const bad = new Set(issues.filter((i) => i.level === 'error' && i.id !== undefined).map((i) => i.id));
   const skills = Object.values(data.skills);
+  const every = all ?? unitTypes;
   const toggle = (list: readonly string[], id: string, on: boolean) => (on ? [...list, id] : list.filter((x) => x !== id));
 
   return (
     <div className="unittypes">
-      {unitTypes.map((u) => {
+      {groupByPromotion(unitTypes).map((group) => (
+        <div className="tier-group" key={group.depth} data-tier={group.depth}>
+          <h4 className="sub tier-title">
+            {group.label} <span className="badge">{group.items.length}종</span>
+          </h4>
+          {group.items.map((u) => renderCard(u))}
+        </div>
+      ))}
+    </div>
+  );
+
+  function renderCard(u: UnitTypeData) {
+    {
         const isSaved = savedIds.has(u.id);
         const className = ['unittype', !isSaved ? 'added' : changed.has(u.id) ? 'changed' : '', bad.has(u.id) ? 'invalid' : ''].filter(Boolean).join(' ');
         const users = charactersUsing(u.id, Object.values(characters));
@@ -155,6 +176,29 @@ export function UnitTypeEditor({ unitTypes, savedIds, changed, issues, character
               )}
             </div>
 
+            <div className="usection">승급 ({DEPTH_NAME(promotionDepth(every, u.id))}) · 승급 보너스</div>
+            <p className="note promo-note">{promotionPathLabel(every, u.id)}{u.promotesTo.length > 0 ? ` → 다음: ${u.promotesTo.map((id) => every.find((x) => x.id === id)?.name ?? id).join(' / ')}` : ''}</p>
+            <div className="ugrid">
+              {MOD_FIELDS.map((f) =>
+                field(
+                  `보너스 ${f.label}`,
+                  <input type="number" min={0} step={1} aria-label={`${u.id} 승급 보너스 ${f.label}`} value={u.promotionBonus?.[f.key] ?? 0} onChange={(e) => onEdit(u.id, { promotionBonus: { [f.key]: num(e.target.value) } })} />,
+                  '승급해서 이 병종이 될 때 오르는 스탯. 장수 스탯은 초기 스탯이고 지금 병종까지 오는 길의 보너스가 더해진다',
+                ),
+              )}
+            </div>
+            <div className="checks" role="group" aria-label={`${u.id} 승급 대상`}>
+              <span className="check-title">승급 대상</span>
+              {every
+                .filter((x) => x.id !== u.id)
+                .map((x) => (
+                  <label key={x.id} className="check">
+                    <input type="checkbox" aria-label={`${u.id} 승급 대상 ${x.name}`} checked={u.promotesTo.includes(x.id)} onChange={(e) => onEdit(u.id, { promotesTo: toggle(u.promotesTo, x.id, e.target.checked) })} />
+                    {x.name}
+                  </label>
+                ))}
+            </div>
+
             <div className="usection">피해 배수 · 반격</div>
             <div className="ugrid">
               {field(
@@ -231,6 +275,7 @@ export function UnitTypeEditor({ unitTypes, savedIds, changed, issues, character
                 </label>
               ))}
             </div>
+            {renderSkills?.(u)}
 
             <div className="usection">
               <label className="check">
@@ -273,7 +318,6 @@ export function UnitTypeEditor({ unitTypes, savedIds, changed, issues, character
             )}
           </section>
         );
-      })}
-    </div>
-  );
+    }
+  }
 }

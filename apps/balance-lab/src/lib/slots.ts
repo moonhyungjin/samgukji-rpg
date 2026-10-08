@@ -16,7 +16,7 @@ export function slotsFromLineup(lineup: LineupEntry[]): Slots {
   for (const entry of lineup) {
     const index = next[entry.row]++;
     if (index >= limit[entry.row]) continue;
-    slots[index] = entry.level === undefined ? { characterId: entry.characterId } : { characterId: entry.characterId, level: entry.level };
+    slots[index] = { characterId: entry.characterId, ...(entry.level === undefined ? {} : { level: entry.level }), ...(entry.unitType === undefined ? {} : { unitType: entry.unitType }) };
   }
   return slots;
 }
@@ -25,7 +25,7 @@ export function slotsFromLineup(lineup: LineupEntry[]): Slots {
 export function lineupFromSlots(slots: Slots): LineupEntry[] {
   return slots.flatMap((slot, index) =>
     slot
-      ? [{ characterId: slot.characterId, row: slotRow(index), ...(slot.level === undefined ? {} : { level: slot.level }) }]
+      ? [{ characterId: slot.characterId, row: slotRow(index), ...(slot.level === undefined ? {} : { level: slot.level }), ...(slot.unitType === undefined ? {} : { unitType: slot.unitType }) }]
       : [],
   );
 }

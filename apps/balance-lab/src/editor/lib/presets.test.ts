@@ -8,10 +8,12 @@ import {
   duplicatePreset,
   lineupFromSlots,
   newPreset,
+  normalizePreset,
   parsePresets,
   presetMap,
   serializePresets,
   setSlot,
+  setSlotUnitType,
   slotsFromLineup,
   summarizeLineup,
   validatePresets,
@@ -116,11 +118,33 @@ describe('편성 검사', () => {
 describe('편성 요약과 변경 비교', () => {
   it('구성과 전체 병력을 계산한다', () => {
     const s = summarizeLineup(presets.shuStart, gameData, defaultBalance);
-    expect(s.composition).toBe('방패병 · 보병 · 기병 / -');
+    // 편성에서 병종을 덮어쓴 칸(승급 전 병종)은 덮어쓴 병종으로 센다
+    const front = presets.shuStart.map((e) => gameData.unitTypes[e.unitType ?? gameData.characters[e.characterId].unitType].name).join(' · ');
+    expect(s.composition).toBe(`${front} / -`);
     expect(s.units).toBe(3);
-    const expected = presets.shuStart.reduce((sum, e) => { const c = gameData.characters[e.characterId]; return sum + Math.round(maxTroops(defaultBalance, e.level ?? c.level) * (gameData.unitTypes[c.unitType].troopScale ?? 1)); }, 0);
+    const expected = presets.shuStart.reduce((sum, e) => { const c = gameData.characters[e.characterId]; return sum + Math.round(maxTroops(defaultBalance, e.level ?? c.level) * (gameData.unitTypes[e.unitType ?? c.unitType].troopScale ?? 1)); }, 0);
     expect(s.troops).toBe(expected);
     expect(summarizeLineup(presets.yellowHard, gameData, defaultBalance).composition).toBe('방패병 · 보병 · 보병 / 궁병');
+  });
+
+  it('칸의 병종(승급 단계)을 바꾸고 저장 형식에 순서대로 남긴다', () => {
+    const base = presets.shu;
+    const withType = setSlotUnitType({ id: 'x', label: 'x', lineup: base }, 0, 'infantry');
+    expect(withType.lineup[0]).toMatchObject({ unitType: 'infantry' });
+    expect(Object.keys(normalizePreset(withType).lineup[0])).toEqual(['characterId', 'row', 'unitType']);
+    // 지우면 항목이 사라지고 장수의 병종으로 돌아간다
+    expect(setSlotUnitType(withType, 0, undefined).lineup[0].unitType).toBeUndefined();
+    // 장수를 바꾸면 병종 지정은 유지하지 않는다
+    expect(setSlot(withType, 0, 'weiYan').lineup[0].unitType).toBeUndefined();
+  });
+
+  it('없는 병종이나 그 열에 못 서는 병종으로 덮어쓰면 오류다', () => {
+    const lineup = [{ characterId: 'zhangFei', row: 'front' as const, unitType: 'nope' }];
+    expect(validatePresets([{ id: 'shu', label: 's', lineup }, { id: 'wei', label: 'w', lineup: presets.wei }], gameData).some((i) => i.level === 'error' && i.message.includes('병종(승급 단계)'))).toBe(true);
+    // 열 제한은 Lab에서 바뀔 수 있으므로 후열 전용 병종을 시험 안에서 만든다
+    const data = { ...gameData, unitTypes: { ...gameData.unitTypes, strategist: { ...gameData.unitTypes.strategist, allowedRows: ['back' as const] } } };
+    const back = [{ characterId: 'zhangFei', row: 'front' as const, unitType: 'strategist' }];
+    expect(validatePresets([{ id: 'shu', label: 's', lineup: back }, { id: 'wei', label: 'w', lineup: presets.wei }], data).some((i) => i.level === 'error' && i.message.includes('둘 수 없습니다'))).toBe(true);
   });
 
   it('저장본과 비교해 수정/추가/삭제를 알려 준다', () => {

@@ -5,6 +5,8 @@ export interface SlotEntry {
   characterId: string;
   /** 비어 있으면 캐릭터의 기본 군단 레벨 */
   level?: number;
+  /** 이 편성에서 지금 맡은 병종(승급 단계). 비어 있으면 장수의 병종 */
+  unitType?: string;
 }
 
 /** 편성 슬롯 6칸. 0~2는 전열, 3~5는 후열. 빈 칸은 null */

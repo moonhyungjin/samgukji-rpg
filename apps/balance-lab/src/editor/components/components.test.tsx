@@ -3,7 +3,7 @@ import { renderToString } from 'react-dom/server';
 import { defaultBalance, gameData, presets } from '@samgukji/game-data';
 import { maxTroops } from '@samgukji/battle-engine';
 import type { CharacterData } from '@samgukji/battle-engine';
-import { newCharacter, validate } from '../lib/editor';
+import { derive, newCharacter, validate } from '../lib/editor';
 import { UnitTypeEditor } from './UnitTypeEditor';
 import { CharacterTable } from './CharacterTable';
 
@@ -36,12 +36,13 @@ describe('장수 편집기 화면', () => {
     expect(out).not.toContain('undefined');
     for (const c of characters) expect(out).toContain(`value="${c.name}"`);
     for (const label of ['공격', '방어', '지력', '속도', '행동력', '외교', '내정', '매력', '총 AP', '병력', '1회 피해', '실제 공/방/지/속']) expect(out).toContain(label);
-    // 방패병 장비: 총 AP 5, 병력 = 레벨 병력 × 방패병 병력 배율, 실제 공격 7(8-1)/방어 9/지력 4/속도 4(5-1)
+    // 장비: 실제 공/방/지/속 = 초기 스탯 + 병종 보정 + 승급 보너스, 병력 = 레벨 병력 × 병종 병력 배율 (현재 데이터에서 계산)
     const row = out.slice(out.indexOf('data-id="zhangFei"'), out.indexOf('data-id="guanYu"'));
-    expect(row).toContain('7 / 9 / 4 / 4');
-    expect(row).toContain('<strong>5</strong>');
     const zf = gameData.characters.zhangFei;
-    expect(row).toContain(String(Math.round(maxTroops(defaultBalance, zf.level) * (gameData.unitTypes.shield.troopScale ?? 1))));
+    const d = derive(zf, gameData, defaultBalance)!;
+    expect(row).toContain(`${d.finalStats.attack} / ${d.finalStats.defense} / ${d.finalStats.intellect} / ${d.finalStats.speed}`);
+    expect(row).toContain(`<strong>${d.totalAp}</strong>`);
+    expect(row).toContain(String(Math.round(maxTroops(defaultBalance, zf.level) * (gameData.unitTypes[zf.unitType].troopScale ?? 1))));
   });
 
   it('수정된 줄, 새 장수 줄, 오류 줄을 구분해 칠한다', () => {
@@ -110,8 +111,10 @@ describe('병종 편집 화면', () => {
     const out = editor();
     const card = (id: string, next: string) => out.slice(out.indexOf(`data-unittype="${id}"`), out.indexOf(`data-unittype="${next}"`));
     expect(card('infantry', 'shield')).toMatch(/class="danger" disabled=""/);
-    const last = out.slice(out.indexOf('data-unittype="geomancer"'));
-    expect(last).not.toMatch(/class="danger" disabled=""/);
+    // 카드는 승급 차수별로 묶여 있으므로 풍수사 카드만 잘라서 본다
+    const start = out.indexOf('data-unittype="geomancer"');
+    const geomancer = out.slice(start, out.indexOf('</section>', start));
+    expect(geomancer).not.toMatch(/class="danger" disabled=""/);
   });
 
   it('수정/새 병종/오류 카드를 구분해 칠하고, 병력과 열 요약을 보여 준다', () => {

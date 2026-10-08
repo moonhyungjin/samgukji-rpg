@@ -34,12 +34,23 @@ export function setSlot(preset: PresetDef, index: number, characterId: string): 
   return { ...preset, lineup: lineupFromSlots(slots) };
 }
 
+/** 칸의 병종(승급 단계)을 바꾼다. undefined이면 지워서 장수의 병종으로 돌아간다. */
+export function setSlotUnitType(preset: PresetDef, index: number, unitType: string | undefined): PresetDef {
+  const slots = slotsFromLineup(preset.lineup);
+  const slot = slots[index];
+  if (!slot) return preset;
+  const next = { ...slot, unitType };
+  if (next.unitType === undefined || next.unitType === '') delete next.unitType;
+  slots[index] = next;
+  return { ...preset, lineup: lineupFromSlots(slots) };
+}
+
 /** 직렬화할 때 키 순서를 고정한다. */
 export function normalizePreset(p: PresetDef): PresetDef {
   return {
     id: p.id,
     label: p.label,
-    lineup: p.lineup.map((e) => ({ characterId: e.characterId, row: e.row, ...(e.level === undefined ? {} : { level: e.level }) })),
+    lineup: p.lineup.map((e) => ({ characterId: e.characterId, row: e.row, ...(e.level === undefined ? {} : { level: e.level }), ...(e.unitType === undefined ? {} : { unitType: e.unitType }) })),
   };
 }
 
@@ -98,7 +109,10 @@ export function validatePresets(list: readonly PresetDef[], data: GameData): Iss
         issues.push({ level: 'error', id: p.id, message: `편성 ${who}: 없는 장수입니다 (${e.characterId}).` });
         continue;
       }
-      const unitType = data.unitTypes[character.unitType];
+      if (e.unitType !== undefined && !data.unitTypes[e.unitType]) {
+        issues.push({ level: 'error', id: p.id, message: `편성 ${who}: ${character.name}의 병종(승급 단계)이 없는 병종입니다 (${e.unitType}).` });
+      }
+      const unitType = data.unitTypes[e.unitType ?? character.unitType];
       if (unitType && !unitType.allowedRows.includes(e.row)) {
         issues.push({ level: 'error', id: p.id, message: `편성 ${who}: ${character.name}(${unitType.name})은 ${e.row === 'front' ? '전열' : '후열'}에 둘 수 없습니다.` });
       }
@@ -129,12 +143,12 @@ export function summarizeLineup(lineup: readonly LineupEntry[], data: GameData, 
       .filter((e) => e.row === row)
       .map((e) => {
         const c = data.characters[e.characterId];
-        return c ? (data.unitTypes[c.unitType]?.name ?? c.unitType) : '?';
+        return c ? (data.unitTypes[e.unitType ?? c.unitType]?.name ?? c.unitType) : '?';
       })
       .join(' · ');
   const troops = lineup.reduce((sum, e) => {
     const c = data.characters[e.characterId];
-    const unitType = c ? data.unitTypes[c.unitType] : undefined;
+    const unitType = c ? data.unitTypes[e.unitType ?? c.unitType] : undefined;
     return c && unitType ? sum + Math.round(maxTroops(balance, e.level ?? c.level) * (unitType.troopScale ?? 1)) : sum;
   }, 0);
   return { composition: `${names('front') || '-'} / ${names('back') || '-'}`, units: lineup.length, troops };

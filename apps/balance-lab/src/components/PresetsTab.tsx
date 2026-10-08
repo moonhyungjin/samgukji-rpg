@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { PresetDef } from '@samgukji/game-data';
 import { useLab } from '../lab/LabContext';
 import { PresetEditor } from '../editor/components/PresetEditor';
-import { changedPresetIds, duplicatePreset, newPreset, setSlot, validatePresets } from '../editor/lib/presets';
+import { changedPresetIds, duplicatePreset, newPreset, setSlot, setSlotUnitType, validatePresets } from '../editor/lib/presets';
 
 /** 기본 편성: 카드마다 전열 3칸 + 후열 3칸을 장수 목록에서 골라 짠다. */
 export function PresetsTab() {
@@ -36,6 +36,7 @@ export function PresetsTab() {
         balance={state.balance}
         onEdit={(id, patch) => setPresets((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))}
         onSetSlot={(id, index, characterId) => setPresets((prev) => prev.map((p) => (p.id === id ? setSlot(p, index, characterId) : p)))}
+        onSetUnitType={(id, index, unitType) => setPresets((prev) => prev.map((p) => (p.id === id ? setSlotUnitType(p, index, unitType) : p)))}
         onDuplicate={(id) => {
           const source = presets.find((p) => p.id === id);
           if (source) setPresets((prev) => [...prev, duplicatePreset(prev, source)]);
