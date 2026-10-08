@@ -3,12 +3,25 @@ import { DECIDED_BY_LABEL, END_CAUSE_LABEL } from './format';
 
 const STAT_NAME = { attack: '공격', defense: '방어', intellect: '지력', speed: '속도' } as const;
 
+/** 로그 한 줄과 그 줄을 만든 이벤트의 위치 (result.events의 인덱스) */
+export interface LogEntry {
+  text: string;
+  eventIndex: number;
+}
+
 /** 엔진 이벤트를 사람이 읽는 로그로 바꾼다. result.events가 있어야 한다. */
 export function formatBattleLog(result: BattleResult, data: GameData): string[] {
+  return formatBattleLogEntries(result, data).map((e) => e.text);
+}
+
+/** formatBattleLog와 같고, 줄마다 이벤트 위치를 함께 돌려준다 (전투 1회 탭에서 피해 줄을 눌러 계산 과정을 볼 때 쓴다) */
+export function formatBattleLogEntries(result: BattleResult, data: GameData): LogEntry[] {
   const names = new Map(result.units.map((u) => [u.uid, `${u.side === 'attacker' ? '공' : '방'}:${u.name}`]));
   const name = (uid: string) => names.get(uid) ?? uid;
   const sideLabel = (side: 'attacker' | 'defender') => (side === 'attacker' ? '공격측' : '방어측');
-  const lines: string[] = [];
+  const entries: LogEntry[] = [];
+  let index = 0;
+  const lines = { push: (text: string) => entries.push({ text, eventIndex: index }) };
 
   for (const e of result.events ?? []) {
     switch (e.type) {
@@ -68,6 +81,7 @@ export function formatBattleLog(result: BattleResult, data: GameData): string[] 
       case 'morale':
         break;
     }
+    index++;
   }
-  return lines;
+  return entries;
 }

@@ -69,7 +69,7 @@ export function ReportView({ report, baseline, baselineLabel, findings, elapsedM
       {baseline && <p className="note">변화량(작은 숫자)은 {baselineLabel} 대비입니다.</p>}
 
       <section className="panel">
-        <h3>목표 지표 점검</h3>
+        <h3>경고 (깨진 곳)</h3>
         <ul className="findings">
           {findings.map((f, i) => (
             <li key={i} className={f.level}>

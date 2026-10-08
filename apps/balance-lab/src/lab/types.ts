@@ -27,14 +27,11 @@ export interface SimSettings {
   autoRunIterations: number;
 }
 
-export interface FamilySurvivalTarget {
-  enabled: boolean;
-  target: number;
-  tolerance: number;
-}
-
-/** 밸런스 목표 지표. 결과가 이 범위를 벗어나면 경고한다. */
-export interface TargetSettings {
+/**
+ * 경고 기준 (안전선). 균형을 맞추는 목표가 아니라 값이 "깨졌는지"만 본다: 시뮬레이션 결과가 이 범위를 벗어나면 경고한다.
+ * 값은 [임시]이며 사용자가 Lab에서 정한다.
+ */
+export interface WarningSettings {
   attackerWinRate: [number, number];
   averageRounds: [number, number];
   /** 무작위 편성에서만 평가 */
@@ -42,7 +39,10 @@ export interface TargetSettings {
   characterWinRate: [number, number];
   /** 공격 스킬 평균 피해 ÷ 공격 스킬 전체 평균 */
   skillDamageRatio: [number, number];
-  familySurvival: Record<Family, FamilySurvivalTarget>;
+  /** 한쪽 전멸로 끝난 전투가 이 비율보다 적으면 경고 (전멸이 거의 안 난다) */
+  minWipeRate: number;
+  /** 교착으로 끝난 전투가 이 비율보다 많으면 경고 */
+  maxStallRate: number;
 }
 
 export interface LabState {
@@ -51,7 +51,7 @@ export interface LabState {
   teamA: Slots;
   teamB: Slots;
   sim: SimSettings;
-  targets: TargetSettings;
+  warnings: WarningSettings;
   /** 기본 편성 (작업 중인 초안). 저장하면 data/presets.json이 된다 */
   presets: PresetDef[];
   /** 이 초안이 어느 데이터 파일 내용에서 시작했는지 나타내는 지문. 파일이 바뀌면 초안을 버리고 파일 값으로 시작한다 */

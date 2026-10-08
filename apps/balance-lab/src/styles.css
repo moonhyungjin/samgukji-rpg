@@ -1735,3 +1735,28 @@ details.formula-panel > summary {
 details.formula-panel > summary h3 {
   display: inline;
 }
+
+/* 전투 1회 로그: 줄마다 "계산" 버튼 */
+.log .log-line > span {
+  white-space: pre-wrap;
+}
+
+.log-line.open {
+  background: rgba(91, 140, 255, 0.08);
+}
+
+.log-calc {
+  margin-left: 8px;
+  padding: 0 6px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.hit-explain {
+  margin: 6px 0 10px 24px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  font-family: -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif;
+  white-space: normal;
+}

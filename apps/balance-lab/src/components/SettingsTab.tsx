@@ -1,9 +1,7 @@
-import { FAMILIES } from '@samgukji/battle-engine';
 import { useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { isLabState, normalizeState, useLab } from '../lab/LabContext';
-import { FAMILY_LABEL } from '../lib/format';
-import { CheckField, NumberField } from './Fields';
+import { NumberField } from './Fields';
 
 function downloadJson(filename: string, value: unknown) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }));
@@ -14,7 +12,7 @@ function downloadJson(filename: string, value: unknown) {
   URL.revokeObjectURL(url);
 }
 
-/** 목표 지표, 가져오기/내보내기, 초기화. */
+/** 경고 기준, 가져오기/내보내기, 초기화. */
 export function SettingsTab() {
   const { state, replace, reset } = useLab();
   const [message, setMessage] = useState<string | null>(null);
@@ -35,72 +33,52 @@ export function SettingsTab() {
 
   return (
     <div className="grid">
-      <section className="panel">
-        <h3>목표 지표</h3>
-        <p className="note">시뮬레이션 결과가 이 범위를 벗어나면 "목표 지표 점검"에서 경고합니다.</p>
+      <section className="panel" data-panel="warnings">
+        <h3>경고 기준</h3>
+        <p className="note">
+          시뮬레이션 결과가 이 범위를 벗어나면 시뮬레이션 탭의 "경고 (깨진 곳)"에 알립니다. 균형을 맞추는 목표가 아니라 값이 <b>깨졌는지</b> 보는 안전선입니다. 예를 들어 한 병종이 거의 다 이기거나, 전멸이 거의 나지 않거나, 전투가 너무 짧거나 길 때입니다. 값은 [임시]이고 여기서 고칩니다.
+        </p>
+        <div className="range">
+          <span>평균 전투 길이 (라운드)</span>
+          <NumberField path="warnings.averageRounds.0" step={0.5} min={0} />
+          <NumberField path="warnings.averageRounds.1" step={0.5} min={0} />
+        </div>
+        <div className="range">
+          <span>병종 계열 승률 (무작위 편성)</span>
+          <NumberField path="warnings.familyWinRate.0" step={0.05} min={0} max={1} />
+          <NumberField path="warnings.familyWinRate.1" step={0.05} min={0} max={1} />
+        </div>
+        <div className="range">
+          <span>장수 승률 (무작위 편성)</span>
+          <NumberField path="warnings.characterWinRate.0" step={0.05} min={0} max={1} />
+          <NumberField path="warnings.characterWinRate.1" step={0.05} min={0} max={1} />
+        </div>
         <div className="range">
           <span>공격측 승률</span>
-          <NumberField path="targets.attackerWinRate.0" step={0.01} min={0} max={1} />
-          <NumberField path="targets.attackerWinRate.1" step={0.01} min={0} max={1} />
+          <NumberField path="warnings.attackerWinRate.0" step={0.05} min={0} max={1} />
+          <NumberField path="warnings.attackerWinRate.1" step={0.05} min={0} max={1} />
         </div>
         <div className="range">
-          <span>평균 라운드</span>
-          <NumberField path="targets.averageRounds.0" step={0.5} min={0} />
-          <NumberField path="targets.averageRounds.1" step={0.5} min={0} />
+          <span>공격 스킬 1회 피해 (평균 대비 배)</span>
+          <NumberField path="warnings.skillDamageRatio.0" step={0.25} min={0} />
+          <NumberField path="warnings.skillDamageRatio.1" step={0.25} min={0} />
         </div>
         <div className="range">
-          <span>병종 승률 (무작위 편성)</span>
-          <NumberField path="targets.familyWinRate.0" step={0.01} min={0} max={1} />
-          <NumberField path="targets.familyWinRate.1" step={0.01} min={0} max={1} />
+          <span>전멸로 끝난 전투 최소 비율</span>
+          <NumberField path="warnings.minWipeRate" step={0.05} min={0} max={1} />
         </div>
         <div className="range">
-          <span>캐릭터 승률 (무작위 편성)</span>
-          <NumberField path="targets.characterWinRate.0" step={0.01} min={0} max={1} />
-          <NumberField path="targets.characterWinRate.1" step={0.01} min={0} max={1} />
+          <span>교착으로 끝난 전투 최대 비율</span>
+          <NumberField path="warnings.maxStallRate" step={0.05} min={0} max={1} />
         </div>
-        <div className="range">
-          <span>스킬 피해 배율 (공격 스킬 평균 대비)</span>
-          <NumberField path="targets.skillDamageRatio.0" step={0.1} min={0} />
-          <NumberField path="targets.skillDamageRatio.1" step={0.1} min={0} />
-        </div>
-      </section>
-
-      <section className="panel">
-        <h3>병종별 생존율 목표</h3>
-        <p className="note">지금은 모두 꺼 두었습니다. 승급 병종과 새 커맨드가 들어오면 판도가 달라지므로 병종별 생존율을 맞추지 않습니다. 필요하면 "사용"을 켜세요 (예: 궁병 40% ±10%p).</p>
-        <table>
-          <thead>
-            <tr>
-              <th>사용</th>
-              <th>병종</th>
-              <th>목표 생존율</th>
-              <th>허용 오차</th>
-            </tr>
-          </thead>
-          <tbody>
-            {FAMILIES.map((f) => (
-              <tr key={f}>
-                <td>
-                  <CheckField label="" path={`targets.familySurvival.${f}.enabled`} />
-                </td>
-                <td>{FAMILY_LABEL[f]}</td>
-                <td>
-                  <NumberField path={`targets.familySurvival.${f}.target`} step={0.05} min={0} max={1} />
-                </td>
-                <td>
-                  <NumberField path={`targets.familySurvival.${f}.tolerance`} step={0.05} min={0} max={1} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <p className="note">비율은 0~1입니다 (0.3 = 30%). 범위는 왼쪽이 최소, 오른쪽이 최대입니다.</p>
       </section>
 
       <section className="panel">
         <h3>가져오기 · 내보내기</h3>
         <div className="stack">
           <button type="button" onClick={() => downloadJson('balance-lab-state.json', state)}>
-            전체 상태 내보내기 (데이터, 밸런스, 편성, 목표)
+            전체 상태 내보내기 (데이터, 밸런스, 편성, 경고 기준)
           </button>
           <button type="button" onClick={() => downloadJson('balance.json', state.balance)}>
             밸런스 수치만 내보내기 (CLI의 --balance 용)
@@ -115,7 +93,7 @@ export function SettingsTab() {
 
       <section className="panel">
         <h3>초기화</h3>
-        <p className="note">모든 수치, 편성, 목표를 기본값으로 되돌립니다. 브라우저에 자동 저장된 내용도 덮어씁니다.</p>
+        <p className="note">모든 수치, 편성, 경고 기준을 기본값으로 되돌립니다. 브라우저에 자동 저장된 내용도 덮어씁니다.</p>
         <button
           type="button"
           onClick={() => {

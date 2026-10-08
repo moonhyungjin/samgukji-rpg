@@ -34,7 +34,7 @@ const TABS = [
   { id: 'data', label: '병종 · 스킬' },
   { id: 'characters', label: '장수' },
   { id: 'presets', label: '기본 편성' },
-  { id: 'settings', label: '목표 · 가져오기' },
+  { id: 'settings', label: '경고 기준 · 가져오기' },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'] | SimTabId;

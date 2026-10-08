@@ -185,12 +185,21 @@ export class BattleEngine {
         break;
       }
       this.state.round = next;
-      this.emit({ type: 'roundStart', round: next });
       this.queue = buildTurnOrder(this.state, this.rng);
       this.queueIndex = 0;
       this.roundActed = false;
+      this.emit({ type: 'roundStart', round: next, order: this.queue.map((u) => u.uid) });
     }
     return null;
+  }
+
+  /**
+   * 이번 라운드에서 아직 행동하지 않은 군단의 순서 (uid). 지금 행동 중인 군단(nextActor가 돌려준 군단)은 빠진다.
+   * 라운드 시작 때 정한 순서(속도 순, 동률은 난수)에서 그 사이 전멸했거나 AP가 0이 된 군단을 뺀 것이며,
+   * nextActor가 실제로 돌려줄 순서와 같다. 라운드 중에 부활한 군단은 다음 라운드부터 순서에 들어간다.
+   */
+  remainingTurnOrder(): string[] {
+    return this.queue.slice(this.queueIndex).filter((u) => !u.isDead && u.ap > 0).map((u) => u.uid);
   }
 
   /** 정책(AI)이 고르는 커맨드 */

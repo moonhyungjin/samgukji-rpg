@@ -4,7 +4,7 @@
 //   npm run sim -- --target-policy lowest-troops (highest-damage(기본) | lowest-troops | random)
 //   npm run sim -- --lineups random              (fixed | random: 전투마다 무작위 편성, 병종/캐릭터별 승률 확인용)
 //   npm run sim -- --pool normal                (elite(기본) | normal | all: 무작위 편성의 후보. normal은 황건적 같은 평범한 장수)
-//   npm run sim -- --buff-policy opening        (first(기본) | opening | half | never: 책사/도사의 버프 AI)
+//   npm run sim -- --buff-policy opening        (opening(기본) | first | half | never: 책사/도사의 버프 AI)
 //   npm run sim -- --guard-policy never          (protect(기본) | never: 가드를 쓸 수 있는 군단의 AI)
 //   npm run sim -- --team-a shu --team-b wei     (src/presets.ts의 편성 이름)
 
@@ -70,7 +70,7 @@ if (!['elite', 'normal', 'all'].includes(pool)) {
   console.error(`Unknown --pool value: ${pool}`);
   process.exit(1);
 }
-const buffMode = (opt('buff-policy') ?? 'first') as BuffMode;
+const buffMode = (opt('buff-policy') ?? 'opening') as BuffMode;
 if (!['first', 'opening', 'half', 'never'].includes(buffMode)) {
   console.error(`Unknown --buff-policy value: ${buffMode}`);
   process.exit(1);

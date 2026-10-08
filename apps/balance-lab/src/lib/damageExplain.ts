@@ -15,6 +15,11 @@ export interface ExplainInput {
   defenderPct: number;
   defenderRow: Row;
   defenderGuarding: boolean;
+  /** 실제 전투의 한 장면을 풀어 볼 때: 군단 레벨과 병력(명)을 그대로 쓴다. 주면 Pct 대신 쓴다 */
+  attackerLevel?: number;
+  defenderLevel?: number;
+  attackerTroops?: number;
+  defenderTroops?: number;
 }
 
 export interface ExplainRow {
@@ -54,12 +59,12 @@ export type ExplainResult = { ok: true; explanation: DamageExplanation } | { ok:
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 export const fmt = (n: number) => String(round3(n));
 
-function makeUnit(data: GameData, balance: BalanceConfig, side: 'attacker' | 'defender', characterId: string, unitTypeId: string, row: Row | null, pct: number, guarding: boolean): CharacterState {
+function makeUnit(data: GameData, balance: BalanceConfig, side: 'attacker' | 'defender', characterId: string, unitTypeId: string, row: Row | null, pct: number, guarding: boolean, level?: number, troops?: number): CharacterState {
   const type = data.unitTypes[unitTypeId];
   // 배치 가능한 열로 만든 뒤 계산할 열로 덮어쓴다 (열 제한은 편성 규칙이고 피해 계산과는 무관하다)
-  const [unit] = buildUnits(side, [{ characterId, row: type.allowedRows[0], unitType: unitTypeId }], data, balance);
+  const [unit] = buildUnits(side, [{ characterId, row: type.allowedRows[0], unitType: unitTypeId, ...(level !== undefined ? { level } : {}) }], data, balance);
   if (row) unit.row = row;
-  unit.troops = Math.max(1, Math.round((unit.maxTroops * Math.min(100, Math.max(1, pct))) / 100));
+  unit.troops = troops !== undefined ? Math.max(1, Math.round(troops)) : Math.max(1, Math.round((unit.maxTroops * Math.min(100, Math.max(1, pct))) / 100));
   unit.guardRate = guarding && type.guard ? Math.max(1, type.guard.start) : 0;
   return unit;
 }
@@ -75,8 +80,8 @@ export function explainDamage(data: GameData, balance: BalanceConfig, input: Exp
   const dType = data.unitTypes[input.defenderUnitType ?? defenderChar.unitType];
   if (!aType || !dType) return { ok: false, reason: '병종을 찾을 수 없습니다.' };
 
-  const attacker = makeUnit(data, balance, 'attacker', input.attackerId, aType.id, null, input.attackerPct, false);
-  const defender = makeUnit(data, balance, 'defender', input.defenderId, dType.id, input.defenderRow, input.defenderPct, input.defenderGuarding);
+  const attacker = makeUnit(data, balance, 'attacker', input.attackerId, aType.id, null, input.attackerPct, false, input.attackerLevel, input.attackerTroops);
+  const defender = makeUnit(data, balance, 'defender', input.defenderId, dType.id, input.defenderRow, input.defenderPct, input.defenderGuarding, input.defenderLevel, input.defenderTroops);
   const calc = new DamageCalculator(balance, data);
   const physical = skill.scalesWith === 'attack';
   const share = 50;

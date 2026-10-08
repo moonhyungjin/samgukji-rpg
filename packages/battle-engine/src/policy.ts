@@ -29,8 +29,8 @@ export type GuardMode = 'protect' | 'never';
 
 /**
  * 버프를 쓸 수 있는 군단(책사/도사)의 AI. 사람은 버프만 쓸 때도, 공격만 할 때도 있어서 성향 몇 가지로 범위를 본다.
- * first: 쓸 대상이 남아 있으면 항상 공격보다 먼저 쓴다 (기본)
- * opening: 1라운드에만 버프를 쓰고 이후에는 공격한다
+ * first: 쓸 대상이 남아 있으면 항상 공격보다 먼저 쓴다
+ * opening: 1라운드에만 버프를 쓰고 이후에는 공격한다 (기본, 2026-10-09 사용자 결정: 책략/도술의 디버프가 실제로 쓰이게)
  * half: 행동마다 절반의 확률로 버프를 고른다 (쓸 수 있을 때)
  * never: 버프를 쓰지 않고 공격만 한다
  */
@@ -50,7 +50,7 @@ export function createDefaultPolicy(options: DefaultPolicyOptions = {}): Command
   const healThreshold = options.healThreshold ?? 0.7;
   const targetPolicy = options.targetPolicy ?? 'highest-damage';
   const guardMode = options.guardMode ?? 'protect';
-  const buffMode = options.buffMode ?? 'first';
+  const buffMode = options.buffMode ?? 'opening';
   const guardTarget = options.guardTarget ?? 100;
 
   return ({ state, actor, data, balance, rng }) => {

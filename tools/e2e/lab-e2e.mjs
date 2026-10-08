@@ -253,6 +253,17 @@ try {
   await sleep(200);
   check('설정 비교: 저장한 설정을 지울 수 있다', (await evalJs(`document.querySelectorAll('table.compare-pick tbody tr').length`)) === 2);
 
+  // 전투 1회: 피해 줄의 "계산"을 누르면 그 순간의 계산 과정이 펼쳐진다
+  await tabs('전투 1회');
+  await sleep(200);
+  await clickButton('전투 1회 실행');
+  await waitFor(`document.querySelectorAll('.log .log-calc').length > 0`, 20000, '전투 1회 로그');
+  await evalJs(`document.querySelector('.log .log-calc').click()`);
+  await sleep(200);
+  const hitText = await text('.log .hit-explain');
+  check('전투 1회: 피해 줄의 "계산"을 누르면 실제 피해와 다시 계산한 과정이 나온다', hitText.includes('실제 피해') && hitText.includes('다시 계산') && hitText.includes('최종 피해'), hitText.slice(0, 80));
+  await shot('lab-battle-hit', true);
+
   await tabs('피해 계산기');
   await sleep(300);
   // "수정하러 가기"를 누르면 병종 · 스킬 탭으로 이동한다

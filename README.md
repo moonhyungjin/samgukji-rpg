@@ -45,7 +45,7 @@ npm run sim -- --lineups random                  # fixed | random (병종/캐릭
 npm run sim -- --balance my-balance.json         # defaultBalance에 부분 덮어쓰기 (Lab의 "밸런스만 내보내기" 파일)
 npm run sim -- --target-policy lowest-troops     # highest-damage(기본) | lowest-troops | random
 npm run sim -- --pool normal                    # elite(기본) | normal(황건적) | all: 무작위 편성의 후보
-npm run sim -- --buff-policy opening            # first(기본) | opening(1라운드만 버프) | half(절반 확률) | never(공격만): 책사/도사의 버프 AI
+npm run sim -- --buff-policy opening            # opening(기본, 1라운드만 버프) | first(대상이 있으면 항상 먼저) | half(절반 확률) | never(공격만): 책사/도사의 버프 AI
 npm run sim -- --guard-policy never              # protect(기본) | never: 가드를 쓸 수 있는 군단의 AI
 npm run sim -- --team-a shu --team-b wei --roles alternate   # alternate | A-attacks | B-attacks
 ```

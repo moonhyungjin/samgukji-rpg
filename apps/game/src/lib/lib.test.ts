@@ -12,7 +12,7 @@ const fmt = (e: BattleEvent) => formatEvent(e, names, gameData);
 
 describe('formatEvent', () => {
   it('이벤트마다 읽을 수 있는 한 줄을 만든다', () => {
-    expect(fmt({ type: 'roundStart', round: 3 })).toBe('── 라운드 3 ──');
+    expect(fmt({ type: 'roundStart', round: 3, order: [] })).toBe('── 라운드 3 ──');
     expect(fmt({ type: 'action', round: 1, actor: 'attacker:0', skillId: 'cavalry-charge', target: 'defender:0', apAfter: 3 })).toBe('공:관우 · 돌격 → 방:하후돈');
     expect(fmt({ type: 'action', round: 1, actor: 'attacker:0', skillId: 'wait', apAfter: 3 })).toBe('공:관우 대기');
     expect(fmt({ type: 'damage', round: 1, kind: 'attack', source: 'attacker:0', target: 'defender:0', amount: 291, troopsAfter: 709 })).toContain('피해 291');

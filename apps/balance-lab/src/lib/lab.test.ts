@@ -5,6 +5,7 @@ import { createDefaultState } from '../lab/defaults';
 import { isLabState, normalizeState } from '../lab/LabContext';
 import { formatBattleLog } from './battleLog';
 import { evaluateReport } from './metrics';
+import type { LabState } from '../lab/types';
 import { getIn, setIn } from './path';
 import { lineupFromSlots, slotsFromLineup } from './slots';
 
@@ -82,41 +83,37 @@ describe('Lab 상태', () => {
     expect(normalized.sim.autoRunIterations).toBe(state.sim.autoRunIterations);
   });
 
-  it('병종별 생존율 목표는 기본으로 모두 꺼져 있고, 켜면 쓸 값(궁병 40% ±10%p)은 남아 있다', () => {
-    const { familySurvival } = createDefaultState().targets;
-    for (const [family, spec] of Object.entries(familySurvival)) expect(spec.enabled, family).toBe(false);
-    expect(familySurvival.archer).toEqual({ enabled: false, target: 0.4, tolerance: 0.1 });
+  it('예전의 목표 지표(targets)는 버리고 경고 기준(warnings)을 기본값으로 채운다', () => {
+    const state = createDefaultState();
+    const { warnings: _w, ...rest } = state;
+    const old = { ...rest, targets: { averageRounds: [3.5, 6.5] } } as unknown as LabState;
+    const normalized = normalizeState(old);
+    expect(normalized.warnings).toEqual(state.warnings);
+    expect('targets' in JSON.parse(JSON.stringify(normalized))).toBe(false);
   });
 });
 
-describe('목표 지표 점검', () => {
+describe('경고 (깨진 곳)', () => {
   const state = createDefaultState();
   const randomReport = () =>
     BattleSimulator.run({ data: state.data, balance: state.balance, iterations: 300, seed: 1, lineups: 'random' });
 
-  it('무작위 편성 결과는 모든 종류의 점검을 포함한다', () => {
-    // 병종별 생존율 목표는 기본으로 꺼져 있으므로 이 시험에서는 궁병 목표를 켠다
-    const targets = { ...state.targets, familySurvival: { ...state.targets.familySurvival, archer: { enabled: true, target: 0.4, tolerance: 0.1 } } };
-    const findings = evaluateReport(randomReport(), targets, state.data);
-    expect(findings.length).toBeGreaterThan(2);
-    expect(findings.some((f) => f.message.includes('평균 전투 길이'))).toBe(true);
-    expect(findings.some((f) => f.message.includes('궁병 생존율'))).toBe(true);
-    expect(findings.some((f) => f.message.includes('공격측 승률'))).toBe(true);
-  });
-
-  it('목표를 결과가 반드시 벗어나도록 좁히면 경고가 나온다', () => {
-    const strict = { ...state.targets, averageRounds: [100, 101] as [number, number] };
+  it('기준을 결과가 반드시 벗어나도록 좁히면 경고가 나온다', () => {
+    const strict = { ...state.warnings, averageRounds: [100, 101] as [number, number], minWipeRate: 1.1 };
     const findings = evaluateReport(randomReport(), strict, state.data);
     expect(findings.some((f) => f.level === 'warn' && f.message.includes('평균 전투 길이'))).toBe(true);
+    expect(findings.some((f) => f.level === 'warn' && f.message.includes('전멸로 끝난 전투'))).toBe(true);
+    expect(findings.some((f) => f.level === 'ok')).toBe(false);
   });
 
-  it('목표를 결과가 반드시 포함하도록 넓히면 평균 라운드는 통과한다', () => {
-    const loose = { ...state.targets, averageRounds: [0, 100] as [number, number] };
+  it('기준을 아주 넓히면 깨진 곳이 없다고 한 줄로 알린다', () => {
+    const loose = { ...state.warnings, averageRounds: [0, 100] as [number, number], familyWinRate: [0, 1] as [number, number], characterWinRate: [0, 1] as [number, number], attackerWinRate: [0, 1] as [number, number], skillDamageRatio: [0, 100] as [number, number], minWipeRate: 0, maxStallRate: 1 };
     const findings = evaluateReport(randomReport(), loose, state.data);
-    expect(findings.find((f) => f.message.includes('평균 전투 길이'))?.level).toBe('ok');
+    expect(findings.filter((f) => f.level === 'warn')).toEqual([]);
+    expect(findings[0]).toEqual({ level: 'ok', message: expect.stringContaining('깨진 곳이 없습니다') });
   });
 
-  it('고정 편성에서는 병종/캐릭터 승률 평가를 건너뛴다', () => {
+  it('고정 편성에서는 병종/장수 승률을 보지 않는다', () => {
     const fixed = BattleSimulator.run({
       data: state.data,
       balance: state.balance,
@@ -125,7 +122,7 @@ describe('목표 지표 점검', () => {
       iterations: 100,
       roles: 'A-attacks',
     });
-    const findings = evaluateReport(fixed, state.targets, state.data);
+    const findings = evaluateReport(fixed, state.warnings, state.data);
     expect(findings.some((f) => f.level === 'info' && f.message.includes('무작위 편성'))).toBe(true);
     expect(findings.some((f) => f.message.includes('공격측 승률 '))).toBe(false);
   });

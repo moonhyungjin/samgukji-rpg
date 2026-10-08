@@ -76,12 +76,12 @@ export function BalanceTab() {
                 ]}
               />
               {gap?.baseMode === 'flat' ? (
-                <NumberField label="고정 기본 피해" path="balance.damage.gap.flat" step={10} min={0} />
+                <NumberField label="고정 기본 피해" path="balance.damage.gap.flat" step={10} min={0} hint="기본 피해를 스탯과 상관없이 이 값으로. 올리면 모든 공격이 같은 비율로 세진다" />
               ) : (
-                <NumberField label="공격 계수 (attackScale)" path="balance.damage.attackScale" step={1} min={0} />
+                <NumberField label="공격 계수 (attackScale)" path="balance.damage.attackScale" step={1} min={0} hint="기본 피해 = 공격(책략은 지력) × 이 값. 올리면 모든 공격이 같은 비율로 세진다" />
               )}
-              <NumberField label="격차 1점당 비율" path="balance.damage.gap.perPoint" step={0.01} min={0} />
-              <NumberField label="배율 하한" path="balance.damage.gap.min" step={0.05} min={0} />
+              <NumberField label="격차 1점당 비율" path="balance.damage.gap.perPoint" step={0.01} min={0} hint="공격과 방어 차이 1점마다 피해가 늘거나 주는 비율 (0.1 = 10%). 올리면 스탯 차이가 더 크게 갈린다" />
+              <NumberField label="배율 하한" path="balance.damage.gap.min" step={0.05} min={0} hint="방어가 아무리 높아도 피해가 이 배율 아래로는 안 줄어든다" />
               <NumberField label="병종 보정 나누기 (0이면 안 씀)" path="balance.damage.gap.bonusDiv" step={1} min={0} hint="0보다 크면 (병종 보정 + 대상 취약) ÷ 이 값을 격차에 더한다" />
             </div>
           </>
@@ -90,26 +90,26 @@ export function BalanceTab() {
           <>
             <p className="note">병종 차이를 더하기로 줍니다. 병종 보정과 대상 취약은 병종 카드에서 고칩니다. 기본값 × 배율 × 스킬 계수 × 병력 보정입니다.</p>
             <div className="fields-grid">
-              <NumberField label="공격 1당" path="balance.damage.additive.attackMul" step={1} min={0} />
-              <NumberField label="방어 1당 빼기" path="balance.damage.additive.defenseMul" step={1} min={0} />
-              <NumberField label="지력 1당 (책략)" path="balance.damage.additive.intellectMul" step={1} min={0} />
-              <NumberField label="대상 지력 1당 빼기 (책략)" path="balance.damage.additive.resistMul" step={1} min={0} />
-              <NumberField label="기본값 하한" path="balance.damage.additive.min" step={1} min={0} />
-              <NumberField label="배율" path="balance.damage.additive.scale" step={0.5} min={0} />
+              <NumberField label="공격 1당" path="balance.damage.additive.attackMul" step={1} min={0} hint="공격 1점이 기본값에 더하는 양. 올리면 공격 스탯이 더 중요해진다" />
+              <NumberField label="방어 1당 빼기" path="balance.damage.additive.defenseMul" step={1} min={0} hint="대상 방어 1점이 기본값에서 빼는 양. 올리면 방어가 높은 병종이 더 단단해진다" />
+              <NumberField label="지력 1당 (책략)" path="balance.damage.additive.intellectMul" step={1} min={0} hint="책략/도술: 지력 1점이 기본값에 더하는 양" />
+              <NumberField label="대상 지력 1당 빼기 (책략)" path="balance.damage.additive.resistMul" step={1} min={0} hint="책략/도술: 대상 지력 1점이 기본값에서 빼는 양. 올리면 지력 높은 대상이 책략에 강해진다" />
+              <NumberField label="기본값 하한" path="balance.damage.additive.min" step={1} min={0} hint="방어가 아무리 높아도 기본값은 이 아래로 안 내려간다 (최소 피해 보장)" />
+              <NumberField label="배율" path="balance.damage.additive.scale" step={0.5} min={0} hint="기본 피해 = 기본값 × 이 값 × 스킬 계수. 올리면 모든 공격이 같은 비율로 세진다" />
             </div>
           </>
         )}
         {formula === 'divide' && (
           <div className="fields-grid">
-            <NumberField label="공격 계수 (attackScale)" path="balance.damage.attackScale" step={1} min={0} />
-            <NumberField label="방어 계수 (defenseScale)" path="balance.damage.defenseScale" step={0.01} min={0} />
-            <NumberField label="지력 저항 계수 (resistScale)" path="balance.damage.resistScale" step={0.01} min={0} />
+            <NumberField label="공격 계수 (attackScale)" path="balance.damage.attackScale" step={1} min={0} hint="기본 피해 = 공격(책략은 지력) × 이 값. 올리면 모든 공격이 같은 비율로 세진다" />
+            <NumberField label="방어 계수 (defenseScale)" path="balance.damage.defenseScale" step={0.01} min={0} hint="피해 ÷ (1 + 방어 × 이 값). 올리면 방어가 더 많이 깎는다" />
+            <NumberField label="지력 저항 계수 (resistScale)" path="balance.damage.resistScale" step={0.01} min={0} hint="책략/도술 피해 ÷ (1 + 대상 지력 × 이 값)" />
           </div>
         )}
         <h4 className="sub">모든 공식에 공통</h4>
         <div className="fields-grid">
-          <NumberField label="최소 피해" path="balance.damage.minDamage" min={0} />
-          <NumberField label="치명타 확률 % (0이면 꺼짐)" path="balance.critical.chance" step={1} min={0} max={100} />
+          <NumberField label="최소 피해" path="balance.damage.minDamage" min={0} hint="맞으면 적어도 이만큼은 깎인다" />
+          <NumberField label="치명타 확률 % (0이면 꺼짐)" path="balance.critical.chance" step={1} min={0} max={100} hint="일반공격과 책략이 이 확률로 크리티컬. 반격·치유·디버프 피해에는 없다" />
           <NumberField label="치명타 피해 배율" path="balance.critical.multiplier" step={0.1} min={1} hint="일반공격과 책략에만. 반격과 치유에는 적용되지 않는다" />
         </div>
       </section>
@@ -117,7 +117,7 @@ export function BalanceTab() {
       <section className="panel">
         <h3>병력</h3>
         <div className="fields-grid">
-          <NumberField label="Lv1 최대 병력 (모든 병종)" path="balance.troops.base" step={10} min={1} />
+          <NumberField label="Lv1 최대 병력 (모든 병종)" path="balance.troops.base" step={10} min={1} hint="레벨 1 군단의 최대 병력. 모든 병종이 같다" />
           <NumberField label="레벨당 병력 상한 증가" path="balance.troops.perLevel" step={5} min={0} hint="× 병종의 병력 배율 (방패병 1.5면 레벨당 1.5배)" />
         </div>
         <p className="note">
@@ -146,10 +146,10 @@ export function BalanceTab() {
             </p>
             <div className="fields-grid">
               <NumberField label="첫 지점 (비율)" path="balance.troopFactor.ratio.knee" step={0.05} min={0} max={1} hint="여기까지는 효율 1 (0.8 = 80%)" />
-              <NumberField label="둘째 지점 (비율)" path="balance.troopFactor.ratio.knee2" step={0.05} min={0} max={1} />
+              <NumberField label="둘째 지점 (비율)" path="balance.troopFactor.ratio.knee2" step={0.05} min={0} max={1} hint="첫 지점과 이 지점 사이는 '구간 2 효율'로 줄어든다" />
               <NumberField label="셋째 지점 (비율)" path="balance.troopFactor.ratio.knee3" step={0.05} min={0} max={1} hint="이 아래는 보정이 더 줄지 않는다 (하한)" />
-              <NumberField label="구간 2 효율 (첫 → 둘째)" path="balance.troopFactor.ratio.rate2" step={0.05} min={0} />
-              <NumberField label="구간 3 효율 (둘째 → 셋째)" path="balance.troopFactor.ratio.rate3" step={0.05} min={0} />
+              <NumberField label="구간 2 효율 (첫 → 둘째)" path="balance.troopFactor.ratio.rate2" step={0.05} min={0} hint="이 구간에서 병력 1%가 줄 때 보정이 몇 % 주는가 (0.3이면 병력 10% 감소 → 보정 3% 감소)" />
+              <NumberField label="구간 3 효율 (둘째 → 셋째)" path="balance.troopFactor.ratio.rate3" step={0.05} min={0} hint="이 구간에서 병력 1%가 줄 때 보정이 몇 % 주는가" />
               <NumberField label="하한 병력 (명)" path="balance.troopFactor.ratio.floorTroops" step={10} min={0} hint="병력이 이보다 적으면 하한 보정. 0이면 쓰지 않는다" />
             </div>
           </>
@@ -158,11 +158,11 @@ export function BalanceTab() {
           <>
             <p className="note">유효 병력 = 꺾이는 지점까지 1명당 1 + 두 번째 지점까지 1명당 (구간 2 효율) + 그 이상 1명당 (구간 3 효율), 최소 하한. 보정 = 유효 병력 ÷ 기준 병력.</p>
             <div className="fields-grid">
-              <NumberField label="꺾이는 지점" path="balance.troopFactor.tiered.knee" step={50} min={1} />
-              <NumberField label="두 번째 지점" path="balance.troopFactor.tiered.knee2" step={100} min={1} />
-              <NumberField label="구간 2 효율" path="balance.troopFactor.tiered.rate2" step={0.05} min={0} />
-              <NumberField label="구간 3 효율" path="balance.troopFactor.tiered.rate3" step={0.05} min={0} />
-              <NumberField label="유효 병력 하한" path="balance.troopFactor.tiered.floor" step={10} min={0} />
+              <NumberField label="꺾이는 지점" path="balance.troopFactor.tiered.knee" step={50} min={1} hint="이 병력까지는 1명이 그대로 1로 센다" />
+              <NumberField label="두 번째 지점" path="balance.troopFactor.tiered.knee2" step={100} min={1} hint="꺾이는 지점부터 여기까지는 1명을 '구간 2 효율'로 센다" />
+              <NumberField label="구간 2 효율" path="balance.troopFactor.tiered.rate2" step={0.05} min={0} hint="두 구간 사이에서 병사 1명을 몇 명으로 세는가" />
+              <NumberField label="구간 3 효율" path="balance.troopFactor.tiered.rate3" step={0.05} min={0} hint="두 번째 지점 이상에서 병사 1명을 몇 명으로 세는가" />
+              <NumberField label="유효 병력 하한" path="balance.troopFactor.tiered.floor" step={10} min={0} hint="병력이 아무리 줄어도 유효 병력은 이 아래로 안 내려간다" />
               <NumberField label="기준 병력" path="balance.troopFactor.reference" step={50} min={1} hint="유효 병력 ÷ 이 값이 보정이 된다" />
             </div>
             <CheckField label="피해가 공격자의 현재 병력을 넘지 않는다" path="balance.troopFactor.tiered.capAtTroops" />
@@ -173,8 +173,8 @@ export function BalanceTab() {
             <p className="note">보정 = 현재 병력 ÷ 기준 병력 (하한~상한). 병종마다 최대 병력이 달라도 같은 기준을 씁니다.</p>
             <div className="fields-grid">
               <NumberField label="기준 병력" path="balance.troopFactor.reference" step={50} min={1} hint="병력 ÷ 이 값이 보정이 된다" />
-              <NumberField label="보정 하한" path="balance.troopFactor.min" step={0.05} min={0} />
-              <NumberField label="보정 상한" path="balance.troopFactor.max" step={0.05} min={0} />
+              <NumberField label="보정 하한" path="balance.troopFactor.min" step={0.05} min={0} hint="병력이 아무리 적어도 보정은 이 아래로 안 내려간다" />
+              <NumberField label="보정 상한" path="balance.troopFactor.max" step={0.05} min={0} hint="병력이 아무리 많아도 보정은 이 위로 안 올라간다" />
             </div>
           </>
         )}
@@ -203,8 +203,8 @@ export function BalanceTab() {
         <h3>반격 · 전투 길이 · 치유</h3>
         <div className="fields-grid">
           <NumberField label="기본 반격 비율" path="balance.counter.rate" step={0.05} min={0} hint="기술에 반격 비율이 없을 때 쓴다. 반격 비율은 스킬 표에서 기술마다 정한다" />
-          <NumberField label="총 전투 턴 한도" path="balance.maxTurns" min={1} />
-          <NumberField label="회복 계수 (heal.scale)" path="balance.heal.scale" step={1} min={0} />
+          <NumberField label="총 전투 턴 한도" path="balance.maxTurns" min={1} hint="이 라운드 수가 지나면 남은 상태로 판정한다 (교착 방지 안전장치)" />
+          <NumberField label="회복 계수 (heal.scale)" path="balance.heal.scale" step={1} min={0} hint="치유량 = 지력 × 이 값 × 스킬 계수" />
         </div>
         <CheckField label="치유량에도 시전자의 병력 보정 적용" path="balance.heal.useTroopFactor" />
       </section>
@@ -220,9 +220,9 @@ export function BalanceTab() {
               {d.name} <small className="muted">({id})</small>
             </h4>
             <div className="fields-grid">
-              <NumberField label="고정값" path={`balance.debuffs.${id}.flat`} step={5} min={0} />
-              <NumberField label="걸린 타격 피해 × 비율" path={`balance.debuffs.${id}.ratio`} step={0.05} min={0} />
-              <NumberField label="지속 (라운드)" path={`balance.debuffs.${id}.rounds`} step={1} min={0} />
+              <NumberField label="고정값" path={`balance.debuffs.${id}.flat`} step={5} min={0} hint="라운드마다 들어가는 피해의 고정 부분" />
+              <NumberField label="걸린 타격 피해 × 비율" path={`balance.debuffs.${id}.ratio`} step={0.05} min={0} hint="걸릴 때 준 타격 피해에 곱해 틱에 더한다 (0.2면 타격 300 → +60)" />
+              <NumberField label="지속 (라운드)" path={`balance.debuffs.${id}.rounds`} step={1} min={0} hint="몇 라운드 동안 틱이 들어가는가. 0이면 이 디버프는 꺼진다" />
             </div>
             <p className="note">
               예: 타격 피해 300으로 걸리면 라운드마다 {Math.round(d.flat + 300 * d.ratio)}, {d.rounds}라운드 동안 모두 {Math.round(d.flat + 300 * d.ratio) * d.rounds}. 이 디버프를 거는 스킬:{' '}
@@ -241,8 +241,8 @@ export function BalanceTab() {
         <div className="fields-grid">
           <NumberField label="방어측 시작 비율" path="balance.morale.defenderStart" step={1} min={0} max={100} hint="50이면 동등. 공격측 = 100 − 값" />
           <NumberField label="피해 보정 폭" path="balance.morale.maxEffect" step={0.01} min={0} hint="0이면 사기는 피해에 영향을 주지 않는다 (기본). 사기가 100:0일 때 ± 몇 %" />
-          <NumberField label="군단 전멸 시 변동" path="balance.morale.onUnitDestroyed" step={1} min={0} />
-          <NumberField label="피격 시 변동" path="balance.morale.onHit" step={0.5} min={0} />
+          <NumberField label="군단 전멸 시 변동" path="balance.morale.onUnitDestroyed" step={1} min={0} hint="군단이 전멸할 때 사기가 상대 쪽으로 옮겨가는 양" />
+          <NumberField label="피격 시 변동" path="balance.morale.onHit" step={0.5} min={0} hint="공격에 맞을 때마다 사기가 상대 쪽으로 옮겨가는 양 (디버프 피해는 제외)" />
           <SelectField
             label="최종 판정에서 사기 순서"
             path="balance.morale.judgement"

@@ -156,11 +156,11 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(html).toContain('파일 값으로 되돌리기');
   });
 
-  it('목표 · 가져오기 탭', () => {
+  it('경고 기준 · 가져오기 탭', () => {
     const html = render(<SettingsTab />);
     expectClean(html);
-    expect(html).toContain('목표 지표');
-    expect(html).toContain('궁병');
+    for (const label of ['경고 기준', '평균 전투 길이', '병종 계열 승률', '전멸로 끝난 전투 최소 비율', '교착으로 끝난 전투 최대 비율']) expect(html).toContain(label);
+    expect(html).not.toContain('목표 지표');
   });
 
   it('편성 편집기는 전열/후열 6칸을 그린다', () => {
@@ -186,7 +186,7 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(html).toContain('아직 실행 결과가 없습니다');
   });
 
-  it.each(['random', 'fixed'] as const)('시뮬레이션 탭: %s 편성 결과와 목표 점검', (lineups) => {
+  it.each(['random', 'fixed'] as const)('시뮬레이션 탭: %s 편성 결과와 경고', (lineups) => {
     const report = BattleSimulator.run({
       data: state.data,
       balance: state.balance,
@@ -198,7 +198,7 @@ describe('Balance Lab 화면 렌더링', () => {
     });
     const html = render(<SimulationTab sim={{ ...idle, report, previous: report, elapsedMs: 12 }} pinned={report} setPinned={() => {}} />);
     expectClean(html);
-    expect(html).toContain('목표 지표 점검');
+    expect(html).toContain('경고 (깨진 곳)');
     expect(html).toContain('병종 계열별');
     expect(html).toContain('관우');
     expect(html).toContain('종료 원인');

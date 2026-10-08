@@ -16,7 +16,7 @@ const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'obj
 /** 저장/가져오기 데이터가 Lab 상태로 쓸 수 있는 모양인지 확인한다. */
 export function isLabState(x: unknown): x is LabState {
   if (!isObject(x)) return false;
-  const { data, balance, teamA, teamB, sim, targets } = x;
+  const { data, balance, teamA, teamB, sim } = x;
   return (
     isObject(data) &&
     isObject(data.skills) &&
@@ -32,8 +32,7 @@ export function isLabState(x: unknown): x is LabState {
     teamA.length === 6 &&
     Array.isArray(teamB) &&
     teamB.length === 6 &&
-    isObject(sim) &&
-    isObject(targets)
+    isObject(sim)
   );
 }
 
@@ -74,12 +73,10 @@ export function normalizeState(saved: LabState): LabState {
       },
     },
     sim: { ...defaults.sim, ...saved.sim },
-    targets: {
-      ...defaults.targets,
-      ...saved.targets,
-      familySurvival: { ...defaults.targets.familySurvival, ...saved.targets.familySurvival },
-    },
-  };
+    // 예전의 "목표 지표"(targets)는 버리고 경고 기준(warnings)을 쓴다 (2026-10-09)
+    targets: undefined,
+    warnings: { ...defaults.warnings, ...saved.warnings },
+  } as LabState;
 }
 
 function loadState(): LabState {

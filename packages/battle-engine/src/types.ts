@@ -430,7 +430,8 @@ export type DecidedBy = 'destroyed' | 'troops' | 'morale' | 'defender';
 export type MoraleJudgement = 'tiebreak' | 'before-troops';
 
 export type BattleEvent =
-  | { type: 'roundStart'; round: number }
+  /** order: 엔진이 이번 라운드에 정한 행동 순서 (uid, 속도 순이고 동률은 난수). 행동 차례가 오기 전에 전멸하거나 AP가 0이 된 군단은 건너뛴다 */
+  | { type: 'roundStart'; round: number; order: string[] }
   | { type: 'action'; round: number; actor: string; skillId: string; target?: string; apAfter: number }
   | { type: 'damage'; round: number; kind: 'attack' | 'counter'; source: string; target: string; amount: number; troopsAfter: number; critical?: true; splash?: true }
   | { type: 'heal'; round: number; source: string; target: string; amount: number; troopsAfter: number }

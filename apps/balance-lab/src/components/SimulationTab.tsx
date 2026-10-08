@@ -18,7 +18,7 @@ const RUN_COUNTS = [1, 100, 1000, 10000];
 export function SimulationTab({ sim, pinned, setPinned }: Props) {
   const { state } = useLab();
   const { report } = sim;
-  const findings = useMemo(() => (report ? evaluateReport(report, state.targets, state.data) : []), [report, state.targets, state.data]);
+  const findings = useMemo(() => (report ? evaluateReport(report, state.warnings, state.data) : []), [report, state.warnings, state.data]);
 
   const baseline = pinned ?? sim.previous;
   const baselineLabel = pinned ? '고정한 기준 결과' : '직전 실행';
@@ -74,8 +74,8 @@ export function SimulationTab({ sim, pinned, setPinned }: Props) {
             label="버프(책사/도사) AI"
             path="sim.buffMode"
             options={[
-              { value: 'first', label: '쓸 대상이 있으면 항상 먼저 (기본)' },
-              { value: 'opening', label: '1라운드에만 버프, 이후 공격' },
+              { value: 'opening', label: '1라운드에만 버프, 이후 공격 (기본)' },
+              { value: 'first', label: '쓸 대상이 있으면 항상 먼저' },
               { value: 'half', label: '행동마다 절반 확률로 버프' },
               { value: 'never', label: '버프 없이 공격만' },
             ]}

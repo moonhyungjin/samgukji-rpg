@@ -1,5 +1,5 @@
 import type { GameData, SimulationReport } from '@samgukji/battle-engine';
-import type { TargetSettings } from '../lab/types';
+import type { WarningSettings } from '../lab/types';
 import { FAMILY_LABEL, pct } from './format';
 
 export interface Finding {
@@ -10,61 +10,45 @@ export interface Finding {
 const inRange = (value: number, [lo, hi]: [number, number]) => value >= lo && value <= hi;
 const range = ([lo, hi]: [number, number], format: (n: number) => string) => `${format(lo)}~${format(hi)}`;
 
-/** 시뮬레이션 결과를 목표 지표와 비교해 이상 징후를 찾는다. */
-export function evaluateReport(report: SimulationReport, targets: TargetSettings, data: GameData): Finding[] {
+/**
+ * 시뮬레이션 결과에서 "깨진 곳"을 찾는다. 경고 기준(안전선)을 벗어난 것만 warn으로 알리고,
+ * 깨진 곳이 없으면 그렇다고 한 줄(ok)로 알린다. info는 평가하지 않은 이유 같은 참고다.
+ */
+export function evaluateReport(report: SimulationReport, warnings: WarningSettings, data: GameData): Finding[] {
   const out: Finding[] = [];
-  const check = (ok: boolean, okMessage: string, warnMessage: string) =>
-    out.push({ level: ok ? 'ok' : 'warn', message: ok ? okMessage : warnMessage });
-
+  const warn = (message: string) => out.push({ level: 'warn', message });
+  const info = (message: string) => out.push({ level: 'info', message });
   const rounds = (n: number) => `${n.toFixed(1)}라운드`;
-  check(
-    inRange(report.averageRounds, targets.averageRounds),
-    `평균 전투 길이 ${rounds(report.averageRounds)} (목표 ${range(targets.averageRounds, rounds)})`,
-    `평균 전투 길이 ${rounds(report.averageRounds)} — 목표 ${range(targets.averageRounds, rounds)} 밖`,
-  );
 
-  if (report.roles === 'alternate' || report.lineups === 'random') {
-    check(
-      inRange(report.attackerWinRate, targets.attackerWinRate),
-      `공격측 승률 ${pct(report.attackerWinRate)} (목표 ${range(targets.attackerWinRate, pct)})`,
-      `공격측 승률 ${pct(report.attackerWinRate)} — 목표 ${range(targets.attackerWinRate, pct)} 밖 (${report.attackerWinRate < targets.attackerWinRate[0] ? '방어측이 유리' : '공격측이 유리'})`,
-    );
-  } else {
-    out.push({ level: 'info', message: '공격측 승률은 "공방 번갈아 배정" 또는 "무작위 편성"에서만 편향을 볼 수 있습니다.' });
+  if (!inRange(report.averageRounds, warnings.averageRounds)) {
+    warn(`평균 전투 길이 ${rounds(report.averageRounds)} — 기준 ${range(warnings.averageRounds, rounds)} 밖 (${report.averageRounds < warnings.averageRounds[0] ? '너무 짧음' : '너무 김'})`);
   }
 
-  for (const [family, spec] of Object.entries(targets.familySurvival)) {
-    if (!spec.enabled) continue;
-    const stat = report.familyStats[family as keyof typeof FAMILY_LABEL];
-    if (!stat) continue;
-    const label = FAMILY_LABEL[family as keyof typeof FAMILY_LABEL];
-    check(
-      Math.abs(stat.survivalRate - spec.target) <= spec.tolerance,
-      `${label} 생존율 ${pct(stat.survivalRate)} (목표 ${pct(spec.target, 0)} ±${pct(spec.tolerance, 0)})`,
-      `${label} 생존율 ${pct(stat.survivalRate)} — 목표 ${pct(spec.target, 0)} ±${pct(spec.tolerance, 0)} 밖`,
-    );
+  const wipeShare = (report.endCauses.wipe ?? 0) / report.iterations;
+  if (wipeShare < warnings.minWipeRate) warn(`한쪽 전멸로 끝난 전투가 ${pct(wipeShare, 0)} — 기준 ${pct(warnings.minWipeRate, 0)} 미만 (전멸이 거의 나지 않음)`);
+  const stallShare = (report.endCauses.stall ?? 0) / report.iterations;
+  if (stallShare > warnings.maxStallRate) warn(`교착으로 끝난 전투가 ${pct(stallShare, 0)} — 기준 ${pct(warnings.maxStallRate, 0)} 초과 (AP가 남았는데 칠 상대가 없는 상태)`);
+
+  if (report.roles === 'alternate' || report.lineups === 'random') {
+    if (!inRange(report.attackerWinRate, warnings.attackerWinRate)) {
+      warn(`공격측 승률 ${pct(report.attackerWinRate)} — 기준 ${range(warnings.attackerWinRate, pct)} 밖 (${report.attackerWinRate < warnings.attackerWinRate[0] ? '방어측이 너무 유리' : '공격측이 너무 유리'})`);
+    }
+  } else {
+    info('공격측 승률은 "공방 번갈아 배정" 또는 "무작위 편성"에서만 봅니다.');
   }
 
   if (report.lineups === 'random') {
     for (const [family, stat] of Object.entries(report.familyStats)) {
-      if (!stat || stat.fielded < 100) continue;
+      if (!stat || stat.fielded < 100 || inRange(stat.teamWinRate, warnings.familyWinRate)) continue;
       const label = FAMILY_LABEL[family as keyof typeof FAMILY_LABEL];
-      if (!inRange(stat.teamWinRate, targets.familyWinRate)) {
-        out.push({
-          level: 'warn',
-          message: `${label} 승률 ${pct(stat.teamWinRate)} — 목표 ${range(targets.familyWinRate, pct)} 밖 (${stat.teamWinRate > targets.familyWinRate[1] ? '과도하게 강함' : '구조적으로 약함'})`,
-        });
-      }
+      warn(`${label} 승률 ${pct(stat.teamWinRate)} — 기준 ${range(warnings.familyWinRate, pct)} 밖 (${stat.teamWinRate > warnings.familyWinRate[1] ? '거의 다 이김' : '거의 못 이김'})`);
     }
     for (const stat of Object.values(report.characterStats)) {
-      if (stat.fielded < 100 || inRange(stat.teamWinRate, targets.characterWinRate)) continue;
-      out.push({
-        level: 'warn',
-        message: `${stat.name} 승률 ${pct(stat.teamWinRate)} — 목표 ${range(targets.characterWinRate, pct)} 밖 (${stat.teamWinRate > targets.characterWinRate[1] ? '과도하게 강함' : '약함'})`,
-      });
+      if (stat.fielded < 100 || inRange(stat.teamWinRate, warnings.characterWinRate)) continue;
+      warn(`${stat.name} 승률 ${pct(stat.teamWinRate)} — 기준 ${range(warnings.characterWinRate, pct)} 밖 (${stat.teamWinRate > warnings.characterWinRate[1] ? '너무 셈' : '너무 약함'})`);
     }
   } else {
-    out.push({ level: 'info', message: '병종/캐릭터별 승률 경고는 "무작위 편성" 모드에서만 평가합니다 (고정 편성은 편성 편향이 섞입니다).' });
+    info('병종/장수별 승률은 "무작위 편성"에서만 봅니다 (고정 편성은 편성 편향이 섞입니다).');
   }
 
   const attackSkills = Object.entries(report.skillStats).filter(([id, s]) => data.skills[id]?.kind === 'attack' && s.uses > 0);
@@ -72,19 +56,12 @@ export function evaluateReport(report: SimulationReport, targets: TargetSettings
     const mean = attackSkills.reduce((sum, [, s]) => sum + s.averageDamagePerUse, 0) / attackSkills.length;
     for (const [id, s] of attackSkills) {
       const ratio = s.averageDamagePerUse / mean;
-      if (!inRange(ratio, targets.skillDamageRatio)) {
-        out.push({
-          level: 'warn',
-          message: `${data.skills[id].name}의 평균 피해가 공격 스킬 평균의 ${ratio.toFixed(2)}배 — 목표 ${range(targets.skillDamageRatio, (n) => `${n}배`)} 밖`,
-        });
+      if (!inRange(ratio, warnings.skillDamageRatio)) {
+        warn(`${data.skills[id].name}의 1회 평균 피해가 공격 스킬 평균의 ${ratio.toFixed(2)}배 — 기준 ${range(warnings.skillDamageRatio, (n) => `${n}배`)} 밖`);
       }
     }
   }
 
-  const stallShare = (report.endCauses.stall ?? 0) / report.iterations;
-  if (stallShare > 0.3) {
-    out.push({ level: 'info', message: `전투의 ${pct(stallShare, 0)}가 교착(AP가 남은 유닛이 행동할 수 없는 상태)으로 끝났습니다. 풍수사처럼 AP가 큰 지원 유닛의 영향일 수 있습니다.` });
-  }
-
+  if (!out.some((f) => f.level === 'warn')) out.unshift({ level: 'ok', message: '깨진 곳이 없습니다 (모든 결과가 경고 기준 안).' });
   return out;
 }

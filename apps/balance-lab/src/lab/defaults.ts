@@ -1,18 +1,10 @@
-import { FAMILIES } from '@samgukji/battle-engine';
-import type { Family } from '@samgukji/battle-engine';
 import { presets } from '@samgukji/game-data';
 import { filesSignature, filesSnapshot } from '../lib/fileSync';
 import { slotsFromLineup } from '../lib/slots';
-import type { FamilySurvivalTarget, LabState } from './types';
+import type { LabState } from './types';
 
 export function createDefaultState(): LabState {
   const files = filesSnapshot();
-  const familySurvival = Object.fromEntries(
-    // 병종별 생존율 목표는 모두 꺼 둔다. 승급 병종과 새 커맨드가 들어오면 판도가 달라지므로 지금은 맞추지 않는다 (필요할 때 켠다).
-    // 궁병 생존율 40%는 한때의 첫 목표였다. 켜면 그 값을 쓴다.
-    FAMILIES.map((f): [Family, FamilySurvivalTarget] => [f, { enabled: false, target: 0.4, tolerance: 0.1 }]),
-  ) as Record<Family, FamilySurvivalTarget>;
-
   return {
     filesSignature: filesSignature(files),
     data: files.data,
@@ -27,18 +19,20 @@ export function createDefaultState(): LabState {
       lineups: 'random',
       targetPolicy: 'highest-damage',
       guardMode: 'protect',
-      buffMode: 'first',
+      buffMode: 'opening',
       pool: 'elite',
       autoRun: true,
       autoRunIterations: 1000,
     },
-    targets: {
-      attackerWinRate: [0.45, 0.55],
-      averageRounds: [3.5, 6.5],
-      familyWinRate: [0.45, 0.55],
-      characterWinRate: [0.4, 0.6],
-      skillDamageRatio: [0.5, 1.5],
-      familySurvival,
+    // 경고 기준 (안전선, [임시]): 균형 목표가 아니라 "깨졌는지"를 보는 넓은 범위다
+    warnings: {
+      attackerWinRate: [0.35, 0.65],
+      averageRounds: [2, 12],
+      familyWinRate: [0.3, 0.7],
+      characterWinRate: [0.25, 0.75],
+      skillDamageRatio: [0.25, 3],
+      minWipeRate: 0.2,
+      maxStallRate: 0.3,
     },
   };
 }
