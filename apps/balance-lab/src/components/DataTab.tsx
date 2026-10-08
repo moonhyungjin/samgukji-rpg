@@ -3,6 +3,7 @@ import { useLab } from '../lab/LabContext';
 import { FAMILY_LABEL } from '../lib/format';
 import { CheckField, CheckGroup, NumberField, SelectField, TextField } from './Fields';
 import type { Option } from './Fields';
+import { DamageCalculatorPanel } from './DamageCalculatorPanel';
 import { UnitTypesSection } from './UnitTypesSection';
 
 const ROW_OPTIONS: Option[] = [
@@ -20,6 +21,8 @@ export function DataTab() {
 
   return (
     <div>
+
+      <DamageCalculatorPanel />
 
       <UnitTypesSection />
 

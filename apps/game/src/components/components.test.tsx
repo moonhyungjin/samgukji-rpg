@@ -86,7 +86,8 @@ describe('CommandPanel', () => {
     expect(html).toContain('대상을 고르세요');
     expect(html).toContain('허저');
     expect(html).toMatch(/피해 \d+/);
-    expect(html).toMatch(/병력 \d+\/1000/);
+    // 최대 병력은 병종 병력 배율과 밸런스 수치에 따라 Lab에서 바뀐다
+    expect(html).toMatch(/병력 \d+\/\d+/);
   });
 
   it('진행 중: 건너뛰기만 보인다', async () => {

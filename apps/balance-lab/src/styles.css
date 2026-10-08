@@ -151,6 +151,10 @@ table input[type='number'] {
   margin: 6px 0 10px;
 }
 
+.unused {
+  opacity: 0.45;
+}
+
 .check {
   display: inline-flex;
   align-items: center;
@@ -851,4 +855,150 @@ tr.dead td {
   flex: 1 1 260px;
   min-width: 200px;
   max-width: 460px;
+}
+
+.formula-panel {
+  grid-column: 1 / -1;
+}
+
+.formula-group {
+  margin: 10px 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--border, #2d3550);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.formula-line {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin: 3px 0;
+  line-height: 1.6;
+}
+
+.formula-label {
+  flex: 0 0 92px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.formula-line .num {
+  color: #ffd166;
+}
+
+.balance-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.balance-page .formula-panel {
+  grid-column: auto;
+}
+
+.balance-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .balance-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.balance-cols .col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.balance-cols .panel {
+  margin-bottom: 0;
+}
+
+.fields-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 14px;
+  margin-bottom: 8px;
+}
+
+.fields-2 .field {
+  margin-bottom: 0;
+}
+
+.fields-2 input {
+  width: 100%;
+}
+
+h4.sub {
+  margin: 18px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text, #e6eaf2);
+  font-size: 13px;
+}
+
+.calc-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px 14px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+
+.calc-controls .field {
+  margin-bottom: 0;
+}
+
+.calc-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 6px 0 10px;
+  font-size: 15px;
+}
+
+.calc-summary .num,
+.calc-table .calc-value {
+  color: #ffd166;
+  font-weight: 700;
+}
+
+.calc-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.calc-table td,
+.calc-table th {
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.calc-table .calc-group th {
+  padding-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.calc-label {
+  width: 150px;
+  white-space: nowrap;
+}
+
+.calc-formula {
+  color: var(--muted);
+}
+
+.calc-value {
+  width: 190px;
+  text-align: right !important;
+  white-space: nowrap;
 }

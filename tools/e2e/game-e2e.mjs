@@ -14,7 +14,7 @@ import { pathToFileURL } from 'node:url';
 
 const BASE = process.env.GAME_URL ?? 'http://localhost:5174/';
 const OUT = resolve(process.env.E2E_OUT ?? 'out/e2e');
-const PORT = 9333;
+const PORT = Number(process.env.E2E_PORT ?? 9333);
 const CANDIDATES = [
   process.env.BROWSER,
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
@@ -262,8 +262,8 @@ try {
   await shot('art-trial-after-hit');
 
   // Renderer fixture: replay explicit events without modifying game data or balancing outcomes.
-  await goto('');
-  await waitFor(`!!document.querySelector('.setup')`, 5000);
+  await goto('?autostart=0');
+  await waitFor(`!!document.querySelector('.setup')`, 20000);
   await evalJs(`(async () => {
     const { BattleScene } = await import('/src/render/BattleScene.ts');
     document.querySelector('.app').style.display = 'none';
@@ -288,6 +288,23 @@ try {
     ] };
     window.effectReview = { scene, view, wrapper };
   })()`);
+  const labelsOk = await evalJs(`(async () => {
+    const {scene, view} = window.effectReview;
+    scene.setState(view); scene.setSpeed(0);
+    const army = scene.sprites.get('guard').army;
+    army.setStatus(50, 0);
+    const active = army.guardLabel.text === '가드 50%' && army.shieldToken.context.instructions.length > 0;
+    army.setStatus(0, 0);
+    const released = army.guardLabel.text === '가드 해제';
+    await army.moveToSlot('front', 0);
+    const aligned = army.annotation.x === army.root.x - 125 && army.annotation.y === army.root.y - 40;
+    const above = scene.world.getChildIndex(scene.armyLabels) > scene.world.getChildIndex(scene.armyLayer) && army.annotation.eventMode === 'none';
+    army.setDead(true);
+    const dead = !army.guardLabel.visible && army.label.text.includes('격파');
+    scene.setState(view);
+    return active && released && aligned && above && dead && scene.armyLabels.children.length === view.units.length;
+  })()`);
+  check('방패 표식·가드 해제·격파·열 이동 이름표와 재시작 정리가 정상이다', labelsOk);
   for (const [skillId, kind, source, target] of [
     ['archer-shot', 'arrow', 'left', 'guard'],
     ['geomancer-shot', 'arrow', 'right', 'left'],
@@ -365,6 +382,16 @@ try {
     return true;
   })()`);
   check('투사체 비행 중 화면 종료가 안전하게 완료된다', disposed);
+  // Mounted art in a real 6v6 lineup, including the mirrored defender side.
+  for (const reversed of [false, true]) {
+    await goto(`?a=${reversed ? 'wei' : 'shu'}&d=${reversed ? 'shu' : 'wei'}&control=${reversed ? 'defender' : 'attacker'}&speed=0&autostart=1`);
+    await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('의 차례')`, 20000, '기병 포함 실제 편성');
+    check(`관우와 공용 기병 텍스처 로드 (${reversed ? '방어측' : '공격측'})`, await evalJs(`['guanYu','shuCavalry'].every(k => document.querySelector('.stage').dataset.artLoaded.split(',').includes(k))`));
+    await shot(reversed ? 'cavalry-runtime-defender' : 'cavalry-runtime-attacker');
+  }
+  await goto('?a=shuStart&d=yellowNormal&control=attacker&speed=0&autostart=1');
+  await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('의 차례')`, 20000, '유관장 대 황건적');
+  await shot('shu-start-shield-labels');
   // Optional local art-review page; no changes to runtime data or assets.
   if (process.env.ART_REVIEW_PATH) {
     await send('Page.navigate', { url: pathToFileURL(resolve(process.env.ART_REVIEW_PATH)).href });

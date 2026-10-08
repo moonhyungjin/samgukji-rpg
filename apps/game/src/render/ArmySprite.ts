@@ -15,6 +15,11 @@ export function fieldPosition(side: ViewUnit['side'], row: Row, slot: number, la
 /** One engine unit represented by a commander and decorative soldiers. No battle rules here. */
 export class ArmySprite {
   readonly root = new Container();
+  /** Non-interactive labels render above every army, not inside depth-sorted figures. */
+  readonly annotation = new Container({ eventMode: 'none' });
+  private readonly nameplate = new Graphics();
+  private readonly guardLabel = new Text({ text: '', style: { fontFamily: FONT, fontSize: 11, fill: 0xa9d4ff } });
+  private readonly shieldToken = new Graphics();
   private readonly figures = new Container();
   private readonly selection = new Graphics();
   private readonly shield = new Graphics();
@@ -42,13 +47,49 @@ export class ArmySprite {
       this.addFigure(art.commander, textures, 8 * direction, 0, lanes === 1 ? 116 : 86);
     } else {
       // Unproduced classes retain explicit tokens rather than showing the wrong weapon/commander.
-      this.figures.addChild(new Graphics().roundRect(-28, -76, 56, 65, 4).fill(0x172728).stroke({ color: 0xb39a65, width: 2 }));
+      if (unit.family === 'shield') {
+        this.figures.addChild(this.shieldToken);
+        this.drawShieldToken();
+      } else {
+        this.figures.addChild(new Graphics().roundRect(-28, -76, 56, 65, 4).fill(0x172728).stroke({ color: 0xb39a65, width: 2 }));
+      }
       const glyph = new Text({ text: FAMILY_GLYPH[unit.family], style: { fontFamily: FONT, fontSize: 30, fill: SIDE_COLOR[unit.side] } });
       glyph.anchor.set(.5); glyph.position.set(0, -44); this.figures.addChild(glyph);
     }
     this.label = new Text({ text: unit.name, style: { fontFamily: FONT, fontSize: 13, fill: 0xfff1d5, stroke: { color: 0x152023, width: 4 } } });
-    this.label.anchor.set(.5, 0); this.label.y = 8;
-    this.root.addChild(this.label);
+    this.label.anchor.set(.5, 0); this.label.y = 4;
+    this.guardLabel.anchor.set(.5, 0); this.guardLabel.y = 22;
+    this.annotation.addChild(this.nameplate, this.label, this.guardLabel);
+    this.positionAnnotation(unit.row);
+    this.drawNameplate();
+  }
+
+  private positionAnnotation(row: Row) {
+    const direction = this.unit.side === 'attacker' ? 1 : -1;
+    const x = this.root.x + direction * (row === 'front' ? 125 : -110);
+    this.annotation.position.set(Math.max(95, Math.min(1185, x)), this.root.y - 40);
+  }
+
+  private drawShieldToken() {
+    if (this.unit.family !== 'shield') return;
+    const active = !this.dead && this.guard > 0;
+    this.shieldToken.clear().poly([-30,-78, 0,-87, 30,-78, 27,-39, 0,-12, -27,-39])
+      .fill(active ? 0x284b62 : 0x172728).stroke({ color: active ? 0xa9d4ff : 0xb39a65, width: active ? 3 : 2 });
+    this.shieldToken.moveTo(-20,-70).lineTo(0,-76).lineTo(20,-70).stroke({ color: 0xb39a65, width: 1 });
+  }
+
+  private drawNameplate() {
+    const status = this.dead ? '' : [
+      this.guard > 0 ? `가드 ${Math.round(this.guard)}%` : this.unit.family === 'shield' ? '가드 해제' : '',
+      this.barrier > 0 ? `결계 ${this.barrier}` : '',
+    ].filter(Boolean).join(' · ');
+    this.guardLabel.text = status;
+    this.guardLabel.visible = !!status;
+    const width = Math.max(76, Math.min(190, Math.max(this.label.width, this.guardLabel.width) + 16));
+    // Limit unusually long edited names without changing the actual name in the card.
+    this.label.scale.x = Math.min(1, 174 / Math.max(1, this.label.getLocalBounds().width));
+    this.nameplate.clear().roundRect(-width / 2, 0, width, status ? 38 : 24, 3)
+      .fill({ color: 0x102023, alpha: .94 }).stroke({ color: this.targetable ? 0xffd46c : this.acting ? 0x91e6ff : 0x86764e, width: 1 });
   }
 
   private addFigure(spec: SpriteSpec, textures: BattleTextures, x: number, y: number, height: number) {
@@ -72,15 +113,19 @@ export class ArmySprite {
   private drawSelection() {
     this.selection.clear();
     if (!this.dead && (this.acting || this.targetable)) this.selection.ellipse(0, 0, 90, 17).stroke({ width: 3, color: this.targetable ? 0xffd46c : 0x91e6ff });
+    this.drawNameplate();
   }
   setStatus(guard: number, barrier: number) {
     this.guard = guard; this.barrier = barrier; this.shield.clear();
+    this.drawShieldToken();
+    this.drawNameplate();
     if (this.dead) return;
     if (barrier > 0) this.shield.ellipse(0, -43, 42, 51).stroke({ width: 2, color: 0x9be7ff, alpha: .65 });
     if (guard > 0) this.shield.poly([48, -45, 65, -39, 64, -18, 56, -10, 48, -18]).fill({ color: 0x83b9ec, alpha: .75 });
   }
   setDead(dead: boolean) {
     this.dead = dead; this.root.alpha = dead ? .18 : 1;
+    this.annotation.alpha = dead ? .65 : 1;
     this.label.text = dead ? `${this.unit.name} · 격파` : this.unit.name;
     this.drawSelection(); this.setStatus(this.guard, this.barrier);
   }
@@ -103,7 +148,7 @@ export class ArmySprite {
   }
   async moveToSlot(row: Row, slot: number) {
     const from = { x: this.root.x, y: this.root.y }, to = fieldPosition(this.unit.side, row, slot, this.lanes);
-    await tween(this.clock, 450, t => { if (!this.gone) { const e = easeOut(t); this.root.position.set(from.x + (to.x - from.x) * e, from.y + (to.y - from.y) * e); this.root.zIndex = this.root.y; } });
+    await tween(this.clock, 450, t => { if (!this.gone) { const e = easeOut(t); this.root.position.set(from.x + (to.x - from.x) * e, from.y + (to.y - from.y) * e); this.root.zIndex = this.root.y; this.positionAnnotation(row); } });
   }
-  destroy() { this.gone = true; this.setTargetable(null); this.root.destroy({ children: true }); }
+  destroy() { this.gone = true; this.setTargetable(null); this.annotation.destroy({ children: true }); this.root.destroy({ children: true }); }
 }

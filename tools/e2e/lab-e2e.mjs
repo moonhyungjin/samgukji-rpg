@@ -75,8 +75,8 @@ const waitFor = async (expression, timeout = 15000, label = expression) => {
     await sleep(120);
   }
 };
-const shot = async (name) => {
-  const r = await send('Page.captureScreenshot', { format: 'png' });
+const shot = async (name, full = false) => {
+  const r = await send('Page.captureScreenshot', { format: 'png', ...(full ? { captureBeyondViewport: true } : {}) });
   writeFileSync(join(OUT, `${name}.png`), Buffer.from(r.data, 'base64'));
 };
 const mouse = async (x, y) => {
@@ -140,6 +140,8 @@ try {
   await sleep(300);
   const bal = await text('main');
   check('밸런스 탭: 행동력 → AP 설정', bal.includes('행동력 몇 마다 AP 1') && bal.includes('공격 계수'));
+  check('밸런스 탭: 지금 값이 들어간 피해 공식이 식으로 나온다', bal.includes('지금 피해 공식') && bal.includes('최종 피해') && bal.includes('병력 보정'));
+  await shot('lab-balance', true);
 
   await tabs('병종 · 스킬');
   await sleep(300);
@@ -148,9 +150,11 @@ try {
   check('병종 탭: 비어 있거나 NaN인 입력란이 없다', !(await evalJs(`[...document.querySelectorAll('main input[type=number]')].some(i => i.value === 'NaN' || i.value === '')`)));
   await shot('lab-unittypes');
 
-  // 스킬 계수 입력란
-  const changed = await evalJs(`(() => { const row = [...document.querySelectorAll('tr')].find(r => r.querySelector('td') && r.querySelector('td').textContent.trim() === '돌격'); if (!row) return 'no row'; const inp = [...row.querySelectorAll('input[type=number]')].find(i => i.value === '1.2'); if (!inp) return 'no 1.2 input: ' + [...row.querySelectorAll('input[type=number]')].map(i=>i.value).join(','); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(inp, '1.5'); inp.dispatchEvent(new Event('input', { bubbles: true })); return 'ok'; })()`);
-  check('돌격 계수 입력란을 찾아 1.5로 바꾼다', changed === 'ok', String(changed));
+  // 스킬 계수 입력란 (값은 Lab에서 계속 바뀌므로 지금 값에서 출발한다)
+  const chargeBefore = readData('skills').find((s) => s.id === 'cavalry-charge').power;
+  const chargeAfter = Math.round((chargeBefore + 0.25) * 100) / 100;
+  const changed = await evalJs(`(() => { const row = [...document.querySelectorAll('tr')].find(r => r.querySelector('td') && r.querySelector('td').textContent.trim() === '돌격'); if (!row) return 'no row'; const inp = [...row.querySelectorAll('input[type=number]')].find(i => i.value === '${chargeBefore}'); if (!inp) return 'no ${chargeBefore} input: ' + [...row.querySelectorAll('input[type=number]')].map(i=>i.value).join(','); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(inp, '${chargeAfter}'); inp.dispatchEvent(new Event('input', { bubbles: true })); return 'ok'; })()`);
+  check(`돌격 계수 입력란을 찾아 ${chargeAfter}로 바꾼다`, changed === 'ok', String(changed));
   await sleep(300);
   check('저장 줄에 "저장 안 됨 (스킬)"이 뜬다', (await text('.savebar .badge')).includes('저장 안 됨 (스킬)'), (await text('.savebar .badge')).trim());
 
@@ -161,9 +165,9 @@ try {
   await waitFor(`!!document.querySelector('.savemsg.ok') || document.querySelectorAll('button.tab').length === 0`, 8000, '저장').catch(() => {});
   await sleep(1500); // 저장하면 개발 서버가 페이지를 새로고침한다
   await waitFor(`document.querySelectorAll('button.tab').length > 0`, 30000, '새로고침 뒤 Lab');
-  check('스킬 계수를 저장하면 skills.json이 바뀐다', readData('skills').find((s) => s.id === 'cavalry-charge').power === 1.5, `${skillBefore} → ${readData('skills').find((s) => s.id === 'cavalry-charge').power}`);
+  check('스킬 계수를 저장하면 skills.json이 바뀐다', readData('skills').find((s) => s.id === 'cavalry-charge').power === chargeAfter, `${skillBefore} → ${readData('skills').find((s) => s.id === 'cavalry-charge').power}`);
   const log1 = readChangelog().slice((originalChangelog ?? '').length);
-  check('저장하면 changelog.md에 무엇이 어떻게 바뀌었는지 남는다', log1.includes('— 스킬') && log1.includes('- skills.cavalry-charge.power: 1.2 → 1.5'), log1.split('\n').filter(Boolean).slice(0, 3).join(' | '));
+  check('저장하면 changelog.md에 무엇이 어떻게 바뀌었는지 남는다', log1.includes('— 스킬') && log1.includes(`- skills.cavalry-charge.power: ${chargeBefore} → ${chargeAfter}`), log1.split('\n').filter(Boolean).slice(0, 3).join(' | '));
   check('변경 메모가 기록에 들어간다', log1.includes('메모: 시험: 돌격 계수 올림'));
   check('저장 뒤 페이지가 새로고침되고 안내 문구가 남는다', (await text('.savemsg')).includes('스킬'), (await text('.savemsg')).trim().slice(0, 50));
   check('새로고침 뒤 "프로젝트 파일과 같음"이다', (await text('.savebar .badge')).includes('프로젝트 파일과 같음'));
@@ -225,12 +229,16 @@ try {
   await tabs('병종 · 스킬');
   await sleep(300);
   const cavBefore = readData('unitTypes').find((u) => u.id === 'cavalry').troopScale;
-  await setValue('input[aria-label="cavalry 병력 배율"]', 0.9);
+  const cavNew = cavBefore === 0.75 ? 0.85 : 0.75;
+  const balanceNow = readData('balance');
+  const lv15 = balanceNow.troops.base + balanceNow.troops.perLevel * 14;
+  const cavTroops = Math.round(lv15 * cavNew);
+  await setValue('input[aria-label="cavalry 병력 배율"]', cavNew);
   await sleep(300);
-  check('병력 배율을 고치면 카드의 병력 요약이 바뀐다 (800 → 900)', (await text('section[data-unittype="cavalry"] .badge')).includes('병력 900'));
+  check(`병력 배율을 고치면 카드의 병력 요약이 바뀐다 (${cavBefore} → ${cavNew}, 병력 ${cavTroops})`, (await text('section[data-unittype="cavalry"] .badge')).includes(`병력 ${cavTroops}`));
   await tabs('장수');
   await sleep(300);
-  check('장수 탭의 관우 병력이 새 배율을 바로 반영한다 (저장 전, 900)', String(await evalJs(`document.querySelector('tr[data-id="guanYu"]').textContent`)).includes('900'));
+  check(`장수 탭의 관우 병력이 새 배율을 바로 반영한다 (저장 전, ${cavTroops})`, String(await evalJs(`document.querySelector('tr[data-id="guanYu"]').textContent`)).includes(String(cavTroops)));
   await tabs('병종 · 스킬');
   await sleep(200);
   await setValue('input[aria-label="cavalry 사거리"]', 0);
@@ -242,7 +250,7 @@ try {
   await clickButton('파일에 저장');
   await sleep(2500);
   await waitFor(`document.querySelectorAll('button.tab').length > 0`, 30000, '새로고침 뒤 Lab');
-  check('병종을 저장하면 unitTypes.json에 기록된다', readData('unitTypes').find((u) => u.id === 'cavalry').troopScale === 0.9, `${cavBefore} → ${readData('unitTypes').find((u) => u.id === 'cavalry').troopScale}`);
+  check('병종을 저장하면 unitTypes.json에 기록된다', readData('unitTypes').find((u) => u.id === 'cavalry').troopScale === cavNew, `${cavBefore} → ${readData('unitTypes').find((u) => u.id === 'cavalry').troopScale}`);
   writeData('unitTypes', JSON.parse(originals.unitTypes));
   await sleep(1500);
   await load();

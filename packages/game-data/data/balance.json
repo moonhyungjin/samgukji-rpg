@@ -1,5 +1,5 @@
 {
-  "maxTurns": 40,
+  "maxTurns": 30,
   "statCurve": [
     0,
     1,
@@ -23,12 +23,12 @@
     "defenseScale": 0.1,
     "resistScale": 0.1,
     "minDamage": 1,
-    "formula": "gap",
+    "formula": "additive",
     "additive": {
       "attackMul": 10,
-      "defenseMul": 8,
+      "defenseMul": 5,
       "intellectMul": 10,
-      "resistMul": 7,
+      "resistMul": 6,
       "min": 10,
       "scale": 10
     },
@@ -45,15 +45,15 @@
     "useTroopFactor": false
   },
   "troops": {
-    "base": 300,
+    "base": 150,
     "perLevel": 50
   },
   "troopFactor": {
     "reference": 1000,
     "min": 0.3,
     "max": 1.75,
-    "mode": "relative",
-    "normalizeByScale": true,
+    "mode": "tiered",
+    "normalizeByScale": false,
     "relative": {
       "min": 0.5,
       "max": 1.5,
@@ -65,10 +65,10 @@
     },
     "tiered": {
       "knee": 1000,
-      "knee2": 4000,
+      "knee2": 5000,
       "rate2": 0.5,
       "rate3": 0.3,
-      "floor": 300,
+      "floor": 500,
       "capAtTroops": true
     }
   },
@@ -82,7 +82,7 @@
   "morale": {
     "defenderStart": 50,
     "maxEffect": 0,
-    "onUnitDestroyed": 8,
+    "onUnitDestroyed": 10,
     "onHit": 1,
     "judgement": "tiebreak"
   }

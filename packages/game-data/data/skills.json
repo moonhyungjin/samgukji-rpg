@@ -16,7 +16,7 @@
     "name": "돌격",
     "kind": "attack",
     "scalesWith": "attack",
-    "power": 1.2,
+    "power": 1.25,
     "apCost": 1,
     "counterable": true,
     "counterRate": 0.25,

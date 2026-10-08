@@ -6,14 +6,16 @@ import { getIn } from '../lib/path';
 interface WrapProps {
   label?: string;
   hint?: string;
+  /** 지금 설정에서 이 값을 쓰지 않을 때 그 이유. 있으면 흐리게 표시하고 툴팁으로 보여 준다 (값은 그대로 고칠 수 있다) */
+  unused?: string;
   children: ReactNode;
 }
 
 /** label이 있으면 라벨 달린 필드로, 없으면 표 안에 넣을 입력만 렌더링한다. */
-function Wrap({ label, hint, children }: WrapProps) {
+function Wrap({ label, hint, unused, children }: WrapProps) {
   if (!label) return <>{children}</>;
   return (
-    <label className="field">
+    <label className={unused ? 'field unused' : 'field'} title={unused ? `지금 설정에서는 쓰지 않는 값입니다 (${unused})` : undefined}>
       <span>{label}</span>
       {children}
       {hint && <small>{hint}</small>}
@@ -28,7 +30,7 @@ interface NumberFieldProps extends Omit<WrapProps, 'children'> {
   max?: number;
 }
 
-export function NumberField({ label, hint, path, step = 1, min, max }: NumberFieldProps) {
+export function NumberField({ label, hint, unused, path, step = 1, min, max }: NumberFieldProps) {
   const { state, set } = useLab();
   const value = Number(getIn(state, path));
   const [text, setText] = useState(String(value));
@@ -38,7 +40,7 @@ export function NumberField({ label, hint, path, step = 1, min, max }: NumberFie
   }, [value]);
 
   return (
-    <Wrap label={label} hint={hint}>
+    <Wrap label={label} hint={hint} unused={unused}>
       <input
         type="number"
         value={text}
@@ -70,10 +72,10 @@ export interface Option {
   label: string;
 }
 
-export function SelectField({ label, hint, path, options }: Omit<WrapProps, 'children'> & { path: string; options: Option[] }) {
+export function SelectField({ label, hint, unused, path, options }: Omit<WrapProps, 'children'> & { path: string; options: Option[] }) {
   const { state, set } = useLab();
   return (
-    <Wrap label={label} hint={hint}>
+    <Wrap label={label} hint={hint} unused={unused}>
       <select value={String(getIn(state, path) ?? '')} onChange={(e) => set(path, e.target.value)}>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -85,10 +87,10 @@ export function SelectField({ label, hint, path, options }: Omit<WrapProps, 'chi
   );
 }
 
-export function CheckField({ label, path }: { label: string; path: string }) {
+export function CheckField({ label, path, unused }: { label: string; path: string; unused?: string }) {
   const { state, set } = useLab();
   return (
-    <label className="check">
+    <label className={unused ? 'check unused' : 'check'} title={unused ? `지금 설정에서는 쓰지 않는 값입니다 (${unused})` : undefined}>
       <input type="checkbox" checked={Boolean(getIn(state, path))} onChange={(e) => set(path, e.target.checked)} />
       <span>{label}</span>
     </label>

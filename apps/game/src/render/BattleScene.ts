@@ -26,6 +26,7 @@ export class BattleScene implements SceneLike {
   private readonly world = new Container();
   private readonly unitsLayer = new Container();
   private readonly armyLayer = new Container({ sortableChildren: true });
+  private readonly armyLabels = new Container({ eventMode: 'none' });
   private readonly effectsLayer = new Container();
   private readonly overlayLayer = new Container();
   private readonly moraleBar = new Graphics();
@@ -64,7 +65,7 @@ export class BattleScene implements SceneLike {
   ) {
     this.app.stage.addChild(this.world);
 
-    this.world.addChild(this.drawBackground(), this.armyLayer, this.unitsLayer, this.effectsLayer, this.moraleBar, this.overlayLayer);
+    this.world.addChild(this.drawBackground(), this.armyLayer, this.armyLabels, this.unitsLayer, this.effectsLayer, this.moraleBar, this.overlayLayer);
 
     this.roundText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 20, fill: 0xe4e8f0, fontWeight: 'bold' } });
     this.roundText.position.set(24, 14);
@@ -97,6 +98,7 @@ export class BattleScene implements SceneLike {
       this.sprites.set(unit.uid, sprite);
       this.unitsLayer.addChild(sprite.root);
       this.armyLayer.addChild(sprite.army.root);
+      this.armyLabels.addChild(sprite.army.annotation);
     }
     this.updateRound(state.round);
     this.morale = state.defenderMorale;

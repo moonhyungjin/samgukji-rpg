@@ -247,3 +247,34 @@ Balance Lab의 "파일에 저장"을 누를 때마다 자동으로 덧붙는다 
 
 ## 2026-10-08 00:34 — 병종
 - unitTypes.cavalry.statMods.attack: 1 → 0
+
+## 2026-10-08 08:26 — 장수
+- characters.xiahouDun.stats.attack: 9 → 8
+- characters.xiahouDun.stats.intellect: 4 → 5
+- characters.zhangLiao.stats.intellect: 5 → 6
+
+## 2026-10-08 08:33 — 밸런스 수치
+- balance.maxTurns: 40 → 30
+
+## 2026-10-08 08:34 — 밸런스 수치
+- balance.damage.formula: "gap" → "additive"
+- balance.troopFactor.mode: "relative" → "tiered"
+- balance.troopFactor.normalizeByScale: true → false
+
+## 2026-10-08 08:38 — 밸런스 수치
+- balance.damage.additive.defenseMul: 8 → 7
+- balance.damage.additive.resistMul: 7 → 8
+- balance.troops.base: 300 → 150
+- balance.troopFactor.tiered.knee2: 4000 → 5000
+- balance.morale.onUnitDestroyed: 8 → 10
+
+## 2026-10-08 08:40 — 밸런스 수치
+- balance.damage.additive.defenseMul: 7 → 6
+- balance.damage.additive.resistMul: 8 → 6
+
+## 2026-10-08 08:40 — 밸런스 수치
+- balance.damage.additive.defenseMul: 6 → 5
+
+## 2026-10-08 08:43 — 스킬 · 밸런스 수치
+- skills.cavalry-charge.power: 1.2 → 1.25
+- balance.troopFactor.tiered.floor: 300 → 500
