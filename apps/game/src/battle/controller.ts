@@ -50,6 +50,8 @@ export interface WaitingInfo {
 export type Phase = 'playing' | 'awaiting' | 'finished';
 
 export interface ControllerSnapshot {
+  /** 현재 행동자와 엔진이 이미 확정한 같은 라운드의 재생 순서. 미공개 순서는 추측하지 않는다. */
+  turnOrder?: { uid: string; current: boolean }[];
   phase: Phase;
   view: ViewState;
   log: string[];
@@ -73,6 +75,7 @@ export class BattleController {
   private disposed = false;
   private selectedSkillId: string | null = null;
   private error: string | null = null;
+  private turnOrder: { uid: string; current: boolean }[] = [];
   private readonly names: Map<string, string>;
 
   constructor(
@@ -156,11 +159,26 @@ export class BattleController {
     this.scene.setActing(null);
     this.emit();
 
-    for (const event of this.session.drainEvents()) {
+    const events = this.session.drainEvents();
+    let acting: string | null = null;
+    for (const [index, event] of events.entries()) {
       if (this.disposed) return;
       const line = formatEvent(event, this.names, this.data);
       if (line !== null) this.log.push(line);
       this.view = applyEvent(this.view, event);
+      if (event.type === 'roundStart') acting = null;
+      if (event.type === 'action') acting = event.actor;
+      const remaining: string[] = [];
+      for (const next of events.slice(index + 1)) {
+        if (next.type === 'roundStart' || next.type === 'battleEnd') break;
+        if (next.type === 'action') remaining.push(next.actor);
+      }
+      const waiting = this.session.waitingUnit;
+      if (waiting && this.session.engine.state.round === this.view.round) remaining.push(waiting.uid);
+      this.turnOrder = event.type === 'battleEnd' ? [] : [
+        ...(acting ? [{ uid: acting, current: true }] : []),
+        ...remaining.filter(uid => uid !== acting && this.view.units.some(u => u.uid === uid && !u.dead && u.ap > 0)).map(uid => ({ uid, current: false })),
+      ];
       this.emit();
       await this.scene.playEvent(event);
     }
@@ -176,9 +194,11 @@ export class BattleController {
     const waiting = this.session.waitingUnit;
     if (waiting) {
       this.phase = 'awaiting';
+      this.turnOrder = [{ uid: waiting.uid, current: true }];
       this.scene.setActing(waiting.uid);
     } else {
       this.phase = 'finished';
+      this.turnOrder = [];
     }
     this.emit();
   }
@@ -220,6 +240,7 @@ export class BattleController {
   private emit(): void {
     if (this.disposed) return;
     this.onChange({
+      turnOrder: this.turnOrder,
       phase: this.phase,
       view: this.view,
       log: [...this.log],

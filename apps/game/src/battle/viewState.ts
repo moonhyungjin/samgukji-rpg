@@ -5,6 +5,7 @@ import type { BattleEvent, BuffStat, CharacterState, DecidedBy, EndCause, Family
  * 그래야 관전/수동 플레이/건너뛰기가 모두 같은 이벤트 스트림 하나로 동작한다.
  */
 export interface ViewUnit {
+  debuffs?: { id: string; name: string; roundsLeft: number }[];
   uid: string;
   characterId?: string;
   name: string;
@@ -62,6 +63,7 @@ export function createViewState(units: readonly CharacterState[], defenderMorale
       guardRate: u.guardRate,
       buffs: { ...u.buffs },
       barrier: u.barrier,
+      debuffs: u.debuffs?.map(d => ({ id: d.id, name: d.id, roundsLeft: d.roundsLeft })),
       row: u.row,
       slot: u.slot,
       dead: u.isDead,
@@ -84,11 +86,13 @@ export function applyEvent(state: ViewState, event: BattleEvent): ViewState {
     case 'heal':
       return patch(state, event.target, { troops: event.troopsAfter });
     case 'debuffTick':
-      return patch(state, event.unit, { troops: event.troopsAfter });
-    case 'debuffApply':
+      return patch(state, event.unit, { troops: event.troopsAfter, debuffs: state.units.find(u => u.uid === event.unit)?.debuffs?.map(d => d.id === event.debuffId ? { ...d, roundsLeft: Math.max(0, d.roundsLeft - 1) } : d) });
+    case 'debuffApply': {
+      const debuffs = state.units.find(u => u.uid === event.unit)?.debuffs ?? [];
+      return patch(state, event.unit, { debuffs: [...debuffs.filter(d => d.id !== event.debuffId), { id: event.debuffId, name: event.name, roundsLeft: event.rounds }] });
+    }
     case 'debuffEnd':
-      // 디버프 표시(아이콘 등)는 아직 없다. 병력 변화는 debuffTick이 처리한다.
-      return state;
+      return patch(state, event.unit, { debuffs: state.units.find(u => u.uid === event.unit)?.debuffs?.filter(d => d.id !== event.debuffId) });
     case 'unitDestroyed':
       return patch(state, event.unit, { troops: 0, dead: true });
     case 'revive':

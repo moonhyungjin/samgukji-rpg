@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import type { Command } from '@samgukji/battle-engine';
 import type { ControllerSnapshot, WaitingInfo } from '../battle/controller';
 import { cardLayout, WORLD_H, WORLD_W } from '../render/theme';
-import { previewText } from './CommandPanel';
 
 /** Legal targets come from the engine; the UI does not infer skill rules from sides. */
 export function actionsForTarget(waiting: WaitingInfo, uid: string) {
@@ -36,8 +35,7 @@ export function CardActions({ snapshot, onSubmit }: {
   };
   return <div className="card-actions" aria-label="군단별 행동 선택">
     {snapshot.view.units.filter(unit => !unit.dead || actionsForTarget(waiting, unit.uid).length > 0).map(unit => {
-      const allies = snapshot.view.units.filter(u => u.side === unit.side);
-      const box = cardLayout(unit.side, unit.row, unit.slot, allies.length <= 3 ? allies.findIndex(u => u.uid === unit.uid) : undefined);
+      const box = cardLayout(unit.side, unit.row, unit.slot);
       const actions = actionsForTarget(waiting, unit.uid);
       const self = waiting.uid === unit.uid;
       const expanded = open === unit.uid;
@@ -58,14 +56,12 @@ export function CardActions({ snapshot, onSubmit }: {
           data-self={self} data-side={unit.side} data-actions={actions.length}
           onFocus={() => { if (!returningFocus.current) setOpen(unit.uid); }} onClick={() => setOpen(unit.uid)} />
         {expanded && <div className="card-action-menu" role="group" aria-label={`${unit.name}에게 할 행동`}>
-          <div className="card-action-heading"><strong>{self ? `${unit.name} · 자신의 행동` : `${waiting.name} → ${unit.name}`}</strong><button type="button" aria-label="행동 메뉴 닫기" onClick={e => { const anchor = e.currentTarget.closest<HTMLElement>('.card-action-anchor'); if (anchor) close(anchor); }}>×</button></div>
-          {actions.map(({ command, target }) => <button key={command.skillId} type="button" className="card-action-option"
+          {actions.map(({ command }) => <button key={command.skillId} type="button" className="card-action-option"
             data-kind={command.kind} onClick={() => submit({ kind: 'skill', skillId: command.skillId, targetUid: unit.uid })}>
-            <strong>{command.skillName} <small>AP {command.apCost}</small></strong>
-            <span>{previewText(target.preview)}</span>
+            <strong>{command.skillName}</strong>
           </button>)}
-          {self && <button type="button" className="card-action-option" data-kind="wait" onClick={() => submit({ kind: 'wait' })}><strong>대기</strong><span>AP 소모 없음</span></button>}
-          {!self && actions.length === 0 && <p className="note">지금 이 군단에게 할 수 있는 행동이 없습니다.</p>}
+          {self && <button type="button" className="card-action-option" data-kind="wait" onClick={() => submit({ kind: 'wait' })}><strong>대기</strong></button>}
+          {!self && actions.length === 0 && <span className="card-action-unavailable">행동 불가</span>}
         </div>}
       </div>;
     })}

@@ -6,7 +6,7 @@ import type { SceneLike } from '../battle/controller';
 import type { BattleOutcome, ViewState, ViewUnit } from '../battle/viewState';
 import { DECIDED_BY_LABEL, END_CAUSE_LABEL, SIDE_LABEL, STAT_SHORT } from '../lib/labels';
 import { UnitSprite } from './UnitSprite';
-import { CARD_H, FONT, SIDE_COLOR, WORLD_H, WORLD_W } from './theme';
+import { CARD_H, FONT, SIDE_COLOR, WORLD_H, WORLD_W, cardLayout } from './theme';
 import { delay, easeOut, tween } from './tween';
 import type { Clock } from './tween';
 import { playRangedEffect, rangedEffectFor, rangedImpact } from './rangedEffects';
@@ -35,7 +35,7 @@ function inferFactionName(units: readonly ViewUnit[], side: 'attacker' | 'defend
  */
 export class BattleScene implements SceneLike {
   private readonly world = new Container();
-  private readonly unitsLayer = new Container();
+  private readonly unitsLayer = new Container({ sortableChildren: true });
   private readonly armyLayer = new Container({ sortableChildren: true });
   private readonly armyLabels = new Container({ eventMode: 'none' });
   private readonly effectsLayer = new Container();
@@ -126,15 +126,14 @@ export class BattleScene implements SceneLike {
     this.clearLayer(this.overlayLayer);
 
     for (const unit of state.units) {
-      const lanes = Math.max(...state.units.filter(u => u.side === unit.side && u.row === unit.row).map(u => u.slot + 1));
-      const allies = state.units.filter(u => u.side === unit.side);
-      const sprite = new UnitSprite(unit, this.clock, this.textures, lanes, allies.length <= 3 ? allies.indexOf(unit) : undefined);
+      const sprite = new UnitSprite(unit, this.clock, this.textures);
       this.sprites.set(unit.uid, sprite);
       this.unitsLayer.addChild(sprite.root);
       this.armyLayer.addChild(sprite.army.root);
       this.armyLabels.addChild(sprite.army.annotation);
     }
     this.attackerTitle.text = inferFactionName(state.units, 'attacker');
+    this.refreshOccupiedSlots();
     this.defenderTitle.text = inferFactionName(state.units, 'defender');
     this.updateRound(state.round);
     this.morale = state.defenderMorale;
@@ -202,6 +201,22 @@ export class BattleScene implements SceneLike {
         await impact;
         return;
       }
+      case 'debuffApply': {
+        this.sprites.get(event.unit)?.updateDebuff(event.debuffId, event.name, event.rounds);
+        return;
+      }
+      case 'debuffEnd': {
+        this.sprites.get(event.unit)?.updateDebuff(event.debuffId, event.name);
+        return;
+      }
+      case 'debuffTick': {
+        const target = this.sprites.get(event.unit);
+        if (!target) return;
+        target.tickDebuff(event.debuffId);
+        void this.floatText(target, `${event.name} −${event.amount}`, 0xffb179, 24, 600);
+        await Promise.all([target.animateTroops(event.troopsAfter), event.amount > 0 ? target.flash() : Promise.resolve()]);
+        return;
+      }
       case 'heal': {
         const target = this.sprites.get(event.target);
         if (!target) return;
@@ -231,6 +246,7 @@ export class BattleScene implements SceneLike {
       case 'unitDestroyed': {
         const sprite = this.sprites.get(event.unit);
         if (sprite) await sprite.fadeOut();
+        this.refreshOccupiedSlots();
         return;
       }
       case 'revive': {
@@ -240,10 +256,15 @@ export class BattleScene implements SceneLike {
         if (source) await source.pulse();
         void this.floatText(sprite, `부활 ${event.troopsAfter}`, 0x59e08a, 26, 800);
         await Promise.all([sprite.fadeIn(), sprite.animateTroops(event.troopsAfter), sprite.moveToSlot(event.row, event.slot)]);
+        this.refreshOccupiedSlots();
         return;
       }
       case 'rowAdvance': {
-        await Promise.all(event.units.map((uid, index) => this.sprites.get(uid)?.moveToSlot('front', index)));
+        await Promise.all(event.units.map(uid => {
+          const sprite = this.sprites.get(uid);
+          return sprite?.moveToSlot('front', sprite.slot);
+        }));
+        this.refreshOccupiedSlots();
         return;
       }
       case 'intercept': {
@@ -303,6 +324,16 @@ export class BattleScene implements SceneLike {
   }
 
   // ---------- 그리기 ----------
+
+  private refreshOccupiedSlots(): void {
+    const sprites = [...this.sprites.values()];
+    for (const sprite of sprites) {
+      const covered = sprite.isDead && sprites.some(other => !other.isDead && other.side === sprite.side && other.row === sprite.row && other.slot === sprite.slot);
+      sprite.root.visible = !covered;
+      sprite.army.root.visible = !covered;
+      sprite.army.annotation.visible = !covered;
+    }
+  }
 
   /** 논리 좌표계(1280×600)를 실제 크기에 맞춘다 */
   private fit(): void {
@@ -372,6 +403,21 @@ export class BattleScene implements SceneLike {
       g.moveTo(x + w - b, 499 + h).lineTo(x + w, 499 + h).lineTo(x + w, 499 + h - b).stroke({ width: 2, color: 0xc8a96e });
     }
 
+    // 군단 수와 무관하게 각 진영의 여섯 자리를 유지한다.
+    for (const side of ['attacker', 'defender'] as const) {
+      for (const row of ['front', 'back'] as const) {
+        for (let slot = 0; slot < 3; slot++) {
+          const box = cardLayout(side, row, slot);
+          const number = slot + (row === 'front' ? 1 : 4);
+          g.roundRect(box.x, box.y, box.width, box.height, 4).fill(0x10151c).stroke({ width: 1, color: 0x3c3940 });
+          const label = new Text({ text: `${number} · ${row === 'front' ? '전열' : '후열'}\n빈 슬롯`, style: { fontFamily: FONT, fontSize: 14, fill: 0x657184, align: 'center', lineHeight: 24 } });
+          label.label = `slot-${side}-${number}`;
+          label.anchor.set(0.5);
+          label.position.set(box.x + box.width / 2, box.y + box.height / 2);
+          layer.addChild(label);
+        }
+      }
+    }
     const versus = new Text({ text: '군단 지휘\n\n아래에서 행동 선택', style: { fontFamily: FONT, fontSize: 18, fill: 0xbfa879, align: 'center', fontWeight: 'bold' } });
     versus.anchor.set(0.5);
     versus.position.set(WORLD_W / 2, 670);

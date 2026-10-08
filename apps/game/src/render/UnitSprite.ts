@@ -31,6 +31,9 @@ export class UnitSprite {
   readonly army: ArmySprite;
   readonly uid: string;
   readonly side: ViewUnit['side'];
+  slot: number;
+  row: Row;
+  get isDead() { return this.dead; }
 
   private readonly maxTroops: number;
   private readonly maxAp: number;
@@ -41,7 +44,6 @@ export class UnitSprite {
   private targetable = false;
   private acting = false;
 
-  private readonly hpBar = new Graphics();
   private readonly pips = new Graphics();
   private readonly apText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 10, fill: 0xe9d6a4 } });
   private readonly ring = new Graphics();
@@ -55,16 +57,17 @@ export class UnitSprite {
   private readonly buffText: Text;
   private buffs: Record<BuffStat, number> = { attack: 0, defense: 0, intellect: 0, speed: 0 };
   private barrier = 0;
+  private debuffs: NonNullable<ViewUnit['debuffs']> = [];
   private dead = false;
 
   constructor(
     unit: ViewUnit,
     private readonly clock: Clock,
     textures: BattleTextures = {},
-    lanes = 3,
-    private readonly wideSlot?: number,
   ) {
-    this.army = new ArmySprite(unit, textures, clock, lanes);
+    this.army = new ArmySprite(unit, textures, clock);
+    this.slot = unit.slot;
+    this.row = unit.row;
     this.uid = unit.uid;
     this.side = unit.side;
     this.maxTroops = unit.maxTroops;
@@ -81,23 +84,23 @@ export class UnitSprite {
     bg.moveTo(cb, ch).lineTo(0, ch).lineTo(0, ch - cb).stroke({ width: 1.5, color: 0xc8a96e });
     bg.moveTo(cw - cb, ch).lineTo(cw, ch).lineTo(cw, ch - cb).stroke({ width: 1.5, color: 0xc8a96e });
 
-    const faceSize = this.wideSlot === undefined ? 60 : 100;
+    const faceSize = 60;
     const portrait = new Graphics().roundRect(6, 6, faceSize, faceSize, 3).fill(0x182026).stroke({ width: 1.5, color: 0x8a7243 });
     portrait.rect(6, 6, 3, faceSize).fill(FAMILY_COLOR[unit.family]);
     const glyph = new Text({ text: FAMILY_GLYPH[unit.family], style: { fontFamily: FONT, fontSize: 30, fill: 0xffffff, fontWeight: 'bold' } });
     glyph.anchor.set(0.5);
     glyph.position.set(6 + faceSize / 2, 6 + faceSize / 2);
 
-    const nameX = this.wideSlot === undefined ? 74 : 116;
-    const nameY = this.wideSlot === undefined ? 7 : 8;
-    const name = new Text({ text: unit.name, style: { fontFamily: FONT, fontSize: this.wideSlot === undefined ? 18 : 22, fill: 0xffffff, fontWeight: 'bold' } });
+    const nameX = 74;
+    const nameY = 7;
+    const name = new Text({ text: unit.name, style: { fontFamily: FONT, fontSize: 18, fill: 0xffffff, fontWeight: 'bold' } });
     name.position.set(nameX, nameY);
 
     // 성씨/진영 한자 인장 배지
     const sealText = getCharacterSeal(unit.characterId, unit.name);
     const sealBadge = new Graphics();
     const sealX = nameX;
-    const sealY = this.wideSlot === undefined ? 30 : 38;
+    const sealY = 30;
     const sealSize = 17;
     const sealColor = unit.side === 'attacker' ? 0x133826 : 0x4a1818;
     sealBadge.roundRect(sealX, sealY, sealSize, sealSize, 3).fill(sealColor).stroke({ width: 1, color: 0xc8a96e });
@@ -109,13 +112,13 @@ export class UnitSprite {
     sealLabel.position.set(sealX + sealSize / 2, sealY + sealSize / 2);
 
     const subtitle = this.subtitle = new Text({
-      text: `${FAMILY_LABEL[unit.family]} · ${unit.row === 'front' ? '전열' : '후열'}`,
+      text: `${FAMILY_LABEL[unit.family]} · ${unit.slot + (unit.row === 'front' ? 1 : 4)}번`,
       style: { fontFamily: FONT, fontSize: 11, fill: 0xa0aec0 },
     });
     subtitle.position.set(sealX + sealSize + 6, sealY + 1);
 
-    this.troopsText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 11, fill: 0xf1f5f9, fontWeight: 'bold' } });
-    this.troopsText.position.set(this.cardWidth - 10, this.wideSlot === undefined ? 49 : 42);
+    this.troopsText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 18, fill: 0xf1f5f9, fontWeight: 'bold' } });
+    this.troopsText.position.set(this.cardWidth - 10, 57);
     this.troopsText.anchor.set(1, 0);
 
     // 전멸하면 병력 글자와 바를 숨기고 그 자리에 "전멸"을 보여 준다 (이름과 겹치지 않게)
@@ -138,9 +141,10 @@ export class UnitSprite {
     this.buffText.position.set(this.infoLeft, 96);
     this.buffs = { ...unit.buffs };
     this.barrier = unit.barrier;
+    this.debuffs = unit.debuffs?.map(d => ({ ...d })) ?? [];
 
     this.root.addChild(
-      bg, portrait, glyph, sealBadge, sealLabel, name, subtitle, this.troopsText, this.hpBar, this.pips, this.apText,
+      bg, portrait, glyph, sealBadge, sealLabel, name, subtitle, this.troopsText, this.pips, this.apText,
       this.guardBadge, this.guardText, this.buffText, this.flashOverlay, this.ring, this.deadText,
     );
     name.scale.x = Math.min(1, (this.cardWidth - name.x - 12) / Math.max(1, name.width));
@@ -167,11 +171,11 @@ export class UnitSprite {
     this.setDead(unit.dead);
   }
 
-  private get cardWidth() { return this.wideSlot === undefined ? CARD_W : 430; }
-  private get infoLeft() { return this.wideSlot === undefined ? 10 : 120; }
+  private get cardWidth() { return CARD_W; }
+  private get infoLeft() { return 10; }
 
   private cardPosition(row: Row, slot: number) {
-    return cardLayout(this.side, row, slot, this.wideSlot);
+    return cardLayout(this.side, row, slot);
   }
 
   /** 카드 중심의 월드 좌표 */
@@ -216,6 +220,7 @@ export class UnitSprite {
 
   private drawBuffs(): void {
     const parts: string[] = [];
+    for (const d of this.debuffs) parts.push(`◆${d.name} ${d.roundsLeft}`);
     if (this.barrier > 0) parts.push(`결계${this.barrier}`);
     for (const key of ['attack', 'defense', 'intellect', 'speed'] as const) {
       if (this.buffs[key] > 0) parts.push(`${STAT_SHORT[key]}+${this.buffs[key]}`);
@@ -224,6 +229,17 @@ export class UnitSprite {
     this.buffText.x = this.infoLeft + (this.guardRate > 0 ? this.guardText.width + 20 : 0);
     this.buffText.scale.x = 1;
     this.buffText.scale.x = Math.min(1, (this.cardWidth - 10 - this.buffText.x) / Math.max(1, this.buffText.width));
+  }
+
+  updateDebuff(id: string, name: string, rounds?: number): void {
+    this.debuffs = this.debuffs.filter(d => d.id !== id);
+    if (rounds !== undefined) this.debuffs.push({ id, name, roundsLeft: rounds });
+    this.drawBuffs();
+  }
+
+  tickDebuff(id: string): void {
+    this.debuffs = this.debuffs.map(d => d.id === id ? { ...d, roundsLeft: Math.max(0, d.roundsLeft - 1) } : d);
+    this.drawBuffs();
   }
 
   /** 병력 바와 숫자를 부드럽게 바꾼다 */
@@ -259,7 +275,9 @@ export class UnitSprite {
   }
 
   async moveToSlot(row: Row, slot: number): Promise<void> {
-    this.subtitle.text = this.subtitle.text.replace(/전열|후열/, row === 'front' ? '전열' : '후열');
+    this.slot = slot;
+    this.row = row;
+    this.subtitle.text = this.subtitle.text.replace(/\d번/, `${slot + (row === 'front' ? 1 : 4)}번`);
     const armyMove = this.army.moveToSlot(row, slot);
     const { x, y } = this.cardPosition(row, slot);
     const fromX = this.root.x;
@@ -329,9 +347,9 @@ export class UnitSprite {
 
   private showDeadLabel(dead: boolean): void {
     this.dead = dead;
+    this.root.zIndex = dead ? 0 : 1;
     this.deadText.visible = dead;
     this.troopsText.visible = !dead;
-    this.hpBar.visible = !dead;
     this.buffText.visible = !dead;
     this.updateGuardVisibility();
   }
@@ -343,16 +361,6 @@ export class UnitSprite {
   }
 
   private drawHp(value: number): void {
-    const g = this.hpBar;
-    g.clear();
-    const left = this.infoLeft;
-    const width = this.cardWidth - left - 10;
-    const y = this.wideSlot === undefined ? 66 : 64;
-    g.roundRect(left, y, width, 10, 3).fill(0x0c1116).stroke({ width: 1, color: 0x475569 });
-    const ratio = Math.max(0, Math.min(1, value / this.maxTroops));
-    if (ratio > 0) {
-      g.roundRect(left + 2, y + 2, (width - 4) * ratio, 6, 2).fill(ratio > 0.5 ? 0x22c55e : ratio > 0.25 ? 0xeab308 : 0xef4444);
-    }
     this.troopsText.text = `${Math.round(value)} / ${this.maxTroops}`;
   }
 

@@ -8,6 +8,7 @@ import { BattleScene } from '../render/BattleScene';
 import { CommandPanel } from './CommandPanel';
 import { LogPanel } from './LogPanel';
 import { CardActions } from './CardActions';
+import { TurnOrder } from './TurnOrder';
 
 interface Props {
   config: BattleConfig;
@@ -109,6 +110,7 @@ export function BattleView({ config, onExit, artTrial = false }: Props) {
 
       <div className="battle-board">
         <div ref={hostRef} className="stage" />
+        {snapshot && <TurnOrder snapshot={snapshot} />}
         {snapshot && <CardActions key={`${runId}:${snapshot.waiting?.uid}:${snapshot.log.length}`} snapshot={snapshot}
           onSubmit={command => void controller()?.submit(command)} />}
         {snapshot && (

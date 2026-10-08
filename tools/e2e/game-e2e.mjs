@@ -126,7 +126,12 @@ try {
   const beforeHover = await text('.log');
   await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point });
   await waitFor(`!!document.querySelector('.card-action-menu')`, 3000);
-  check('적 카드에 마우스를 올리면 공격과 예상 피해가 나온다', /피해/.test(await text('.card-action-menu')));
+  check('카드 위 화살표 커맨드는 이름만 표시하고 피해·확률을 숨긴다', await evalJs(`(() => {
+    const menu = document.querySelector('.card-action-menu'), card = menu.parentElement;
+    const m = menu.getBoundingClientRect(), c = card.getBoundingClientRect();
+    return !!menu.querySelector('.card-action-option') && !/피해|치명|확률|AP/.test(menu.textContent) && m.top >= c.top && m.top < c.bottom;
+  })()`));
+  check('행동 순서 이름표가 현재 행동자와 일치한다', await evalJs(`document.querySelector('.turn-badge[aria-current="step"]').dataset.unit === document.querySelector('.card-action-trigger[data-self="true"]').parentElement.dataset.unit`));
   check('적 카드에는 가드·대기·지원 행동이 없다', await evalJs(`![...document.querySelectorAll('.card-action-option')].some(b => ['guard','wait','buff','heal'].includes(b.dataset.kind))`));
   check('마우스를 올리는 것만으로 공격하지 않는다', beforeHover === await text('.log'));
   await shot('card-enemy-actions');
@@ -158,9 +163,8 @@ try {
     if (guard) {
       await shot('card-guard-actions');
       await evalJs(`document.querySelector('.card-action-option[data-kind="guard"]').click()`);
-      const rate = /막을 확률 (\d+)%/.exec(guard)?.[1];
       await waitFor(`document.querySelector('.log').textContent !== ${JSON.stringify(before)}`, 8000);
-      check('자기 카드에서 가드 실행 후 표시 확률이 로그에 반영된다', (await text('.log')).includes('가드 확률 '+rate+'%'));
+      check('숫자 예측 없이도 가드 커맨드를 실행한다', (await text('.log')).includes('가드 확률'));
       guarded = true;
     } else {
       await evalJs(`document.querySelector('.card-action-option[data-kind="wait"]').click()`);
@@ -223,7 +227,7 @@ try {
   check('중앙 지휘 패널이 양쪽 군단 카드를 가리지 않는다', dockClear);
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
   await sleep(400);
-  await evalJs(`document.querySelector('[aria-label="행동 메뉴 닫기"]')?.click()`);
+  await mouse(10, 10);
   await send('Emulation.setTouchEmulationEnabled', { enabled: true });
   const touchPoint = await evalJs(`(() => { const r = document.querySelector('.card-action-trigger[data-side="defender"]').getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}; })()`);
   await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [touchPoint] });
@@ -234,9 +238,11 @@ try {
   const mobileClear = await evalJs(`(() => {
     const stage = document.querySelector('.stage').getBoundingClientRect();
     const dock = document.querySelector('.command-dock').getBoundingClientRect();
-    return dock.top >= stage.bottom && document.documentElement.scrollWidth <= innerWidth;
+    const order = document.querySelector('.turn-order').getBoundingClientRect();
+    return dock.top >= stage.bottom && document.documentElement.scrollWidth <= innerWidth &&
+      order.top >= stage.top + stage.height * .50 && order.bottom <= stage.top + stage.height * .56;
   })()`);
-  check('좁은 화면은 지휘 패널을 전장 아래에 놓고 가로 넘침이 없다', mobileClear);
+  check('좁은 화면에서도 순서 줄은 전장 경계에 있고 지휘 패널만 아래로 이동한다', mobileClear);
   await shot('art-trial-mobile');
   await send('Emulation.clearDeviceMetricsOverride');
   await sleep(400);
@@ -274,6 +280,27 @@ try {
     ] };
     window.effectReview = { scene, view, wrapper };
   })()`);
+  const slotsOk = await evalJs(`(async () => {
+    const {scene, view} = window.effectReview;
+    const {applyEvent} = await import('/src/battle/viewState.ts');
+    const sparse = {...view, units: view.units.map((u, i) => ({...u, slot: i === 0 ? 2 : u.slot}))};
+    scene.setState(sparse); scene.setSpeed(0);
+    const labels = scene.world.children[0].children.filter(c => c.label?.startsWith('slot-'));
+    const before = scene.sprites.get('left');
+    const fixed = labels.length === 12 && before.root.x === 140 && before.root.y === 818 && before.army.root.y === 382;
+    const event = {type: 'rowAdvance', round: 2, side: 'attacker', units: ['left']};
+    await scene.playEvent(event);
+    const advanced = before.slot === 2 && before.root.x === 370 && before.root.y === 818 && before.army.root.y === 382;
+    const after = applyEvent(sparse, event);
+    scene.setState(after);
+    const rebuilt = scene.sprites.get('left');
+    const skipped = rebuilt.root.x === 370 && rebuilt.root.y === 818 && rebuilt.army.root.y === 382;
+    scene.setState(sparse);
+    const restarted = scene.sprites.get('left').root.x === 140 && scene.sprites.get('left').slot === 2;
+    scene.setState(view);
+    return fixed && advanced && skipped && restarted;
+  })()`);
+  check('소수 편성도 여섯 슬롯 고정: 6→3 이동·건너뛰기·재시작 위치 보존', slotsOk);
   const labelsOk = await evalJs(`(async () => {
     const {scene, view} = window.effectReview;
     scene.setState(view); scene.setSpeed(0);
@@ -291,6 +318,26 @@ try {
     return active && released && aligned && above && dead && scene.armyLabels.children.length === view.units.length;
   })()`);
   check('방패 표식·가드 해제·격파·열 이동 이름표와 재시작 정리가 정상이다', labelsOk);
+  const debuffsOk = await evalJs(`(async () => {
+    const {scene, view} = window.effectReview;
+    const {applyEvent} = await import('/src/battle/viewState.ts');
+    scene.setState(view); scene.setSpeed(0);
+    let state = view;
+    const apply = {type:'debuffApply',round:1,unit:'left',source:'right',debuffId:'burn',name:'화상',tick:40,rounds:2,refresh:false};
+    const tick = {type:'debuffTick',round:1,unit:'left',source:'right',debuffId:'burn',name:'화상',amount:40,troopsAfter:960};
+    for (const event of [apply, {...apply,refresh:true}, tick]) {
+      state = applyEvent(state,event); await scene.playEvent(event);
+    }
+    const sprite = scene.sprites.get('left');
+    const applied = sprite.buffText.text.includes('화상 1') && sprite.troops === 960 && sprite.debuffs.length === 1;
+    scene.setState(state);
+    const restored = scene.sprites.get('left').buffText.text.includes('화상 1');
+    await scene.playEvent({type:'debuffEnd',round:1,unit:'left',debuffId:'burn',name:'화상',reason:'cleanse'});
+    const cleared = !scene.sprites.get('left').buffText.text.includes('화상');
+    scene.setState(view);
+    return applied && restored && cleared;
+  })()`);
+  check('디버프 갱신·남은 라운드·틱 병력·건너뛰기·해제 표시', debuffsOk);
   for (const [skillId, kind, source, target] of [
     ['archer-shot', 'arrow', 'left', 'guard'],
     ['geomancer-shot', 'arrow', 'right', 'left'],

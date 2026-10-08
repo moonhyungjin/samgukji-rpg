@@ -11,6 +11,21 @@ import type { ViewState } from './viewState';
 const base = { data: gameData, balance: defaultBalance, attacker: presets.shu, defender: presets.wei, seed: 1 };
 
 describe('viewState: 이벤트만으로 최종 상태를 재구성한다', () => {
+  it('디버프는 갱신 시 중복 없이 남은 라운드를 표시하고 종료 시 제거한다', () => {
+    const engine = new BattleEngine(base);
+    const initial = createViewState(engine.state.units, 50);
+    const unit = initial.units[0];
+    const applied: BattleEvent = { type: 'debuffApply', round: 1, unit: unit.uid, source: 'defender:0', debuffId: 'burn', name: '화상', tick: 10, rounds: 2, refresh: false };
+    const refreshed = applyEvents(initial, [applied, { ...applied, rounds: 3, refresh: true }]);
+    expect(refreshed.units[0].debuffs).toEqual([{ id: 'burn', name: '화상', roundsLeft: 3 }]);
+    const ticked = applyEvent(refreshed, { type: 'debuffTick', round: 1, unit: unit.uid, source: 'defender:0', debuffId: 'burn', name: '화상', amount: 10, troopsAfter: 100 });
+    expect(ticked.units[0]).toMatchObject({ troops: 100, debuffs: [{ id: 'burn', roundsLeft: 2 }] });
+    for (const reason of ['expire', 'cleanse'] as const) {
+      const ended = applyEvent(ticked, { type: 'debuffEnd', round: 1, unit: unit.uid, debuffId: 'burn', name: '화상', reason });
+      expect(ended.units[0].debuffs).toEqual([]);
+    }
+    expect(initial.units[0].debuffs ?? []).toEqual([]);
+  });
   it('엔진의 최종 상태와 같다 (병력, AP, 열, 전멸, 라운드, 사기, 결과)', () => {
     // 기본 수치에서는 전열 3군단이 모두 쓰러지는 일이 거의 없어 열 이동이 일어나지 않는다.
     // 열 이동 이벤트까지 검증하도록 피해를 키운 조건도 함께 돌린다.
@@ -65,14 +80,16 @@ describe('viewState: 이벤트만으로 최종 상태를 재구성한다', () =>
     expect(JSON.stringify(initial)).toBe(snapshot);
   });
 
-  it('열 이동 이벤트는 순서대로 슬롯을 다시 매긴다', () => {
+  it('열 이동 이벤트는 중간 빈칸이 있어도 원래 슬롯을 보존한다', () => {
     const engine = new BattleEngine({ ...base });
     const initial = createViewState(engine.state.units, 50);
-    const back = initial.units.filter((u) => u.side === 'defender' && u.row === 'back').map((u) => u.uid);
+    const rear = initial.units.filter((u) => u.side === 'defender' && u.row === 'back');
+    rear[0].dead = true;
+    const back = rear.slice(1).map(u => u.uid);
     const event: BattleEvent = { type: 'rowAdvance', round: 2, side: 'defender', units: back };
     const next = applyEvent(initial, event);
-    back.forEach((uid, index) => {
-      expect(next.units.find((u) => u.uid === uid)).toMatchObject({ row: 'front', slot: index });
+    back.forEach((uid) => {
+      expect(next.units.find((u) => u.uid === uid)).toMatchObject({ row: 'front', slot: initial.units.find(u => u.uid === uid)!.slot });
     });
   });
 
@@ -218,6 +235,15 @@ function setup(playerSide: Side | null, scene = new FakeScene()) {
 }
 
 describe('BattleController', () => {
+  it('이름표 순서는 같은 라운드에서 실제 재생할 행동과 일치하고 종료하면 비운다', async () => {
+    const { controller, session, snapshots, last } = setup(null);
+    await controller.start();
+    const queued = snapshots.find(s => s.view.round === 1 && (s.turnOrder?.length ?? 0) > 1 && s.turnOrder?.every(t => !t.current))!;
+    expect(queued).toBeDefined();
+    const actual = session.engine.events.filter(e => e.type === 'action' && e.round === 1).map(e => e.type === 'action' ? e.actor : '');
+    expect(queued.turnOrder?.map(t => t.uid)).toEqual(actual);
+    expect(last().turnOrder).toEqual([]);
+  });
   it('관전: 끝까지 재생하고 화면 상태가 엔진의 최종 상태와 같다', async () => {
     const { controller, scene, last, session } = setup(null);
     await controller.start();
@@ -248,6 +274,8 @@ describe('BattleController', () => {
     expect(snap.phase).toBe('awaiting');
     expect(snap.waiting).not.toBeNull();
     expect(scene.acting).toBe(snap.waiting!.uid);
+    // 엔진이 공개하지 않은 수동 대기 이후의 순서를 지어내지 않는다.
+    expect(snap.turnOrder).toEqual([{ uid: snap.waiting!.uid, current: true }]);
     const command = snap.waiting!.commands[0];
     expect(command.skillName).toBeTruthy();
     expect(command.targets.length).toBeGreaterThan(0);
