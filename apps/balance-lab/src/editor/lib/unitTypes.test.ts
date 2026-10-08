@@ -125,25 +125,22 @@ describe('병종 요약과 변경 비교', () => {
   });
 });
 
-describe('승급 트리와 승급 스탯 보너스 (promotionBonus)', () => {
+describe('승급 트리와 스탯 보정 (statMods)', () => {
   const infantry = normalizeUnitType(gameData.unitTypes.infantry);
 
-  it('저장 형식에는 승급 보너스가 5개 스탯 모두 항상 들어간다 (statMods 바로 다음)', () => {
-    const n = normalizeUnitType({ ...infantry, promotionBonus: { attack: 1 } });
-    expect(n.promotionBonus).toEqual({ attack: 1, defense: 0, intellect: 0, speed: 0, action: 0 });
-    const keys = Object.keys(n);
-    expect(keys.indexOf('promotionBonus')).toBe(keys.indexOf('statMods') + 1);
+  it('저장 형식에는 스탯 보정이 5개 스탯 모두 항상 들어가고 승급 보너스 칸은 없다', () => {
+    const n = normalizeUnitType({ ...infantry, statMods: { attack: 1 } });
+    expect(n.statMods).toEqual({ attack: 1, defense: 0, intellect: 0, speed: 0, action: 0 });
+    expect(Object.keys(n)).not.toContain('promotionBonus');
   });
 
   it('카드에서 한 칸을 고쳐도 다른 칸은 그대로다', () => {
-    const base = normalizeUnitType({ ...infantry, promotionBonus: { attack: 2, speed: 1 } });
-    const next = applyUnitTypePatch(base, { promotionBonus: { attack: 3 } });
-    expect(next.promotionBonus).toMatchObject({ attack: 3, speed: 1 });
+    const base = normalizeUnitType({ ...infantry, statMods: { attack: 2, speed: 1 } });
+    const next = applyUnitTypePatch(base, { statMods: { attack: 3 } });
+    expect(next.statMods).toMatchObject({ attack: 3, speed: 1 });
   });
 
-  it('음수 보너스와 없는 승급 대상은 오류다', () => {
-    const bad = normalizeUnitType({ ...infantry, promotionBonus: { attack: -1 } });
-    expect(validateUnitTypes([bad], gameData).filter((i) => i.level === 'error' && i.message.includes('승급 보너스'))).toHaveLength(1);
+  it('없는 승급 대상은 오류다', () => {
     const ghost = normalizeUnitType({ ...infantry, promotesTo: ['nope'] });
     expect(validateUnitTypes([ghost], gameData).some((i) => i.level === 'error' && i.message.includes('승급 대상'))).toBe(true);
   });
@@ -160,9 +157,8 @@ describe('승급 트리와 승급 스탯 보너스 (promotionBonus)', () => {
     expect(promotionPathLabel(list, 'b2')).toBe('base → b → b2');
   });
 
-  it('지금 데이터: 승급 보너스는 모두 0 이상이고 승급 대상은 모두 있는 병종이다', () => {
+  it('지금 데이터: 승급 대상은 모두 있는 병종이다', () => {
     for (const u of Object.values(gameData.unitTypes)) {
-      for (const v of Object.values(u.promotionBonus ?? {})) expect(v).toBeGreaterThanOrEqual(0);
       for (const id of u.promotesTo) expect(gameData.unitTypes[id]).toBeDefined();
     }
   });
@@ -190,10 +186,54 @@ describe('승급 트리 목록 (unitTypeTrees)', () => {
     expect([...ids].sort()).toEqual(['x', 'y']);
   });
 
-  it('지금 데이터: 기병/보병/방패병/궁병은 트리(1+2+2)이고 책사/도사/풍수사는 혼자다', () => {
+  it('지금 데이터: 일곱 계열 모두 승급 트리(뿌리 1 + 1차 2 + 2차 2)다', () => {
     const trees = unitTypeTrees(Object.values(gameData.unitTypes));
     const size = (n: (typeof trees)[number]): number => 1 + n.children.reduce((s, c) => s + size(c), 0);
-    for (const root of ['infantry', 'shield', 'cavalry', 'archer']) expect(size(trees.find((t) => t.unit.id === root)!), root).toBe(5);
-    for (const root of ['strategist', 'taoist', 'geomancer']) expect(size(trees.find((t) => t.unit.id === root)!), root).toBe(1);
+    expect(trees.map((t) => t.unit.id).sort()).toEqual(['archer', 'cavalry', 'geomancer', 'infantry', 'shield', 'strategist', 'taoist']);
+    for (const t of trees) expect(size(t), t.unit.id).toBe(5);
+  });
+});
+
+describe('반격 배율 (counterPower)', () => {
+  const infantry = normalizeUnitType(gameData.unitTypes.infantry);
+
+  it('저장 형식에는 반격 배율이 항상 들어간다 (반격함 바로 다음, 없으면 1)', () => {
+    const n = normalizeUnitType({ ...infantry, counterPower: undefined });
+    expect(n.counterPower).toBe(1);
+    const keys = Object.keys(n);
+    expect(keys.indexOf('counterPower')).toBe(keys.indexOf('canCounter') + 1);
+  });
+
+  it('음수는 오류다', () => {
+    const bad = normalizeUnitType({ ...infantry, counterPower: -1 });
+    expect(validateUnitTypes([bad], gameData).some((i) => i.level === 'error' && i.message.includes('반격 배율'))).toBe(true);
+  });
+
+  it('지금 데이터: 근위대는 반격이 센 병종이다 (반격 배율 > 1)', () => {
+    expect(gameData.unitTypes['royal-guard'].counterPower).toBeGreaterThan(1);
+  });
+});
+
+describe('가드 규칙 값 (scope, interceptsMagic, keepOnAttack)', () => {
+  const shield = normalizeUnitType(gameData.unitTypes.shield);
+
+  it('저장 형식에는 가드 규칙 값이 항상 들어간다 (생략하면 같은 열, 도술 못 막음, 공격하면 풀림)', () => {
+    const n = normalizeUnitType({ ...shield, guard: { start: 50, gain: 0, decay: 40 } });
+    expect(n.guard).toMatchObject({ scope: 'row', interceptsMagic: false, keepOnAttack: false });
+  });
+
+  it('값을 정하면 그대로 저장된다', () => {
+    const n = normalizeUnitType({ ...shield, guard: { ...shield.guard!, scope: 'all', interceptsMagic: true, keepOnAttack: true } });
+    expect(n.guard).toMatchObject({ scope: 'all', interceptsMagic: true, keepOnAttack: true });
+  });
+
+  it('지금 데이터: 호위병은 전체 가드, 귀갑병은 전체 가드 + 도술 방어, 철벽대는 가드 유지 공격', () => {
+    const U = gameData.unitTypes;
+    expect(U.escort.guard?.scope).toBe('all');
+    expect(U['armored-guard'].guard).toMatchObject({ scope: 'all', interceptsMagic: true });
+    expect(U['iron-wall'].guard?.keepOnAttack).toBe(true);
+    // 방패병과 중방패병은 보통 가드다
+    expect(U.shield.guard?.scope ?? 'row').toBe('row');
+    expect(U['heavy-shield'].guard?.keepOnAttack ?? false).toBe(false);
   });
 });

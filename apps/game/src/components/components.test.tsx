@@ -6,6 +6,7 @@ import type { ControllerSnapshot, SceneLike } from '../battle/controller';
 import { PlaySession } from '../battle/session';
 import { DEFAULT_CONFIG } from '../lib/config';
 import { CommandPanel, previewText } from './CommandPanel';
+import { CardActions } from './CardActions';
 import { LogPanel } from './LogPanel';
 import { SetupPanel } from './SetupPanel';
 
@@ -33,7 +34,7 @@ const noop = () => {};
 // 서버 렌더링은 인접한 텍스트 사이에 <!-- --> 를 끼워 넣는다. 브라우저의 textContent에는 없으므로 비교 전에 지운다.
 const html = (node: React.ReactElement) => renderToString(node).replace(/<!-- -->/g, '');
 const panel = (snapshot: ControllerSnapshot) =>
-  html(<CommandPanel snapshot={snapshot} onSelectSkill={noop} onSubmit={noop} onAutoplay={noop} onSkip={noop} onRestart={noop} onExit={noop} />);
+  html(<CommandPanel snapshot={snapshot} onAutoplay={noop} onSkip={noop} onRestart={noop} onExit={noop} />);
 
 describe('previewText', () => {
   it('공격: 피해, 격파, 반격을 보여 준다', () => {
@@ -69,23 +70,30 @@ describe('previewText', () => {
 });
 
 describe('CommandPanel', () => {
-  it('내 차례: 군단 정보, 스킬, 대기, AI 위임 버튼이 나온다', async () => {
+  it('전멸 카드는 합법적인 부활 대상일 때만 조작할 수 있다', async () => {
+    const snap = await snapshotOf('attacker');
+    const fallen = snap.view.units.find(u => u.uid !== snap.waiting!.uid)!;
+    const view = { ...snap.view, units: snap.view.units.map(u => u.uid === fallen.uid ? { ...u, dead: true, troops: 0 } : u) };
+    const waiting = { ...snap.waiting!, commands: [] };
+    expect(html(<CardActions snapshot={{ ...snap, view, waiting }} onSubmit={noop} />)).not.toContain(`${fallen.name} 행동 보기`);
+    expect(html(<CardActions snapshot={{ ...snap, view, waiting: { ...waiting, commands: [{ skillId: 'revive', skillName: '부활', kind: 'revive', apCost: 1, targets: [{ uid: fallen.uid, name: fallen.name, troops: 0, maxTroops: fallen.maxTroops, preview: { kind: 'revive', troops: 100 } }] }] } }} onSubmit={noop} />)).toContain(`${fallen.name} 행동 보기`);
+  });
+  it('내 차례: 군단 정보, 카드 조작 안내, AI 위임만 나온다', async () => {
     const html = panel(await snapshotOf('attacker'));
     expect(html).toContain('의 차례');
-    expect(html).toContain('AP 4/4');
-    expect(html).toContain('돌격 (AP 1)');
-    expect(html).toContain('대기 (AP 소모 없음)');
+    expect(html).toMatch(/AP \d+\/\d+/); // 첫 차례 군단은 속도와 병종에 따라 바뀐다
+    expect(html).not.toContain('aria-pressed');
+    expect(html).not.toContain('대기 (AP 소모 없음)');
     expect(html).toContain('AI에게 맡기기');
-    expect(html).toContain('스킬을 고르면 대상과 예상 결과가 나옵니다');
+    expect(html).toContain('군단 카드에 마우스를 올리거나');
     expect(html).not.toContain('NaN');
     expect(html).not.toContain('undefined');
   });
 
-  it('스킬을 고르면 대상별 병력과 예상 결과가 나온다', async () => {
+  it('이전 스킬 선택 상태가 남아도 중앙 대상 목록은 표시하지 않는다', async () => {
     const html = panel(await snapshotOf('attacker', true));
-    expect(html).toContain('대상을 고르세요');
-    expect(html).toContain('허저');
-    expect(html).toMatch(/피해 \d+/);
+    expect(html).not.toContain('대상을 고르세요');
+    expect(html).not.toContain('class="targets"');
     // 최대 병력은 병종 병력 배율과 밸런스 수치에 따라 Lab에서 바뀐다
     expect(html).toMatch(/병력 \d+\/\d+/);
   });

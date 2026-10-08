@@ -25,7 +25,7 @@ export function formatEvent(event: BattleEvent, names: ReadonlyMap<string, strin
       if (event.reason === 'reset') return `    ${name(event.unit)} 가드 해제 (공격)`;
       return `    ${name(event.unit)} 가드 확률 ${event.rate}%`;
     case 'damage':
-      return `    ${event.critical ? '치명타! ' : ''}${event.kind === 'counter' ? '반격' : '피해'} ${event.amount} → ${name(event.target)} (병력 ${event.troopsAfter})`;
+      return `    ${event.critical ? '치명타! ' : ''}${event.splash ? '관통 ' : ''}${event.kind === 'counter' ? '반격' : '피해'} ${event.amount} → ${name(event.target)} (병력 ${event.troopsAfter})`;
     case 'heal':
       return `    회복 ${event.amount} → ${name(event.target)} (병력 ${event.troopsAfter})`;
     case 'buff':
@@ -36,6 +36,8 @@ export function formatEvent(event: BattleEvent, names: ReadonlyMap<string, strin
         : `    결계가 피해를 무시 → ${name(event.unit)} (남은 ${event.charges}회)`;
     case 'unitDestroyed':
       return `    ✕ ${name(event.unit)} 전멸`;
+    case 'revive':
+      return `    ✚ ${name(event.target)} 부활 (병력 ${event.troopsAfter}, ${event.row === 'front' ? '전열' : '후열'})`;
     case 'rowAdvance':
       return `    ▶ ${SIDE_LABEL[event.side]} 후열이 전열로: ${event.units.map(name).join(', ')}`;
     case 'battleEnd':

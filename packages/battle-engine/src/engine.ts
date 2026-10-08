@@ -5,7 +5,7 @@ import { defaultCommandPolicy } from './policy';
 import type { Command, CommandPolicy } from './policy';
 import { createRng } from './rng';
 import type { Rng } from './rng';
-import { canBuff, TargetSelector } from './targeting';
+import { canBuff, reviveRow, reviveTargets, TargetSelector } from './targeting';
 import { buildTurnOrder } from './turnOrder';
 import type {
   BalanceConfig,
@@ -53,12 +53,17 @@ export type CommandPreview =
       interceptChance: number;
       /** 원래 대상에게 피해 무시(결계)가 남아 있는가. true면 이 공격은 피해가 0이 된다 */
       targetBarrier: boolean;
+      /** 동시 타격: 함께 맞는 후열 군단과 그 피해 (남은 병력으로 잘린 값) */
+      alsoHit?: { uid: string; damage: number };
+      /** 열 공격: 조준한 대상 말고 같은 열에서 함께 맞는 군단들과 그 피해 (남은 병력으로 잘린 값) */
+      rowHits?: { uid: string; damage: number }[];
       /** 크리티컬이 켜져 있을 때만: 확률(%)과 크리티컬이 났을 때의 피해 (남은 병력으로 잘린 값) */
       criticalChance?: number;
       criticalDamage?: number;
     }
-  | { kind: 'heal'; amount: number }
-  | { kind: 'buff'; effect: BuffEffect }
+  | { kind: 'revive'; troops: number }
+  | { kind: 'heal'; amount: number; /** 범위 치유: 함께 회복하는 아군들 */ alsoHealed?: { uid: string; amount: number }[] }
+  | { kind: 'buff'; effect: BuffEffect; /** 범위 버프: 함께 받는 아군들 */ alsoBuffed?: string[] }
   | { kind: 'guard'; rateAfter: number };
 
 /**
@@ -194,9 +199,11 @@ export class BattleEngine {
     for (const id of [unitType.basicSkillId, ...unitType.extraSkillIds]) {
       const skill = data.skills[id];
       if (!skill || skill.apCost > actor.ap) continue;
+      if (skill.kind !== 'revive' && skill.maxUses !== undefined && (actor.skillUses?.[skill.id] ?? 0) >= skill.maxUses) continue;
       let targets: CharacterState[];
       if (skill.kind === 'heal') targets = TargetSelector.getAllies(actor, this.state);
       else if (skill.kind === 'buff') targets = TargetSelector.getAllies(actor, this.state).filter((u) => canBuff(u, skill));
+      else if (skill.kind === 'revive') targets = reviveTargets(actor, this.state, skill);
       else if (skill.kind === 'guard') targets = unitType.guard ? [actor] : []; // 가드는 자기 자신에게 쓴다
       else targets = TargetSelector.getValidTargets(actor, this.state, unitType.range);
       if (targets.length > 0) commands.push({ skillId: id, targetUids: targets.map((t) => t.uid) });
@@ -212,20 +219,24 @@ export class BattleEngine {
     if (!skill || !target) throw new Error(`Unknown skill or target: ${skillId} ${targetUid}`);
 
     if (skill.kind === 'heal') {
-      return { kind: 'heal', amount: Math.min(this.calc.heal(actor, skill), target.maxTroops - target.troops) };
+      const amountFor = (u: CharacterState) => Math.min(this.calc.heal(actor, skill), u.maxTroops - u.troops);
+      const others = this.areaRecipients(actor, target, skill).filter((u) => u.uid !== target.uid).map((u) => ({ uid: u.uid, amount: amountFor(u) }));
+      return { kind: 'heal', amount: amountFor(target), ...(others.length > 0 ? { alsoHealed: others } : {}) };
     }
-    if (skill.kind === 'buff' && skill.buff) return { kind: 'buff', effect: skill.buff };
+    if (skill.kind === 'revive') return { kind: 'revive', troops: this.reviveTroops(target, skill) };
+    if (skill.kind === 'buff' && skill.buff) {
+      const others = this.areaRecipients(actor, target, skill).filter((u) => u.uid !== target.uid).map((u) => u.uid);
+      return { kind: 'buff', effect: skill.buff, ...(others.length > 0 ? { alsoBuffed: others } : {}) };
+    }
     if (skill.kind === 'guard') {
       return { kind: 'guard', rateAfter: actor.guardRate + this.guardGain(actor) };
     }
 
     // 가드 유닛이 순서대로 판정하므로, 아무도 막지 못할 확률은 각자 못 막을 확률의 곱이다.
     let noIntercept = 1;
-    if (skill.guardable) {
-      for (const guardian of this.guardiansFor(target)) noIntercept *= 1 - Math.min(guardian.guardRate, 100) / 100;
-    }
+    for (const guardian of this.guardiansFor(target, skill)) noIntercept *= 1 - Math.min(guardian.guardRate, 100) / 100;
 
-    const damage = Math.min(this.calc.damage(actor, target, skill, this.moraleShare(actor.side)), target.troops);
+    const damage = Math.min(this.victimAmount(actor, target, skill), target.troops);
     const remaining = target.troops - damage;
     let counter = 0;
     const targetType = data.unitTypes[target.unitType];
@@ -245,6 +256,8 @@ export class BattleEngine {
       actorTroopsAfter: actor.troops - counter,
       interceptChance: 1 - noIntercept,
       targetBarrier: target.barrier > 0,
+      ...(this.behindTarget(target, skill) ? { alsoHit: { uid: this.behindTarget(target, skill)!.uid, damage: Math.min(this.behindAmount(actor, this.behindTarget(target, skill)!, skill), this.behindTarget(target, skill)!.troops) } } : {}),
+      ...(this.rowVictims(target, skill).length > 1 ? { rowHits: this.rowVictims(target, skill).slice(1).map((u) => ({ uid: u.uid, damage: Math.min(this.victimAmount(actor, u, skill), u.troops) })) } : {}),
       ...(this.criticalOn() && damage > 0 ? { criticalChance: balance.critical!.chance, criticalDamage: Math.min(this.criticalAmount(this.calc.damage(actor, target, skill, this.moraleShare(actor.side))), target.troops) } : {}),
     };
   }
@@ -307,38 +320,46 @@ export class BattleEngine {
       apAfter: actor.ap,
     });
 
+    if (skill.maxUses !== undefined && skill.kind !== 'revive') actor.skillUses = { ...(actor.skillUses ?? {}), [skill.id]: (actor.skillUses?.[skill.id] ?? 0) + 1 };
     if (skill.kind === 'attack') this.performAttack(actor, target, skill);
     else if (skill.kind === 'guard') this.performGuard(actor);
     else if (skill.kind === 'buff') this.performBuff(actor, target, skill);
+    else if (skill.kind === 'revive') this.performRevive(actor, target, skill);
     else this.performHeal(actor, target, skill);
     return true;
   }
 
   private performAttack(actor: CharacterState, originalTarget: CharacterState, skill: SkillData): void {
-    // 막기만 하거나 공격만 해야 한다: 공격하는 순간 가드 확률이 모두 사라진다.
-    this.setGuardRate(actor, 0, 'reset');
+    // 막기만 하거나 공격만 해야 한다: 공격하는 순간 가드 확률이 모두 사라진다 (공격해도 가드를 유지하는 병종은 예외).
+    if (!this.input.data.unitTypes[actor.unitType].guard?.keepOnAttack) this.setGuardRate(actor, 0, 'reset');
 
     // 같은 열의 가드 유닛이 대신 맞을 수 있다. 이후의 피해와 반격은 실제로 맞는 쪽(target) 기준이다.
     let target = originalTarget;
-    if (skill.guardable) {
-      const guardian = this.rollIntercept(originalTarget);
-      if (guardian) {
-        // 순서: 가드 발동 → 확률 감소 → 피해 (화면 연출이 이 순서로 재생된다)
-        this.emit({ type: 'intercept', round: this.state.round, attacker: actor.uid, target: originalTarget.uid, guardian: guardian.uid });
-        this.report(guardian).blocks++;
-        target = guardian;
-      }
+    const rowHit = (skill.rowAttack ?? 0) > 0;
+    const guardian = rowHit ? null : this.rollIntercept(originalTarget, skill); // 열 공격은 대신 맞기가 없다
+    if (guardian) {
+      // 순서: 가드 발동 → 확률 감소 → 피해 (화면 연출이 이 순서로 재생된다)
+      this.emit({ type: 'intercept', round: this.state.round, attacker: actor.uid, target: originalTarget.uid, guardian: guardian.uid });
+      this.report(guardian).blocks++;
+      target = guardian;
     }
 
     // 피해는 가드 상태(받는 피해 감소)로 먼저 계산하고, 가드 중에 맞으면 확률이 준다 (대신 맞든 직접 맞든, 원작 규칙).
-    let amount = this.calc.damage(actor, target, skill, this.moraleShare(actor.side));
-    // 크리티컬: 확률이 켜져 있고 맞을 때만 난수를 쓴다 (꺼져 있으면 기존 시드 결과가 그대로다)
+    // 열 공격은 같은 열 전체(조준한 대상이 첫 번째)가 각자 기준으로 맞는다.
+    const victims = this.rowVictims(target, skill);
+    let amount = this.victimAmount(actor, target, skill);
+    // 크리티컬: 확률이 켜져 있고 맞을 때만 난수를 쓴다 (꺼져 있으면 기존 시드 결과가 그대로다). 열 공격도 한 번만 굴린다.
     const critical = this.criticalOn() && amount > 0 && this.rng() * 100 < this.input.balance.critical!.chance;
     if (critical) amount = this.criticalAmount(amount);
-    const guard = this.input.data.unitTypes[target.unitType].guard;
-    if (guard && target.guardRate > 0 && target.barrier === 0) this.setGuardRate(target, Math.max(0, target.guardRate - guard.decay), 'block');
     const troopsBeforeHit = target.troops;
-    this.skillStat(skill.id).damage += this.inflict(actor, target, amount, 'attack', critical);
+    victims.forEach((victim, index) => {
+      let hit = index === 0 ? amount : this.victimAmount(actor, victim, skill);
+      if (index > 0 && critical) hit = this.criticalAmount(hit);
+      const guard = this.input.data.unitTypes[victim.unitType].guard;
+      if (guard && victim.guardRate > 0 && victim.barrier === 0) this.setGuardRate(victim, Math.max(0, victim.guardRate - guard.decay), 'block');
+      this.skillStat(skill.id).damage += this.inflict(actor, victim, hit, 'attack', critical, index > 0);
+    });
+    this.hitBehind(actor, originalTarget, skill, critical);
 
     // 상호 피해: 근접 공격을 받은 대상이 살아 있으면 반격한다. 반격의 세기는 맞기 전 병력으로 계산한다 (원작 규칙).
     const { data } = this.input;
@@ -366,9 +387,44 @@ export class BattleEngine {
     return Math.round(guard.gain + unit.stats.intellect * (guard.gainPerIntellect ?? 0));
   }
 
+  /** 버프/치유를 받는 아군들: 범위가 없으면 대상 하나, row면 대상이 있는 열 전체, all이면 아군 전체. 대상이 맨 앞에 온다 */
+  private areaRecipients(actor: CharacterState, target: CharacterState, skill: SkillData): CharacterState[] {
+    if (!skill.area) return [target];
+    const allies = this.state.units.filter((u) => u.side === actor.side && !u.isDead && u.uid !== target.uid && (skill.area === 'all' || u.row === target.row));
+    const eligible = skill.kind === 'buff' ? allies.filter((u) => canBuff(u, skill)) : allies;
+    return [target, ...eligible.sort((x, y) => (x.row === y.row ? x.slot - y.slot : x.row === 'front' ? -1 : 1))];
+  }
+
+  private reviveTroops(target: CharacterState, skill: SkillData): number {
+    return Math.max(1, Math.round(target.maxTroops * (skill.reviveRatio ?? 0.2)));
+  }
+
+  /** 부활: 전멸한 아군을 적은 병력으로 되살린다. 결계는 사라지고 가드는 시작값으로 돌아오며, 남은 AP는 그대로다. */
+  private performRevive(actor: CharacterState, target: CharacterState, skill: SkillData): void {
+    const row = reviveRow(target, this.state);
+    if (!row) throw new Error(`No room to revive ${target.name}`);
+    actor.skillUses = { ...(actor.skillUses ?? {}), [skill.id]: (actor.skillUses?.[skill.id] ?? 0) + 1 };
+    const troops = this.reviveTroops(target, skill);
+    const slot = this.state.units.filter((u) => u.side === target.side && !u.isDead && u.row === row).length;
+    target.isDead = false;
+    target.troops = troops;
+    target.row = row;
+    target.slot = slot;
+    target.barrier = 0;
+    target.guardRate = this.input.data.unitTypes[target.unitType].guard?.start ?? 0;
+    this.report(actor).healing += troops;
+    this.skillStat(skill.id).healing += troops;
+    this.emit({ type: 'revive', round: this.state.round, source: actor.uid, target: target.uid, troopsAfter: troops, row, slot });
+  }
+
   private performBuff(actor: CharacterState, target: CharacterState, skill: SkillData): void {
     const buff = skill.buff;
     if (!buff) throw new Error(`Skill ${skill.id} has no buff effect`);
+    for (const unit of this.areaRecipients(actor, target, skill)) this.applyBuff(actor, unit, skill);
+  }
+
+  private applyBuff(actor: CharacterState, target: CharacterState, skill: SkillData): void {
+    const buff = skill.buff!;
     target.buffUses[skill.id] = (target.buffUses[skill.id] ?? 0) + 1;
 
     if (buff.type === 'barrier') {
@@ -393,21 +449,31 @@ export class BattleEngine {
   // ---------- 가드 ----------
 
   /** target과 같은 열의 다른 아군 중 가드 확률이 있는 유닛. 확률이 높은 순서로 판정한다. */
-  private guardiansFor(target: CharacterState): CharacterState[] {
+  /**
+   * 이 공격을 대신 맞을 수 있는 가드 군단들 (가드 확률이 높은 순).
+   * 같은 열 아군만 지키는 가드(scope row)와 모든 아군을 지키는 가드(scope all)가 있고, 가드로 막을 수 있는 공격(guardable)은 모든 가드가,
+   * 지력 기반 공격은 interceptsMagic인 가드만 막는다.
+   */
+  private guardiansFor(target: CharacterState, skill: SkillData): CharacterState[] {
+    if (skill.kind !== 'attack') return [];
     return this.state.units
-      .filter((u) => u.side === target.side && !u.isDead && u.uid !== target.uid && u.row === target.row && u.guardRate > 0)
+      .filter((u) => {
+        if (u.side !== target.side || u.isDead || u.uid === target.uid || u.guardRate <= 0) return false;
+        const guard = this.input.data.unitTypes[u.unitType].guard;
+        if (!guard) return false;
+        if (guard.scope !== 'all' && u.row !== target.row) return false;
+        return skill.guardable === true || (guard.interceptsMagic === true && skill.scalesWith === 'intellect');
+      })
       .sort((a, b) => b.guardRate - a.guardRate);
   }
 
-  /** 가드 유닛을 확률이 높은 순서로 판정해 처음 성공한 유닛을 돌려준다 (상태는 바꾸지 않는다). */
-  private rollIntercept(target: CharacterState): CharacterState | null {
-    for (const guardian of this.guardiansFor(target)) {
+  private rollIntercept(target: CharacterState, skill: SkillData): CharacterState | null {
+    for (const guardian of this.guardiansFor(target, skill)) {
       if (this.rng() * 100 < guardian.guardRate) return guardian;
     }
     return null;
   }
 
-  /** 가드 확률을 바꾸고 이벤트를 남긴다. 값이 그대로면 아무것도 하지 않는다. */
   private setGuardRate(unit: CharacterState, rate: number, reason: 'raise' | 'block' | 'reset'): void {
     if (unit.guardRate === rate) return;
     unit.guardRate = rate;
@@ -416,18 +482,49 @@ export class BattleEngine {
 
   private performHeal(actor: CharacterState, target: CharacterState, skill: SkillData): void {
     const amount = this.calc.heal(actor, skill);
-    const applied = Math.min(amount, target.maxTroops - target.troops);
-    target.troops += applied;
-    this.report(actor).healing += applied;
-    this.skillStat(skill.id).healing += applied;
-    this.emit({
-      type: 'heal',
-      round: this.state.round,
-      source: actor.uid,
-      target: target.uid,
-      amount: applied,
-      troopsAfter: target.troops,
-    });
+    for (const unit of this.areaRecipients(actor, target, skill)) {
+      const applied = Math.min(amount, unit.maxTroops - unit.troops);
+      // 범위 치유에서 이미 가득 찬 아군은 건너뛴다 (대상 하나를 직접 고른 경우는 0이어도 그대로 기록한다)
+      if (applied <= 0 && unit.uid !== target.uid) continue;
+      unit.troops += applied;
+      this.report(actor).healing += applied;
+      this.skillStat(skill.id).healing += applied;
+      this.emit({ type: 'heal', round: this.state.round, source: actor.uid, target: unit.uid, amount: applied, troopsAfter: unit.troops });
+    }
+  }
+
+  /** 동시 타격으로 함께 맞는 후열 군단: 조준한 대상이 전열이고 같은 칸 번호의 후열 군단이 살아 있을 때 */
+  private behindTarget(target: CharacterState, skill: SkillData): CharacterState | undefined {
+    if (!(skill.behindHit && skill.behindHit > 0) || target.row !== 'front') return undefined;
+    return this.state.units.find((u) => u.side === target.side && !u.isDead && u.row === 'back' && u.slot === target.slot);
+  }
+
+  private behindAmount(actor: CharacterState, behind: CharacterState, skill: SkillData): number {
+    return Math.round(this.calc.damage(actor, behind, skill, this.moraleShare(actor.side)) * (skill.behindHit ?? 0));
+  }
+
+  /** 동시 타격의 두 번째 피해. 후열 군단 기준으로 계산하고 가드 대신 맞기와 반격은 없다 (가드 중이면 확률이 준다) */
+  private hitBehind(actor: CharacterState, aimed: CharacterState, skill: SkillData, critical: boolean): void {
+    const behind = this.behindTarget(aimed, skill);
+    if (!behind) return;
+    let amount = this.behindAmount(actor, behind, skill);
+    if (critical) amount = this.criticalAmount(amount);
+    const guard = this.input.data.unitTypes[behind.unitType].guard;
+    if (guard && behind.guardRate > 0 && behind.barrier === 0) this.setGuardRate(behind, Math.max(0, behind.guardRate - guard.decay), 'block');
+    this.skillStat(skill.id).damage += this.inflict(actor, behind, amount, 'attack', critical, true);
+  }
+
+  /** 이 공격으로 맞는 군단들: 열 공격이면 대상이 있는 열의 살아 있는 군단 전체(대상이 첫 번째), 아니면 대상 하나 */
+  private rowVictims(target: CharacterState, skill: SkillData): CharacterState[] {
+    if (!((skill.rowAttack ?? 0) > 0) || skill.kind !== 'attack') return [target];
+    const row = this.state.units.filter((u) => u.side === target.side && !u.isDead && u.row === target.row && u.uid !== target.uid).sort((a, b) => a.slot - b.slot);
+    return [target, ...row];
+  }
+
+  /** 한 군단이 이 공격으로 받는 피해 (열 공격이면 비율을 곱한다) */
+  private victimAmount(actor: CharacterState, victim: CharacterState, skill: SkillData): number {
+    const raw = this.calc.damage(actor, victim, skill, this.moraleShare(actor.side));
+    return (skill.rowAttack ?? 0) > 0 ? Math.round(raw * skill.rowAttack!) : raw;
   }
 
   private criticalOn(): boolean {
@@ -440,7 +537,7 @@ export class BattleEngine {
   }
 
   /** 피해를 적용하고 실제로 깎인 병력을 돌려준다. 사망/사기 변동도 여기서 처리한다. */
-  private inflict(source: CharacterState, target: CharacterState, amount: number, kind: 'attack' | 'counter', critical = false): number {
+  private inflict(source: CharacterState, target: CharacterState, amount: number, kind: 'attack' | 'counter', critical = false, splash = false): number {
     // 피해 무시(결계): 피해 한 번을 통째로 0으로 만든다 (반격 피해도 마찬가지)
     if (amount > 0 && target.barrier > 0) {
       target.barrier--;
@@ -460,6 +557,7 @@ export class BattleEngine {
       amount: applied,
       troopsAfter: target.troops,
       ...(critical && applied > 0 ? { critical: true as const } : {}),
+      ...(splash ? { splash: true as const } : {}),
     });
 
     const { morale } = this.input.balance;

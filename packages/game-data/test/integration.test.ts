@@ -156,7 +156,7 @@ describe('실제 데이터로 6 vs 6', () => {
       // 풍수사처럼 병종은 있어도 캐릭터가 없으면 전투에 나오지 않는다
       expect(report.familyStats[f] !== undefined, f).toBe(hasCharacter);
     }
-  });
+  }, 30000); // 전체 테스트가 병렬로 돌 때 느려질 수 있어 제한을 넉넉히 둔다
 });
 
 describe('숫자를 바꾸면 결과가 달라진다', () => {

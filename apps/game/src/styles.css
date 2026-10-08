@@ -142,7 +142,7 @@ button.big {
   aspect-ratio: 1280 / 900;
   background: #12151c;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 0;
   overflow: hidden;
 }
 
@@ -156,26 +156,71 @@ a { color: #e2bd76; }
   position: relative;
 }
 
-/* 카드의 논리 X 470~810 사이, Y 510~874 안에 지휘 패널을 둔다. */
+.card-actions {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 1280 / 900;
+  pointer-events: none;
+  z-index: 3;
+}
+.card-action-anchor { position: absolute; pointer-events: auto; }
+.card-action-trigger {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.card-action-trigger:hover, .card-action-trigger[aria-expanded='true'] {
+  box-shadow: inset 0 0 0 2px #ffe1a1;
+  background: #e9c16812;
+}
+.card-action-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  width: 280px;
+  max-width: 78vw;
+  max-height: 45vh;
+  overflow-y: auto;
+  padding: 8px;
+  background: #101b1ef5;
+  border: 2px solid #c4a261;
+  box-shadow: 0 5px 18px #000b;
+}
+.defender > .card-action-menu { left: auto; right: 0; }
+.card-action-heading { display: flex; align-items: center; justify-content: space-between; color: #eddbb3; }
+.card-action-heading button { padding: 0 8px; font-size: 20px; }
+.card-action-option { display: block; width: 100%; text-align: left; margin-top: 6px; border-radius: 2px; background: #26332f; }
+.card-action-option:hover { background: #554b30; }
+.card-action-option strong, .card-action-option span { display: block; }
+.card-action-option span { font-size: 12px; color: #e9cb88; margin-top: 3px; }
+
+/* 양측 카드 사이 X 486~794, 하단 프레임 Y 499~889에 지휘 패널을 둔다. */
 .command-dock {
   position: absolute;
   left: 38%;
   width: 24%;
-  top: 56.6667%;
-  bottom: 2.8889%;
+  top: 55.4444%;
+  bottom: 1.2222%;
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border) var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--panel);
+  border: 2px solid #9b8150;
+  border-radius: 0;
+  background: #0c1417;
+  box-shadow: inset 0 0 0 3px #252b25;
 }
 
 .command-dock .command {
   border: 0;
   border-radius: 0;
   padding: 12px;
-  background: linear-gradient(145deg, #203632, #111f22);
+  background: linear-gradient(145deg, #182824, #0b1217);
   min-height: 100%;
 }
 
@@ -231,6 +276,14 @@ button:focus-visible {
 
 .battle-log {
   margin-top: 14px;
+}
+
+.battle-log > summary {
+  cursor: pointer;
+  padding: 8px 16px;
+  color: #e0c78f;
+  border: 1px solid var(--border);
+  background: #10191b;
 }
 
 .row {

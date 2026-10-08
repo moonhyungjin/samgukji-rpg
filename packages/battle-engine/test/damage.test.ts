@@ -355,6 +355,33 @@ describe('격차식 피해 공식 (damage.formula = gap)', () => {
   });
 });
 
+describe('병종 반격 배율 (counterPower)', () => {
+  const withPower = (power?: number) => ({
+    ...testData,
+    unitTypes: { ...testData.unitTypes, inf: { ...testData.unitTypes.inf, ...(power === undefined ? {} : { counterPower: power }) } },
+  });
+  const counter = (power?: number) => new DamageCalculator(testBalance, withPower(power)).counterDamage(makeUnit({ unitType: 'inf' }), makeUnit({ unitType: 'cav' }), hit, hit, 50);
+
+  it('반격 배율을 안 정하면 1이라 지금까지의 반격 피해와 같다', () => {
+    expect(counter(undefined)).toBe(counter(1));
+    expect(counter(1)).toBeGreaterThan(0);
+  });
+
+  it('반격하는 병종의 반격 배율만큼 반격 피해가 커진다', () => {
+    expect(Math.abs(counter(2) - counter(1) * 2)).toBeLessThanOrEqual(1); // 반올림 차이
+    expect(counter(2)).toBeGreaterThan(counter(1));
+    expect(counter(0)).toBe(0);
+  });
+
+  it('공격하는 쪽 병종의 반격 배율은 상관없다 (반격자 병종의 값만 쓴다)', () => {
+    const d = withPower(3);
+    // 반격자는 cav(배율 없음), 공격한 쪽이 inf여도 cav의 반격에는 영향이 없다
+    const calc = new DamageCalculator(testBalance, d);
+    const base = new DamageCalculator(testBalance, testData).counterDamage(makeUnit({ unitType: 'cav' }), makeUnit({ unitType: 'inf' }), hit, hit, 50);
+    expect(calc.counterDamage(makeUnit({ unitType: 'cav' }), makeUnit({ unitType: 'inf' }), hit, hit, 50)).toBe(base);
+  });
+});
+
 describe('구간식 병력 보정 (troopFactor.mode = tiered)', () => {
   const tiered = { ...testBalance, troopFactor: { ...testBalance.troopFactor, mode: 'tiered' as const, normalizeByScale: false, tiered: { ...DEFAULT_TIERED } } };
   const calc = new DamageCalculator(tiered, testData);

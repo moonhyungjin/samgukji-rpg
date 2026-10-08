@@ -73,4 +73,44 @@ describe('피해 계산기 (explainDamage)', () => {
     const r = explainDamage(gameData, defaultBalance, { ...base, skillId: 'heal' });
     expect(r.ok).toBe(false);
   });
+
+  it('반격 배율: 반격하는 병종의 값이 반격 피해에 곱해지고 출처 표에 나온다', () => {
+    const data = clone(gameData);
+    const input = { ...base, attackerId: 'liuBei', attackerUnitType: 'infantry', skillId: 'infantry-attack', defenderId: 'weiYan', defenderUnitType: 'infantry' };
+    const plain = explainDamage(data, defaultBalance, input);
+    data.unitTypes.infantry.counterPower = 2;
+    const strong = explainDamage(data, defaultBalance, input);
+    if (!plain.ok || !strong.ok) throw new Error('explain failed');
+    expect(plain.explanation.counter).toBeGreaterThan(0);
+    expect(Math.abs(strong.explanation.counter - plain.explanation.counter * 2)).toBeLessThanOrEqual(1); // 반올림 차이
+    expect(strong.explanation.sources.some((r) => r.label.startsWith('반격 배율') && r.value === '× 2')).toBe(true);
+    expect(strong.explanation.rows.some((r) => r.group === '반격' && r.formula.includes('반격 배율 2'))).toBe(true);
+  });
+
+  it('동시 타격: 전열 대상일 때만 쓰이고 출처 표에 나온다', () => {
+    const input = { ...base, attackerId: 'liuBei', attackerUnitType: 'assault-infantry', skillId: 'assault-infantry-infantry-attack', defenderId: 'weiYan', defenderUnitType: 'infantry' };
+    const front = explainDamage(gameData, defaultBalance, input);
+    const back = explainDamage(gameData, defaultBalance, { ...input, defenderRow: 'back' });
+    if (!front.ok || !back.ok) throw new Error('explain failed');
+    const row = (r: typeof front) => r.explanation.sources.find((x) => x.label.startsWith('동시 타격'));
+    expect(row(front)).toMatchObject({ used: true, value: `후열 × ${gameData.skills['assault-infantry-infantry-attack'].behindHit}` }); // Lab에서 고치는 값이라 데이터에서 읽는다
+    expect(row(back)).toMatchObject({ used: false });
+  });
+
+  it('열 공격: 출처 표에 비율이 나오고 최종 피해는 단일 공격보다 비율만큼 낮다', () => {
+    const input = { ...base, attackerId: 'huangZhong', attackerUnitType: 'crossbow', skillId: 'crossbow-archer-shot', defenderId: 'weiYan', defenderUnitType: 'infantry' };
+    const row = explainDamage(gameData, defaultBalance, input);
+    if (!row.ok) throw new Error(row.reason);
+    expect(row.explanation.sources.some((x) => x.label.startsWith('열 공격') && x.used)).toBe(true);
+    // 최종 피해는 엔진이 조준한 대상에게 주는 피해(열 공격 비율 적용)와 같다
+    const engineDamage = (() => {
+      const calc = new DamageCalculator(defaultBalance, gameData);
+      const [a] = buildUnits('attacker', [{ characterId: 'huangZhong', row: 'front', unitType: 'crossbow' }], gameData, defaultBalance);
+      const [d] = buildUnits('defender', [{ characterId: 'weiYan', row: 'front', unitType: 'infantry' }], gameData, defaultBalance);
+      d.guardRate = 0;
+      const skill = gameData.skills['crossbow-archer-shot'];
+      return Math.round(calc.damage(a, d, skill, 50) * skill.rowAttack!);
+    })();
+    expect(row.explanation.damage).toBe(engineDamage);
+  });
 });

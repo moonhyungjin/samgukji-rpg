@@ -7,6 +7,7 @@ import type { BattleConfig } from '../lib/config';
 import { BattleScene } from '../render/BattleScene';
 import { CommandPanel } from './CommandPanel';
 import { LogPanel } from './LogPanel';
+import { CardActions } from './CardActions';
 
 interface Props {
   config: BattleConfig;
@@ -108,12 +109,12 @@ export function BattleView({ config, onExit, artTrial = false }: Props) {
 
       <div className="battle-board">
         <div ref={hostRef} className="stage" />
+        {snapshot && <CardActions key={`${runId}:${snapshot.waiting?.uid}:${snapshot.log.length}`} snapshot={snapshot}
+          onSubmit={command => void controller()?.submit(command)} />}
         {snapshot && (
           <div className="command-dock">
             <CommandPanel
               snapshot={snapshot}
-              onSelectSkill={(id) => controller()?.selectSkill(id)}
-              onSubmit={(command) => void controller()?.submit(command)}
               onAutoplay={() => void controller()?.autoplayRest()}
               onSkip={() => controller()?.skip()}
               onRestart={() => setRunId((n) => n + 1)}
@@ -123,7 +124,7 @@ export function BattleView({ config, onExit, artTrial = false }: Props) {
         )}
       </div>
       {loadError && <div className="error">화면을 만들지 못했습니다: {loadError}</div>}
-      {snapshot && <div className="battle-log"><LogPanel lines={snapshot.log} /></div>}
+      {snapshot && <details className="battle-log"><summary>전투 로그</summary><LogPanel lines={snapshot.log} /></details>}
     </div>
   );
 }

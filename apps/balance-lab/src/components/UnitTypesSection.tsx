@@ -61,7 +61,7 @@ export function UnitTypesSection() {
   /** 선택한 병종의 승급 병종을 하나 만든다 (복사본, 차수 +1, 승급 보너스는 0에서 시작) */
   const addPromotion = () => {
     if (!current) return;
-    const created: UnitTypeData = { ...newUnitType(list, current), name: `${current.name} 승급`, tier: current.tier + 1, promotesTo: [], promotionBonus: {} };
+    const created: UnitTypeData = { ...newUnitType(list, current), name: `${current.name} 승급`, tier: current.tier + 1, promotesTo: [], statMods: { attack: 0, defense: 0, intellect: 0, speed: 0, action: 0 } };
     setList((prev) => [...prev.map((u) => (u.id === current.id ? { ...u, promotesTo: [...u.promotesTo, created.id] } : u)), created]);
     setSelected(created.id);
   };

@@ -1,11 +1,11 @@
-import { FAMILIES } from '@samgukji/battle-engine';
-import type { BalanceConfig, Family, GameData, Row, StatBonus, UnitTypeData } from '@samgukji/battle-engine';
+import { FAMILIES, statModsTotal } from '@samgukji/battle-engine';
+import type { BalanceConfig, Family, GameData, Row, UnitTypeData } from '@samgukji/battle-engine';
+import { skillUsers } from '../../lib/skillOwnership';
 import type { Issue } from '../lib/editor';
-import { DEFAULT_GUARD, FAMILY_LABEL, MOD_FIELDS, charactersUsing, groupByPromotion, promotionDepth, promotionPathLabel, unitTypeSummary } from '../lib/unitTypes';
+import { DEFAULT_GUARD, FAMILY_LABEL, MOD_FIELDS, charactersUsing, groupByPromotion, promotionDepth, promotionPathLabel, unitTypeRecord, unitTypeSummary } from '../lib/unitTypes';
 
-type Patch = Partial<Omit<UnitTypeData, 'promotionBonus' | 'statMods' | 'damageTakenByType' | 'damageDealtByRow' | 'guard' | 'recruit' | 'typeBonus' | 'vulnerability'>> & {
+type Patch = Partial<Omit<UnitTypeData, 'statMods' | 'damageTakenByType' | 'damageDealtByRow' | 'guard' | 'recruit' | 'typeBonus' | 'vulnerability'>> & {
   statMods?: Partial<NonNullable<UnitTypeData['statMods']>>;
-  promotionBonus?: Partial<StatBonus>;
   typeBonus?: Partial<NonNullable<UnitTypeData['typeBonus']>>;
   vulnerability?: Partial<NonNullable<UnitTypeData['vulnerability']>>;
   recruit?: Partial<NonNullable<UnitTypeData['recruit']>>;
@@ -15,6 +15,7 @@ type Patch = Partial<Omit<UnitTypeData, 'promotionBonus' | 'statMods' | 'damageT
   guard?: Partial<NonNullable<UnitTypeData['guard']>> | null;
 };
 
+const signed = (n: number) => (n > 0 ? `+${n}` : String(n));
 const DEPTH_NAME = (depth: number) => (depth === 0 ? '0차' : `${depth}차`);
 
 interface Props {
@@ -44,6 +45,12 @@ const num = (value: string) => (value === '' ? 0 : Number(value));
 export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed, issues, characters, data, balance, onEdit, onDuplicate, onRevert, onRemove }: Props) {
   const bad = new Set(issues.filter((i) => i.level === 'error' && i.id !== undefined).map((i) => i.id));
   const skills = Object.values(data.skills);
+  // 같은 이름의 스킬(공격, 가드 …)은 쓰는 병종 이름을 붙여 구분한다
+  const nameCount = skills.reduce<Record<string, number>>((m, s) => ({ ...m, [s.name]: (m[s.name] ?? 0) + 1 }), {});
+  const skillLabel = (id: string, name: string) => {
+    const owner = nameCount[name] > 1 ? skillUsers(data.unitTypes, id)[0] : undefined;
+    return owner ? `${name} · ${owner.name}` : name;
+  };
   const every = all ?? unitTypes;
   const toggle = (list: readonly string[], id: string, on: boolean) => (on ? [...list, id] : list.filter((x) => x !== id));
 
@@ -166,7 +173,7 @@ export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed
               </div>
             </div>
 
-            <div className="usection">스탯 보정 (캐릭터 기본 스탯에 더해짐)</div>
+            <div className="usection">스탯 보정 (앞 병종의 보정에 더해짐)</div>
             <div className="ugrid">
               {MOD_FIELDS.map((f) =>
                 field(
@@ -176,27 +183,45 @@ export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed
               )}
             </div>
 
-            <div className="usection">승급 ({DEPTH_NAME(promotionDepth(every, u.id))}) · 승급 보너스</div>
-            <p className="note promo-note">{promotionPathLabel(every, u.id)}{u.promotesTo.length > 0 ? ` → 다음: ${u.promotesTo.map((id) => every.find((x) => x.id === id)?.name ?? id).join(' / ')}` : ''}</p>
-            <div className="ugrid">
-              {MOD_FIELDS.map((f) =>
-                field(
-                  `보너스 ${f.label}`,
-                  <input type="number" min={0} step={1} aria-label={`${u.id} 승급 보너스 ${f.label}`} value={u.promotionBonus?.[f.key] ?? 0} onChange={(e) => onEdit(u.id, { promotionBonus: { [f.key]: num(e.target.value) } })} />,
-                  '승급해서 이 병종이 될 때 오르는 스탯. 장수 스탯은 초기 스탯이고 지금 병종까지 오는 길의 보너스가 더해진다',
-                ),
-              )}
-            </div>
+            <div className="usection">승급 ({DEPTH_NAME(promotionDepth(every, u.id))})</div>
+            <p className="note promo-note">
+              {promotionPathLabel(every, u.id)}
+              {u.promotesTo.length > 0 ? ` → 다음: ${u.promotesTo.map((id) => every.find((x) => x.id === id)?.name ?? id).join(' / ')}` : ''}
+            </p>
+            <p className="note">
+              장수에게 적용되는 보정 합계 (기본 병종부터 이 병종까지): {MOD_FIELDS.map((f) => `${f.label} ${signed(statModsTotal(unitTypeRecord(every), u.id)[f.key])}`).join(' · ')}
+            </p>
             <div className="checks" role="group" aria-label={`${u.id} 승급 대상`}>
               <span className="check-title">승급 대상</span>
-              {every
-                .filter((x) => x.id !== u.id)
-                .map((x) => (
-                  <label key={x.id} className="check">
-                    <input type="checkbox" aria-label={`${u.id} 승급 대상 ${x.name}`} checked={u.promotesTo.includes(x.id)} onChange={(e) => onEdit(u.id, { promotesTo: toggle(u.promotesTo, x.id, e.target.checked) })} />
-                    {x.name}
-                  </label>
-                ))}
+              {u.promotesTo.map((id) => (
+                <span key={id} className="skill-chip">
+                  {every.find((x) => x.id === id)?.name ?? `${id} (없음)`}
+                  <button type="button" aria-label={`${u.id} 승급 대상 ${every.find((x) => x.id === id)?.name ?? id} 빼기`} onClick={() => onEdit(u.id, { promotesTo: toggle(u.promotesTo, id, false) })}>
+                    ×
+                  </button>
+                </span>
+              ))}
+              <select
+                aria-label={`${u.id} 승급 대상 추가`}
+                value=""
+                onChange={(e) => e.target.value && onEdit(u.id, { promotesTo: toggle(u.promotesTo, e.target.value, true) })}
+              >
+                <option value="">+ 승급 대상 추가…</option>
+                {[
+                  { label: '같은 계열', items: every.filter((x) => x.id !== u.id && x.family === u.family && !u.promotesTo.includes(x.id)) },
+                  { label: '다른 계열', items: every.filter((x) => x.id !== u.id && x.family !== u.family && !u.promotesTo.includes(x.id)) },
+                ]
+                  .filter((g) => g.items.length > 0)
+                  .map((g) => (
+                    <optgroup key={g.label} label={g.label}>
+                      {g.items.map((x) => (
+                        <option key={x.id} value={x.id}>
+                          {x.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+              </select>
             </div>
 
             <div className="usection">피해 배수 · 반격</div>
@@ -209,7 +234,7 @@ export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed
               {field(
                 '받는 책략',
                 <input type="number" min={0.05} step={0.05} aria-label={`${u.id} 받는 피해 책략`} value={taken.magic} onChange={(e) => onEdit(u.id, { damageTakenByType: { magic: num(e.target.value) } })} />,
-                '책략/독연으로 맞을 때',
+                '책략/도술로 맞을 때',
               )}
               {field(
                 '줄 때 전열',
@@ -245,6 +270,11 @@ export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed
                 <span>반격</span>
                 <input type="checkbox" aria-label={`${u.id} 반격함`} checked={u.canCounter} onChange={(e) => onEdit(u.id, { canCounter: e.target.checked })} />
               </label>
+              {field(
+                '반격 배율',
+                <input type="number" min={0} step={0.1} aria-label={`${u.id} 반격 배율`} value={u.counterPower ?? 1} onChange={(e) => onEdit(u.id, { counterPower: num(e.target.value) })} />,
+                '이 병종이 반격할 때 반격 피해에 곱함 (반격 비율은 공격한 쪽 스킬의 값이고, 이 값은 반격하는 쪽의 세기)',
+              )}
             </div>
 
             <div className="usection">스킬</div>
@@ -252,28 +282,41 @@ export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed
               {field(
                 '일반공격',
                 <select aria-label={`${u.id} 일반공격`} value={u.basicSkillId} onChange={(e) => onEdit(u.id, { basicSkillId: e.target.value })}>
-                  {skills.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.id})
-                    </option>
-                  ))}
+                  {skills
+                    .filter((s) => s.id === u.basicSkillId || u.extraSkillIds.includes(s.id))
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.id})
+                      </option>
+                    ))}
                   {!data.skills[u.basicSkillId] && <option value={u.basicSkillId}>{u.basicSkillId} (없음)</option>}
                 </select>,
               )}
             </div>
             <div className="checks" role="group" aria-label={`${u.id} 추가 스킬`}>
               <span className="check-title">추가 스킬</span>
-              {skills.map((s) => (
-                <label key={s.id} className="check">
-                  <input
-                    type="checkbox"
-                    aria-label={`${u.id} 스킬 ${s.name}`}
-                    checked={u.extraSkillIds.includes(s.id)}
-                    onChange={(e) => onEdit(u.id, { extraSkillIds: toggle(u.extraSkillIds, s.id, e.target.checked) })}
-                  />
-                  {s.name}
-                </label>
+              {u.extraSkillIds.map((id) => (
+                <span key={id} className="skill-chip" title={id}>
+                  {data.skills[id] ? skillLabel(id, data.skills[id].name) : `${id} (없음)`}
+                  <button type="button" aria-label={`${u.id} 스킬 ${data.skills[id]?.name ?? id} 빼기`} onClick={() => onEdit(u.id, { extraSkillIds: toggle(u.extraSkillIds, id, false) })}>
+                    ×
+                  </button>
+                </span>
               ))}
+              <select
+                aria-label={`${u.id} 스킬 추가`}
+                value=""
+                onChange={(e) => e.target.value && onEdit(u.id, { extraSkillIds: toggle(u.extraSkillIds, e.target.value, true) })}
+              >
+                <option value="">+ 스킬 추가…</option>
+                {skills
+                  .filter((s) => !u.extraSkillIds.includes(s.id))
+                  .map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {skillLabel(s.id, s.name)}
+                    </option>
+                  ))}
+              </select>
             </div>
             {renderSkills?.(u)}
 
@@ -302,6 +345,24 @@ export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed
                   '받는 피해 배수',
                   <input type="number" min={0.05} step={0.05} aria-label={`${u.id} 가드 피해 배수`} value={u.guard.damageTaken ?? 1} onChange={(e) => onEdit(u.id, { guard: { damageTaken: num(e.target.value) } })} />,
                   '가드 상태(확률 > 0)인 동안 받는 피해에 곱함',
+                )}
+                {field(
+                  '지키는 범위',
+                  <select aria-label={`${u.id} 가드 범위`} value={u.guard.scope ?? 'row'} onChange={(e) => onEdit(u.id, { guard: { scope: e.target.value as 'row' | 'all' } })}>
+                    <option value="row">같은 열 아군</option>
+                    <option value="all">모든 아군 (전체 가드)</option>
+                  </select>,
+                  '대신 맞아 줄 수 있는 아군의 범위',
+                )}
+                {field(
+                  '도술도 막음',
+                  <input type="checkbox" aria-label={`${u.id} 가드 도술 방어`} checked={u.guard.interceptsMagic ?? false} onChange={(e) => onEdit(u.id, { guard: { interceptsMagic: e.target.checked } })} />,
+                  '지력 기반 공격(책략/도술)도 대신 맞는다 (원래는 가드로 막을 수 없다)',
+                )}
+                {field(
+                  '공격해도 가드 유지',
+                  <input type="checkbox" aria-label={`${u.id} 가드 유지 공격`} checked={u.guard.keepOnAttack ?? false} onChange={(e) => onEdit(u.id, { guard: { keepOnAttack: e.target.checked } })} />,
+                  '공격해도 가드 확률이 풀리지 않는다 (원래는 공격하면 모두 사라진다)',
                 )}
               </div>
             )}

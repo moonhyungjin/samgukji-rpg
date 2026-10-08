@@ -46,3 +46,9 @@ export function slotPosition(side: Side, row: Row, slot: number): { x: number; y
 export function columnX(side: Side, row: Row): number {
   return COLUMN_X[side][row];
 }
+
+/** Shared by the Pixi card and its accessible HTML action surface. */
+export function cardLayout(side: Side, row: Row, slot: number, wideSlot?: number) {
+  return wideSlot === undefined ? { ...slotPosition(side, row, slot), width: CARD_W, height: CARD_H }
+    : { x: side === 'attacker' ? 40 : 810, y: 510 + wideSlot * 126, width: 430, height: CARD_H };
+}

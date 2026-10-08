@@ -56,7 +56,7 @@
   },
   {
     "id": "poison-smoke",
-    "name": "독연",
+    "name": "도술",
     "kind": "attack",
     "scalesWith": "intellect",
     "power": 1,
@@ -116,5 +116,253 @@
     "power": 0,
     "apCost": 1,
     "counterable": false
+  },
+  {
+    "id": "tiger-cavalry-cavalry-charge",
+    "name": "전차 돌격",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 1.7,
+    "apCost": 1,
+    "counterable": true,
+    "counterRate": 0.5,
+    "guardable": true,
+    "ignoreDefense": 2
+  },
+  {
+    "id": "horse-archer-cavalry-charge",
+    "name": "돌격2",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 1.5,
+    "apCost": 1,
+    "counterable": true,
+    "counterRate": 0.25,
+    "guardable": true,
+    "ignoreDefense": 1
+  },
+  {
+    "id": "heavy-cavalry-cavalry-charge",
+    "name": "돌격3",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 1.7,
+    "apCost": 1,
+    "counterable": true,
+    "counterRate": 0.35,
+    "guardable": true,
+    "ignoreDefense": 1.5
+  },
+  {
+    "id": "light-infantry-infantry-attack",
+    "name": "공격2",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 1.25,
+    "apCost": 1,
+    "counterable": true,
+    "counterRate": 0.25,
+    "guardable": true,
+    "ignoreDefense": 0
+  },
+  {
+    "id": "escort-guard",
+    "name": "전체 가드",
+    "kind": "guard",
+    "scalesWith": "attack",
+    "power": 0,
+    "apCost": 1,
+    "counterable": false
+  },
+  {
+    "id": "strong-bow-archer-shot",
+    "name": "화살 공격2",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 1,
+    "apCost": 1,
+    "counterable": false,
+    "guardable": true,
+    "ignoreDefense": 0
+  },
+  {
+    "id": "long-bow-archer-shot",
+    "name": "관통 사격",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 1.1,
+    "apCost": 1,
+    "counterable": false,
+    "guardable": true,
+    "ignoreDefense": 0
+  },
+  {
+    "id": "adviser-stratagem",
+    "name": "책략2",
+    "kind": "attack",
+    "scalesWith": "intellect",
+    "power": 1.3,
+    "apCost": 1,
+    "counterable": false
+  },
+  {
+    "id": "tactician-inspire",
+    "name": "독려2",
+    "kind": "buff",
+    "scalesWith": "intellect",
+    "power": 0,
+    "apCost": 1,
+    "counterable": false,
+    "buff": {
+      "type": "stats",
+      "pool": [
+        "attack",
+        "defense",
+        "intellect",
+        "speed"
+      ],
+      "minCount": 2,
+      "maxCount": 4,
+      "amount": 1,
+      "maxStacks": 2
+    }
+  },
+  {
+    "id": "alchemist-poison-smoke",
+    "name": "도술2",
+    "kind": "attack",
+    "scalesWith": "intellect",
+    "power": 1.3,
+    "apCost": 1,
+    "counterable": false
+  },
+  {
+    "id": "sorcerer-ward",
+    "name": "열 결계",
+    "kind": "buff",
+    "scalesWith": "intellect",
+    "power": 0,
+    "apCost": 2,
+    "counterable": false,
+    "buff": {
+      "type": "barrier",
+      "charges": 1,
+      "maxStacks": 1
+    },
+    "area": "row"
+  },
+  {
+    "id": "assault-infantry-infantry-attack",
+    "name": "관통 돌격",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 1.25,
+    "apCost": 1,
+    "counterable": true,
+    "counterRate": 0.25,
+    "guardable": true,
+    "ignoreDefense": 0,
+    "behindHit": 0.4
+  },
+  {
+    "id": "elite-archer-archer-shot",
+    "name": "저격",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 1.3,
+    "apCost": 1,
+    "counterable": false,
+    "guardable": true,
+    "ignoreDefense": 0
+  },
+  {
+    "id": "crossbow-archer-shot",
+    "name": "일제사격",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 0.75,
+    "apCost": 2,
+    "counterable": false,
+    "guardable": true,
+    "ignoreDefense": 0,
+    "rowAttack": 0.7
+  },
+  {
+    "id": "jade-strategist-stratagem",
+    "name": "대화계",
+    "kind": "attack",
+    "scalesWith": "intellect",
+    "power": 1.3,
+    "apCost": 2,
+    "counterable": false,
+    "rowAttack": 0.7
+  },
+  {
+    "id": "grand-tactician-inspire",
+    "name": "전체 독려",
+    "kind": "buff",
+    "scalesWith": "intellect",
+    "power": 0,
+    "apCost": 2,
+    "counterable": false,
+    "buff": {
+      "type": "stats",
+      "pool": [
+        "attack",
+        "defense",
+        "intellect",
+        "speed"
+      ],
+      "minCount": 2,
+      "maxCount": 4,
+      "amount": 1,
+      "maxStacks": 2
+    },
+    "area": "all"
+  },
+  {
+    "id": "sage-poison-smoke",
+    "name": "도술3",
+    "kind": "attack",
+    "scalesWith": "intellect",
+    "power": 2,
+    "apCost": 1,
+    "counterable": false
+  },
+  {
+    "id": "qimen-master-ward",
+    "name": "전체 결계",
+    "kind": "buff",
+    "scalesWith": "intellect",
+    "power": 0,
+    "apCost": 2,
+    "counterable": false,
+    "buff": {
+      "type": "barrier",
+      "charges": 1,
+      "maxStacks": 1
+    },
+    "area": "all"
+  },
+  {
+    "id": "grand-physician-heal",
+    "name": "열 치유",
+    "kind": "heal",
+    "scalesWith": "intellect",
+    "power": 0.8,
+    "apCost": 2,
+    "counterable": false,
+    "area": "row"
+  },
+  {
+    "id": "immortal-revive",
+    "name": "부활",
+    "kind": "revive",
+    "scalesWith": "intellect",
+    "power": 0,
+    "apCost": 2,
+    "counterable": false,
+    "reviveRatio": 0.2,
+    "maxUses": 1
   }
 ]

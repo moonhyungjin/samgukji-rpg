@@ -28,11 +28,14 @@ interface NumberFieldProps extends Omit<WrapProps, 'children'> {
   step?: number;
   min?: number;
   max?: number;
+  /** 값이 없을 때 보여 줄 값 (예: 생략하면 0인 선택 항목) */
+  fallback?: number;
 }
 
-export function NumberField({ label, hint, unused, path, step = 1, min, max }: NumberFieldProps) {
+export function NumberField({ label, hint, unused, path, step = 1, min, max, fallback }: NumberFieldProps) {
   const { state, set } = useLab();
-  const value = Number(getIn(state, path));
+  const raw = getIn(state, path);
+  const value = raw === undefined && fallback !== undefined ? fallback : Number(raw);
   const [text, setText] = useState(String(value));
 
   useEffect(() => {

@@ -1,11 +1,11 @@
-import { DamageCalculator, applyStatMods, buildUnits, maxTroops, promotionBonusTotal, totalAp } from '@samgukji/battle-engine';
+import { DamageCalculator, applyStatMods, buildUnits, maxTroops, statModsTotal, totalAp } from '@samgukji/battle-engine';
 import type { BalanceConfig, CharacterData, CharacterRank, GameData, LineupEntry, Stats } from '@samgukji/battle-engine';
 
 /** 편집기가 다루는 스탯과 표시 이름. 순서는 characters.json의 순서와 같다. */
 export const STAT_FIELDS: { key: keyof Stats; label: string; hint: string }[] = [
   { key: 'attack', label: '공격', hint: '일반공격/돌격/화살의 피해' },
   { key: 'defense', label: '방어', hint: '물리 피해 경감' },
-  { key: 'intellect', label: '지력', hint: '책략/독연의 피해, 책략 저항' },
+  { key: 'intellect', label: '지력', hint: '책략/도술의 피해, 지력 저항' },
   { key: 'speed', label: '속도', hint: '라운드 안의 행동 순서' },
   { key: 'action', label: '행동력', hint: '2마다 AP +1 (병종 기본 AP에 더해짐)' },
   { key: 'diplomacy', label: '외교', hint: '아직 전투에서 쓰이지 않음' },
@@ -91,16 +91,8 @@ export interface Derived {
 export function derive(c: CharacterData, data: GameData, balance: BalanceConfig): Derived | null {
   const unitType = data.unitTypes[c.unitType];
   if (!unitType) return null;
-  // 실제 스탯 = 초기 스탯 + 병종 보정 + 지금 병종까지 오는 길의 승급 보너스 누적 (엔진 buildUnits와 같다)
-  const bonus = promotionBonusTotal(data.unitTypes, unitType.id);
-  const mods = unitType.statMods ?? {};
-  const finalStats = applyStatMods(c.stats, {
-    attack: (mods.attack ?? 0) + bonus.attack,
-    defense: (mods.defense ?? 0) + bonus.defense,
-    intellect: (mods.intellect ?? 0) + bonus.intellect,
-    speed: (mods.speed ?? 0) + bonus.speed,
-    action: (mods.action ?? 0) + bonus.action,
-  });
+  // 실제 스탯 = 초기 스탯 + 승급 길의 스탯 보정 누적 (엔진 buildUnits와 같다)
+  const finalStats = applyStatMods(c.stats, statModsTotal(data.unitTypes, unitType.id));
   const troops = Math.max(1, Math.round(maxTroops(balance, c.level) * (unitType.troopScale ?? 1)));
   const skill = data.skills[unitType.basicSkillId];
   let sampleDamage: number | null = null;

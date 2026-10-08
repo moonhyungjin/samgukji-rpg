@@ -63,11 +63,11 @@ export function promotionChain(unitTypes: Record<string, UnitTypeData>, id: stri
   return chain;
 }
 
-/** 이 병종이 되기까지 받은 승급 보너스의 합 (뿌리 병종은 승급이 아니라 0) */
-export function promotionBonusTotal(unitTypes: Record<string, UnitTypeData>, id: string): Record<'attack' | 'defense' | 'intellect' | 'speed' | 'action', number> {
+/** 이 병종의 스탯 보정: 승급 길(뿌리 병종부터 이 병종까지)의 스탯 보정을 모두 더한 값 */
+export function statModsTotal(unitTypes: Record<string, UnitTypeData>, id: string): Record<'attack' | 'defense' | 'intellect' | 'speed' | 'action', number> {
   const total = { attack: 0, defense: 0, intellect: 0, speed: 0, action: 0 };
-  for (const u of promotionChain(unitTypes, id).slice(1)) {
-    for (const k of Object.keys(total) as (keyof typeof total)[]) total[k] += u.promotionBonus?.[k] ?? 0;
+  for (const u of promotionChain(unitTypes, id)) {
+    for (const k of Object.keys(total) as (keyof typeof total)[]) total[k] += u.statMods?.[k] ?? 0;
   }
   return total;
 }
@@ -100,16 +100,8 @@ export function buildUnits(side: Side, lineup: LineupEntry[], data: GameData, ba
 
     const level = entry.level ?? character.level;
     const max = Math.max(1, Math.round(maxTroops(balance, level) * (unitType.troopScale ?? 1)));
-    // 스탯 = 캐릭터 스탯(초기) + 병종 보정 + 지금 병종까지 오는 길의 승급 보너스 누적
-    const bonus = promotionBonusTotal(data.unitTypes, unitType.id);
-    const mods = unitType.statMods ?? {};
-    const stats = applyStatMods(character.stats, {
-      attack: (mods.attack ?? 0) + bonus.attack,
-      defense: (mods.defense ?? 0) + bonus.defense,
-      intellect: (mods.intellect ?? 0) + bonus.intellect,
-      speed: (mods.speed ?? 0) + bonus.speed,
-      action: (mods.action ?? 0) + bonus.action,
-    });
+    // 스탯 = 캐릭터 스탯(초기) + 승급 길의 스탯 보정 누적 (뿌리 병종 + 1차 + ... + 지금 병종)
+    const stats = applyStatMods(character.stats, statModsTotal(data.unitTypes, unitType.id));
     const maxAp = totalAp(balance, unitType.baseAp, stats.action);
     return {
       uid: `${side}:${index}`,

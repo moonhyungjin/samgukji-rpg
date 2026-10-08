@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defaultBalance, gameData, presets } from '@samgukji/game-data';
-import { maxTroops, promotionBonusTotal } from '@samgukji/battle-engine';
+import { maxTroops, statModsTotal } from '@samgukji/battle-engine';
 import type { CharacterData } from '@samgukji/battle-engine';
 import { changedIds, derive, duplicateCharacter, isDirty, newCharacter, parseCharacters, presetsUsing, serialize, validate } from './editor';
 
@@ -48,10 +48,10 @@ describe('장수 편집기 로직', () => {
     const d = derive(zhangFei, gameData, defaultBalance)!;
     // 장비는 승급 트리의 최종 병종이라 병종 이름과 보정은 현재 데이터에서 읽는다
     const type = gameData.unitTypes[zhangFei.unitType];
-    const bonus = promotionBonusTotal(gameData.unitTypes, type.id);
+    const mods = statModsTotal(gameData.unitTypes, type.id);
     expect(d.unitTypeName).toBe(type.name);
-    expect(d.finalStats.attack).toBe(Math.max(0, zhangFei.stats.attack + (type.statMods?.attack ?? 0) + bonus.attack)); // 병종 보정 + 승급 보너스
-    expect(d.finalStats.speed).toBe(Math.max(0, zhangFei.stats.speed + (type.statMods?.speed ?? 0) + bonus.speed));
+    expect(d.finalStats.attack).toBe(Math.max(0, zhangFei.stats.attack + mods.attack)); // 승급 길의 스탯 보정 합
+    expect(d.finalStats.speed).toBe(Math.max(0, zhangFei.stats.speed + mods.speed));
     expect(d.totalAp).toBe((type.baseAp ?? 0) + Math.ceil(d.finalStats.action / 2)); // 기본 AP + 행동력 2마다 1
     expect(d.troops).toBe(Math.round(maxTroops(defaultBalance, zhangFei.level) * (type.troopScale ?? 1)));
     expect(d.sampleDamage).toBeGreaterThan(0);

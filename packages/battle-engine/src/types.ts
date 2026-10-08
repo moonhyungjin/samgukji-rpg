@@ -9,7 +9,7 @@ export type Side = 'attacker' | 'defender';
 export type StatKey = 'attack' | 'defense' | 'intellect' | 'speed' | 'action' | 'diplomacy' | 'politics' | 'charm';
 export type Stats = Record<StatKey, number>;
 
-export type SkillKind = 'attack' | 'heal' | 'guard' | 'buff';
+export type SkillKind = 'attack' | 'heal' | 'guard' | 'buff' | 'revive';
 
 // ---------- 정적 데이터 ----------
 
@@ -25,6 +25,25 @@ export interface SkillData {
   counterable: boolean;
   /** 이 기술로 공격받은 대상의 반격 비율 (원작처럼 기술마다 다르다. 예: 일반공격 0.25, 전력 공격 0.5). 생략하면 balance.counter.rate */
   counterRate?: number;
+  /**
+   * 동시 타격: 전열 대상을 칠 때 같은 칸 번호(전열 1번 ↔ 후열 1번)의 후열 군단도 함께 친다. 값은 후열 피해의 비율
+   * (후열 군단 기준으로 계산한 피해 × 이 값). 생략하거나 0이면 없다. 후열을 직접 칠 때는 적용하지 않고, 반격은 전열 대상만 한다.
+   */
+  behindHit?: number;
+  /**
+   * 열 공격: 조준한 대상이 있는 열 전체를 친다 (일제사격, 대화계). 값은 각 군단 피해의 비율
+   * (그 군단 기준으로 계산한 피해 × 이 값). 생략하거나 0이면 단일 대상이다. 가드로 대신 맞기는 없고 크리티컬은 한 번만 굴려 모두에 적용한다.
+   */
+  rowAttack?: number;
+  /**
+   * 버프/치유의 대상 범위. 생략하면 대상 하나. row: 고른 아군이 있는 열의 아군 전체, all: 아군 전체 (자신 포함).
+   * 한 번의 사용(AP 한 번)으로 범위 안의 아군 각각에게 효과가 적용된다 (버프는 받을 수 있는 아군에게만, 스탯 버프의 무작위는 아군마다 따로 굴린다).
+   */
+  area?: 'row' | 'all';
+  /** 부활(kind가 revive): 되살아난 군단의 병력 = 최대 병력 × 이 값. 생략하면 0.2 */
+  reviveRatio?: number;
+  /** 한 전투에서 시전자 한 군단이 이 스킬을 쓸 수 있는 횟수. 부활은 생략하면 1, 다른 스킬은 생략하면 제한 없음 */
+  maxUses?: number;
   /**
    * true이면 대상과 같은 열의 가드 유닛이 대신 맞을 수 있다 (단일 대상 물리 공격).
    * 책략처럼 막을 수 없는 공격은 false. 생략하면 false.
@@ -64,6 +83,12 @@ export interface GuardConfig {
   decay: number;
   /** 가드 확률이 0보다 큰 동안(가드 상태) 받는 피해에 곱하는 값. 생략하면 1 (피해 감소 없음) */
   damageTaken?: number;
+  /** 대신 맞아 줄 수 있는 아군의 범위. row(기본): 같은 열 아군만, all: 모든 아군(양 열, 자기 제외) */
+  scope?: 'row' | 'all';
+  /** true이면 지력 기반 공격(책략/도술)도 대신 맞는다. 생략하면 false (지력 공격은 가드로 막을 수 없다) */
+  interceptsMagic?: boolean;
+  /** true이면 공격해도 가드가 풀리지 않는다. 생략하면 false (공격하면 가드 확률이 모두 사라진다) */
+  keepOnAttack?: boolean;
 }
 
 /**
@@ -91,7 +116,6 @@ export interface TraitData {
 }
 
 /** 승급으로 오르는 스탯 (양수) */
-export type StatBonus = Partial<Pick<Stats, 'attack' | 'defense' | 'intellect' | 'speed' | 'action'>>;
 
 export interface UnitTypeData {
   id: string;
@@ -106,6 +130,11 @@ export interface UnitTypeData {
   range: number;
   /** 공격받았을 때 반격할 수 있는가. 반격 비율은 공격한 쪽 기술의 counterRate다 */
   canCounter: boolean;
+  /**
+   * 반격 배율: 이 병종이 반격할 때 반격 피해에 곱하는 값 (기본 1). 반격 비율은 공격한 쪽 스킬의 값이라
+   * 반격하는 쪽의 세기는 이 값으로 정한다 (예: 근위대는 반격이 매우 강하다)
+   */
+  counterPower?: number;
   basicSkillId: string;
   extraSkillIds: string[];
   /** 승급 병종 id 목록 (프로토타입에서는 비어 있음) */
@@ -122,7 +151,7 @@ export interface UnitTypeData {
   /** 징병 단가(병사 1명당 돈). 아직 전투에서는 쓰지 않는다 (돈 체계가 생기면 쓴다) */
   recruit?: RecruitCost;
   /**
-   * 공격 종류에 따라 이 병종이 받는 피해에 곱하는 값. physical: 공격 스탯 기반 공격(일반공격/돌격/화살), magic: 지력 기반 공격(책략/독연).
+   * 공격 종류에 따라 이 병종이 받는 피해에 곱하는 값. physical: 공격 스탯 기반 공격(일반공격/돌격/화살), magic: 지력 기반 공격(책략/도술).
    * 예: 지력 계열은 책략에 ×0.8, 물리에 ×1.2 — 궁병 같은 물리 공격수가 책사/도사를 잡는 전문가가 된다. 생략하면 둘 다 1
    */
   damageTakenByType?: { physical: number; magic: number };
@@ -135,14 +164,8 @@ export interface UnitTypeData {
   typeBonus?: { physical: number; magic: number };
   /** additive 공식: 이 병종이 맞을 때 기본값에 더하는 값 (원작: 무사/기마 0, 아시가루 10, 궁병 15, 지력 계열 20). 생략하면 0 */
   vulnerability?: { physical: number; magic: number };
-  /** 병종 스탯 보정. 캐릭터의 기본 스탯에 더해진다 (0 아래로는 내려가지 않는다). 승급 병종은 자기 보정을 따로 가진다 */
+  /** 병종 스탯 보정. 캐릭터의 기본 스탯에 더해진다 (0 아래로는 내려가지 않는다). 승급 트리(promotesTo)의 앞 병종 보정과 누적된다: 최종 = 캐릭터 + 뿌리 병종부터 이 병종까지의 보정 합 */
   statMods?: Partial<Pick<Stats, 'attack' | 'defense' | 'intellect' | 'speed' | 'action'>>;
-  /**
-   * 승급 스탯 보너스: 승급해서 이 병종이 될 때 오르는 스탯 (양수, 생략하면 0).
-   * 병종은 promotesTo로 이어진 승급 트리를 이룬다 (예: 기병 → 경기병/중기병 → 궁기병/호표기).
-   * 장수의 스탯은 초기(0차) 스탯이고, 지금 병종까지 오는 길의 승급 보너스가 누적되어 더해진다.
-   */
-  promotionBonus?: StatBonus;
   /** 가드를 쓸 수 있는 병종 (스킬 목록에 kind: 'guard' 스킬도 있어야 한다) */
   guard?: GuardConfig;
 }
@@ -320,6 +343,8 @@ export interface CharacterState {
   buffs: Record<BuffStat, number>;
   /** 스킬별로 받은 버프 횟수 (maxStacks 판정용) */
   buffUses: Record<string, number>;
+  /** 스킬별로 이 군단이 쓴 횟수 (maxUses 판정용). 생략하면 아직 쓰지 않았다 */
+  skillUses?: Record<string, number>;
   /** 남은 피해 무시 횟수. 피해를 입을 때마다 1 줄고 그 피해는 0이 된다 */
   barrier: number;
   isDead: boolean;
@@ -348,8 +373,10 @@ export type MoraleJudgement = 'tiebreak' | 'before-troops';
 export type BattleEvent =
   | { type: 'roundStart'; round: number }
   | { type: 'action'; round: number; actor: string; skillId: string; target?: string; apAfter: number }
-  | { type: 'damage'; round: number; kind: 'attack' | 'counter'; source: string; target: string; amount: number; troopsAfter: number; critical?: true }
+  | { type: 'damage'; round: number; kind: 'attack' | 'counter'; source: string; target: string; amount: number; troopsAfter: number; critical?: true; splash?: true }
   | { type: 'heal'; round: number; source: string; target: string; amount: number; troopsAfter: number }
+  /** 부활: 전멸했던 target이 병력 troopsAfter로 row의 slot 자리에 되살아났다 */
+  | { type: 'revive'; round: number; source: string; target: string; troopsAfter: number; row: Row; slot: number }
   | { type: 'unitDestroyed'; round: number; unit: string; by: string }
   | { type: 'rowAdvance'; round: number; side: Side; units: string[] }
   /** 가드 유닛이 원래 대상 대신 맞는다. 이 이벤트 다음의 damage는 guardian이 받는다 */

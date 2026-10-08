@@ -1,3 +1,4 @@
+import { ROW_CAPACITY } from './lineup';
 import type { Rng } from './rng';
 import type { BattleState, CharacterState, Row, SkillData } from './types';
 
@@ -59,4 +60,19 @@ export function canBuff(target: CharacterState, skill: SkillData): boolean {
   const buff = skill.buff;
   if (!buff || target.isDead) return false;
   return (target.buffUses[skill.id] ?? 0) < (buff.maxStacks ?? 1);
+}
+
+/** 부활 스킬로 되살릴 수 있는 전멸한 아군. 시전 횟수가 남아 있어야 하고, 원래 열이나 반대 열에 자리가 있어야 한다. */
+export function reviveTargets(actor: CharacterState, state: BattleState, skill: SkillData): CharacterState[] {
+  if (skill.kind !== 'revive') return [];
+  if ((actor.skillUses?.[skill.id] ?? 0) >= (skill.maxUses ?? 1)) return [];
+  return state.units.filter((u) => u.side === actor.side && u.isDead && reviveRow(u, state) !== null);
+}
+
+/** 되살아난 군단이 설 열: 원래 열에 자리가 있으면 그 열, 없으면 반대 열, 둘 다 꽉 차 있으면 null */
+export function reviveRow(unit: CharacterState, state: BattleState): Row | null {
+  const count = (row: Row) => state.units.filter((u) => u.side === unit.side && !u.isDead && u.row === row).length;
+  const other: Row = unit.row === 'front' ? 'back' : 'front';
+  if (count(unit.row) < ROW_CAPACITY) return unit.row;
+  return count(other) < ROW_CAPACITY ? other : null;
 }

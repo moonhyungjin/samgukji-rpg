@@ -91,14 +91,15 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(html).toContain('role="tablist"');
     for (const root of ['infantry', 'shield', 'cavalry', 'archer', 'strategist', 'taoist', 'geomancer']) expect(html).toContain(`data-root="${root}"`);
     for (const id of ['infantry', 'light-infantry', 'heavy-infantry', 'assault-infantry', 'royal-guard']) expect(html).toContain(`data-node="${id}"`);
-    // 선택한 병종(처음에는 첫 병종)의 카드만 그린다: 기본 AP, 사거리, 스탯 보정, 승급 보너스, 피해 배수, 가드, 스킬
+    // 선택한 병종(처음에는 첫 병종)의 카드만 그린다: 기본 AP, 사거리, 스탯 보정, 피해 배수, 가드, 스킬
     expect(html).toContain('data-unittype="infantry"');
     expect(html).not.toContain('data-unittype="light-infantry"');
-    for (const label of ['기본 AP', '사거리', '스탯 보정', '승급 보너스', '줄 때 전열', '줄 때 후열', '가드 (같은 열 아군을 대신 맞을 확률)', '추가 스킬', '스킬 (이 병종이 쓰는 것)']) expect(html).toContain(label);
-    // 카드 안의 스킬 표: 이 병종의 스킬만 있고, 같이 쓰는 병종이 있으면 복제 버튼이 나온다
+    for (const label of ['기본 AP', '사거리', '스탯 보정', '보정 합계', '줄 때 전열', '줄 때 후열', '가드 (같은 열 아군을 대신 맞을 확률)', '추가 스킬', '스킬 (이 병종이 쓰는 것)']) expect(html).toContain(label);
+    // 카드 안의 스킬 표: 이 병종의 스킬만 있다. 스킬은 공용이라 여러 병종이 같이 쓰면 공유 경고가 나온다
     expect(html).toContain('data-skills-of="infantry"');
+    expect(html).toContain('같이 씁니다');
     expect(html).toContain('이 병종 전용으로 복제');
-    // 전체 스킬 표(접혀 있음)에는 모든 스킬과 버프 설정이 있다
+    // 전체 스킬 표(항상 펼쳐짐)에는 모든 스킬과 버프 설정이 있다
     expect(html).toContain('전체 스킬 표');
     for (const id of Object.keys(state.data.skills)) expect(html).toContain(`data-skill="${id}"`);
     for (const label of ['가드로 막힘', '방어 무시', '피해 무시 횟수']) expect(html).toContain(label);

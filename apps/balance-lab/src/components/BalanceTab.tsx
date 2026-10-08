@@ -142,7 +142,7 @@ export function BalanceTab() {
                   <NumberField label="[기존] 병력 보정 하한" path="balance.troopFactor.min" unused={notAbsolute} step={0.05} min={0} />
                   <NumberField label="[기존] 병력 보정 상한" path="balance.troopFactor.max" unused={notAbsolute} step={0.05} min={0} />
                 </div>
-                <p className="note">상대 비교 방식: 공격력 기반(일반공격/돌격/화살/풍수사 활)은 (내 병력 ÷ 상대 병력)의 거듭제곱, 지력 기반(책략/독연/치유)은 상대와 무관하게 내 최대 병력 대비 현재 병력입니다.</p>
+                <p className="note">상대 비교 방식: 공격력 기반(일반공격/돌격/화살/풍수사 활)은 (내 병력 ÷ 상대 병력)의 거듭제곱, 지력 기반(책략/도술/치유)은 상대와 무관하게 내 최대 병력 대비 현재 병력입니다.</p>
                 <div className="fields-2">
                   <NumberField label="[상대 비교] 하한" path="balance.troopFactor.relative.min" unused={notRelative} step={0.05} min={0} hint="약한 쪽이 얼마까지 약해지는가" />
                   <NumberField label="[상대 비교] 상한" path="balance.troopFactor.relative.max" unused={notRelative} step={0.05} min={0} hint="큰 쪽의 이점이 어디서 멈추는가" />

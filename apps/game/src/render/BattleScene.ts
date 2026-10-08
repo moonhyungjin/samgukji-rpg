@@ -6,7 +6,7 @@ import type { SceneLike } from '../battle/controller';
 import type { BattleOutcome, ViewState, ViewUnit } from '../battle/viewState';
 import { DECIDED_BY_LABEL, END_CAUSE_LABEL, SIDE_LABEL, STAT_SHORT } from '../lib/labels';
 import { UnitSprite } from './UnitSprite';
-import { CARD_H, CARD_W, columnX, FONT, SIDE_COLOR, WORLD_H, WORLD_W } from './theme';
+import { CARD_H, FONT, SIDE_COLOR, WORLD_H, WORLD_W } from './theme';
 import { delay, easeOut, tween } from './tween';
 import type { Clock } from './tween';
 import { playRangedEffect, rangedEffectFor, rangedImpact } from './rangedEffects';
@@ -17,7 +17,7 @@ export interface SceneOptions {
   artUnits?: readonly Pick<ViewUnit, 'characterId' | 'family'>[];
 }
 
-const MORALE_BAR = { x: 390, y: 16, w: 500, h: 18 };
+const MORALE_BAR = { x: 390, y: 48, w: 500, h: 14 };
 
 /**
  * PixiJS로 전투를 그린다. 규칙은 계산하지 않고, 컨트롤러가 넘겨 주는 엔진 이벤트를 재생하기만 한다.
@@ -68,7 +68,8 @@ export class BattleScene implements SceneLike {
     this.world.addChild(this.drawBackground(), this.armyLayer, this.armyLabels, this.unitsLayer, this.effectsLayer, this.moraleBar, this.overlayLayer);
 
     this.roundText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 20, fill: 0xe4e8f0, fontWeight: 'bold' } });
-    this.roundText.position.set(24, 14);
+    this.roundText.anchor.set(.5, 0);
+    this.roundText.position.set(640, 10);
     this.attackerMoraleText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 15, fill: SIDE_COLOR.attacker, fontWeight: 'bold' } });
     this.attackerMoraleText.anchor.set(1, 0.5);
     this.attackerMoraleText.position.set(MORALE_BAR.x - 12, MORALE_BAR.y + MORALE_BAR.h / 2);
@@ -94,7 +95,8 @@ export class BattleScene implements SceneLike {
 
     for (const unit of state.units) {
       const lanes = Math.max(...state.units.filter(u => u.side === unit.side && u.row === unit.row).map(u => u.slot + 1));
-      const sprite = new UnitSprite(unit, this.clock, this.textures, lanes);
+      const allies = state.units.filter(u => u.side === unit.side);
+      const sprite = new UnitSprite(unit, this.clock, this.textures, lanes, allies.length <= 3 ? allies.indexOf(unit) : undefined);
       this.sprites.set(unit.uid, sprite);
       this.unitsLayer.addChild(sprite.root);
       this.armyLayer.addChild(sprite.army.root);
@@ -134,6 +136,12 @@ export class BattleScene implements SceneLike {
         const source = this.sprites.get(event.source);
         const target = this.sprites.get(event.target);
         if (!source || !target) return;
+        // 동시 타격으로 함께 맞은 군단: 돌진 연출 없이 피격만 보여 준다
+        if (event.splash) {
+          void this.floatText(target, `관통 -${event.amount}`, 0xffa94d, 22, 600);
+          await Promise.all([event.amount > 0 ? target.flash() : Promise.resolve(), target.animateTroops(event.troopsAfter)]);
+          return;
+        }
         const counter = event.kind === 'counter';
         // Damage carries the actual recipient (including guard interception).
         // The preceding action supplies only the visual skill, never the hit result.
@@ -189,6 +197,15 @@ export class BattleScene implements SceneLike {
       case 'unitDestroyed': {
         const sprite = this.sprites.get(event.unit);
         if (sprite) await sprite.fadeOut();
+        return;
+      }
+      case 'revive': {
+        const sprite = this.sprites.get(event.target);
+        const source = this.sprites.get(event.source);
+        if (!sprite) return;
+        if (source) await source.pulse();
+        void this.floatText(sprite, `부활 ${event.troopsAfter}`, 0x59e08a, 26, 800);
+        await Promise.all([sprite.fadeIn(), sprite.animateTroops(event.troopsAfter), sprite.moveToSlot(event.row, event.slot)]);
         return;
       }
       case 'rowAdvance': {
@@ -267,34 +284,27 @@ export class BattleScene implements SceneLike {
     if (this.textures.field) {
       const field = new Sprite(this.textures.field);
       field.position.set(0, -84);
-      field.scale.set(Math.max(WORLD_W / field.texture.width, 412 / field.texture.height));
-      const mask = new Graphics().rect(0, 46, WORLD_W, 412).fill(0xffffff);
+      field.scale.set(Math.max(WORLD_W / field.texture.width, 425 / field.texture.height));
+      const mask = new Graphics().rect(0, 70, WORLD_W, 425).fill(0xffffff);
       const view = new Container(); view.addChild(field, mask); view.mask = mask;
       layer.addChild(view);
     } else {
-      layer.addChild(new Graphics().rect(0, 46, WORLD_W, 412).fill(0x626953));
+      layer.addChild(new Graphics().rect(0, 70, WORLD_W, 425).fill(0x626953));
     }
-    g.rect(0, 0, WORLD_W, 46).fill(0x101e21);
-    g.rect(0, 458, WORLD_W, WORLD_H - 458).fill(0x101d20);
-    g.moveTo(0, 458).lineTo(WORLD_W, 458).stroke({ width: 3, color: 0x9b8150 });
-    // 열마다 어두운 바탕을 깔아 구조(전열/후열)를 보여 준다
+    g.rect(0, 0, WORLD_W, 70).fill(0x0c1417).stroke({ width: 2, color: 0x9b8150 });
+    g.rect(0, 495, WORLD_W, WORLD_H - 495).fill(0x0c1417);
+    for (const x of [24, 798]) {
+      g.rect(x, 499, 458, 390).fill(0x111d1e).stroke({ width: 2, color: 0x9b8150 });
+      g.rect(x + 4, 503, 450, 382).stroke({ width: 1, color: 0x4e4938 });
+    }
+    g.moveTo(0, 495).lineTo(WORLD_W, 495).stroke({ width: 3, color: 0xc3a15d });
     for (const side of ['attacker', 'defender'] as const) {
-      for (const row of ['front', 'back'] as const) {
-        g.roundRect(columnX(side, row) - 12, 478, CARD_W + 24, 410, 4).fill({ color: 0x182b2c });
-        const label = new Text({
-          text: row === 'front' ? '전열' : '후열',
-          style: { fontFamily: FONT, fontSize: 14, fill: 0x6b7690, fontWeight: 'bold' },
-        });
-        label.anchor.set(0.5, 0);
-        label.position.set(columnX(side, row) + CARD_W / 2, 484);
-        layer.addChild(label);
-      }
       const title = new Text({
         text: SIDE_LABEL[side],
-        style: { fontFamily: FONT, fontSize: 16, fill: SIDE_COLOR[side], fontWeight: 'bold' },
+        style: { fontFamily: FONT, fontSize: 25, fill: 0xf1e6cf, fontWeight: 'bold' },
       });
       title.anchor.set(0.5, 0);
-      title.position.set(side === 'attacker' ? 270 : 1010, 432);
+      title.position.set(side === 'attacker' ? 200 : 1080, 12);
       layer.addChild(title);
     }
     const versus = new Text({ text: '군단 지휘\n\n아래에서 행동 선택', style: { fontFamily: FONT, fontSize: 18, fill: 0xbfa879, align: 'center', fontWeight: 'bold' } });

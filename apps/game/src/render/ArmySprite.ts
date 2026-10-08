@@ -51,7 +51,7 @@ export class ArmySprite {
         this.figures.addChild(this.shieldToken);
         this.drawShieldToken();
       } else {
-        this.figures.addChild(new Graphics().roundRect(-28, -76, 56, 65, 4).fill(0x172728).stroke({ color: 0xb39a65, width: 2 }));
+        this.figures.addChild(this.drawFamilyToken());
       }
       const glyph = new Text({ text: FAMILY_GLYPH[unit.family], style: { fontFamily: FONT, fontSize: 30, fill: SIDE_COLOR[unit.side] } });
       glyph.anchor.set(.5); glyph.position.set(0, -44); this.figures.addChild(glyph);
@@ -68,6 +68,37 @@ export class ArmySprite {
     const direction = this.unit.side === 'attacker' ? 1 : -1;
     const x = this.root.x + direction * (row === 'front' ? 125 : -110);
     this.annotation.position.set(Math.max(95, Math.min(1185, x)), this.root.y - 40);
+  }
+
+  /** Equipment silhouettes for unproduced art; the class glyph remains visible. */
+  private drawFamilyToken() {
+    const g = new Graphics();
+    const outline = { color: 0xb39a65, width: 2 };
+    switch (this.unit.family) {
+      case 'archer':
+        g.moveTo(-24, -82).quadraticCurveTo(48, -44, -24, -6).stroke({ ...outline, width: 4 });
+        g.moveTo(-24, -82).lineTo(-24, -6).stroke(outline);
+        g.moveTo(-37, -18).lineTo(37, -75).lineTo(27, -73).moveTo(37, -75).lineTo(33, -65).stroke(outline);
+        break;
+      case 'strategist':
+        g.rect(-28, -75, 56, 62).fill(0x172728).stroke(outline);
+        g.roundRect(-34, -82, 68, 10, 4).fill(0x39423b).stroke(outline);
+        g.roundRect(-34, -16, 68, 10, 4).fill(0x39423b).stroke(outline);
+        break;
+      case 'taoist':
+        g.poly([-23, -82, 23, -82, 23, -5, 0, -15, -23, -5]).fill(0x172728).stroke(outline);
+        g.moveTo(-12, -72).lineTo(12, -72).moveTo(-12, -24).lineTo(12, -24).stroke({ color: 0x71c9c5, width: 2 });
+        break;
+      case 'geomancer':
+        g.circle(0, -44, 36).fill(0x172728).stroke(outline);
+        g.poly([0, -86, 7, -73, -7, -73]).fill(0xb39a65);
+        g.moveTo(-30, -44).lineTo(-24, -44).moveTo(24, -44).lineTo(30, -44)
+          .moveTo(0, -74).lineTo(0, -68).moveTo(0, -20).lineTo(0, -14).stroke(outline);
+        break;
+      default:
+        g.roundRect(-28, -76, 56, 65, 4).fill(0x172728).stroke(outline);
+    }
+    return g;
   }
 
   private drawShieldToken() {

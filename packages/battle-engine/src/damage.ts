@@ -150,13 +150,14 @@ export class DamageCalculator {
   }
 
   /**
-   * 반격 피해 = 반격자가 공격자를 기본 계수(1)로 친 피해 × 공격 기술의 반격 비율.
+   * 반격 피해 = 반격자가 공격자를 기본 계수(1)로 친 피해 × 공격 기술의 반격 비율 × 반격자 병종의 반격 배율.
    * 반격자의 일반공격 스킬은 계산 종류(공격/지력)만 쓰고, 계수와 방어 무시는 쓰지 않는다.
    * 반격자의 병력은 호출하는 쪽이 정한다 (엔진은 맞기 전 병력을 넘긴다).
    */
   counterDamage(counterer: CharacterState, target: CharacterState, counterSkill: SkillData, attackSkill: SkillData, countererMoraleShare: number): number {
     const plain = { ...counterSkill, power: 1, ignoreDefense: 0 };
-    return Math.round(this.damage(counterer, target, plain, countererMoraleShare) * this.counterRate(attackSkill));
+    const power = this.data.unitTypes[counterer.unitType]?.counterPower ?? 1;
+    return Math.round(this.damage(counterer, target, plain, countererMoraleShare) * this.counterRate(attackSkill) * power);
   }
 
   /** 병사 회복량. 기본은 병력 보정과 사기 보정을 받지 않고, heal.useTroopFactor를 켜면 시전자의 병력 보정을 곱한다. */

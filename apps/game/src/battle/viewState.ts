@@ -85,6 +85,8 @@ export function applyEvent(state: ViewState, event: BattleEvent): ViewState {
       return patch(state, event.target, { troops: event.troopsAfter });
     case 'unitDestroyed':
       return patch(state, event.unit, { troops: 0, dead: true });
+    case 'revive':
+      return patch(state, event.target, { troops: event.troopsAfter, dead: false, row: event.row, slot: event.slot });
     case 'rowAdvance': {
       const order = new Map(event.units.map((uid, index) => [uid, index] as const));
       return {

@@ -302,3 +302,117 @@ Balance Lab의 "파일에 저장"을 누를 때마다 자동으로 덧붙는다 
 - characters.liuBei: unitType infantry → royal-guard, stats 공7 방6 속5 → 공5 방5 속4 (근위대에서 공7 방6 속5)
 - characters.zhangFei: unitType shield → iron-wall, stats 공8 방9 속5 → 공6 방8 속4 (철벽대에서 공7 방9 속4)
 - presets.shuStart: 유비 보병, 장비 방패병, 관우 보병 (모두 승급 전)
+
+## 2026-10-08 — 밸런스 수치
+메모: 피해가 공격자의 현재 병력을 넘지 않는 상한을 풂. 기본 피해가 큰 병종이 병력 대비 더 크게 때리게 하려는 것 (원작에서도 기마가 병력보다 큰 피해를 준 것 같다는 사용자 관찰).
+- balance.troopFactor.tiered.capAtTroops: true → false
+
+## 2026-10-08 — 스킬
+메모: 도사의 공격 스킬 이름을 독연에서 도술로 바꿈 (책사의 공격 스킬은 책략 그대로). 지력 기반 공격은 책략과 도술.
+- skills.poison-smoke.name: 독연 → 도술
+
+## 2026-10-08 — 병종 · 스킬
+메모: 모든 병종이 고유 스킬을 갖게 하고(병종 35종, 스킬 55개) 값만으로 되는 승급 병종의 성격을 임시 수치로 반영. 새 규칙이 필요한 스킬(전체 가드, 관통 돌격, 일제사격, 대화계, 전체 독려, 열 결계, 전체 결계, 열 치유)은 이름만 있고 효과는 기존 스킬과 같다.
+- skills: 승급 병종마다 `<병종 id>-<원래 스킬 id>` 스킬을 만들고 이름은 차수 번호 (공격2, 공격3, 가드2, 책략2 …). 방패병은 보병과 같이 쓰던 공격을 `shield-infantry-attack`으로 분리
+- unitTypes.light-infantry: 기본 AP +1 / heavy-infantry: 속도 보정 −1, 받는 물리 ×0.8, 받는 도술 ×1.15
+- unitTypes.heavy-shield: 속도 보정 −1 더, 가드 상승량 지력×27, 가드 중 받는 피해 ×0.3
+- unitTypes.strong-bow: 화살 계수 1.3, 전열 주는 피해 ×0.95, 속도 −1 더 / long-bow: 기본 AP +1, 화살 계수 0.75 / elite-archer: 후열 주는 피해 ×1.3
+- unitTypes.adviser: 책략 계수 1.3 / tactician: 독려 가짓수 2~4, 최대 중첩 2 / alchemist: 도술 계수 1.3 / sage: 도술 계수 2, 속도 −1 / healer: 기본 AP +1
+- 승급 보너스: 병종마다 임시 조정 (설계 문서 01 참고). 승급 병종은 부모의 값을 이어받는다
+
+## 2026-10-08 — 병종 · 스킬
+메모: 승급 병종의 새 규칙을 구현하고 그 값을 데이터에 넣음 (모두 임시값).
+- unitTypes.royal-guard.counterPower: 1 → 2 (근위대 반격 배율). 모든 병종에 counterPower 칸 추가
+- unitTypes.escort.guard: 전체 가드 (scope all, 가드 상승량 지력×10) / armored-guard.guard: 전체 가드 + 도술 방어(interceptsMagic) / iron-wall.guard: 공격해도 가드 유지(keepOnAttack). 모든 가드 병종에 scope, interceptsMagic, keepOnAttack 칸 추가
+- skills.assault-infantry-infantry-attack(관통 돌격).behindHit: (없음) → 0.3
+- skills.crossbow-archer-shot(일제사격), jade-strategist-stratagem(대화계): rowAttack 0.7, apCost 1 → 2
+- skills.grand-tactician-inspire(전체 독려, all), sorcerer-ward(열 결계, row), qimen-master-ward(전체 결계, all), grand-physician-heal(열 치유, row): area 추가, apCost 1 → 2
+- skills: + immortal-revive(부활: reviveRatio 0.2, maxUses 1, apCost 2), unitTypes.immortal.extraSkillIds에 추가
+
+## 2026-10-09 — 병종
+메모: 스탯 보정과 승급 보너스를 하나로 합침 (최종 스탯 = 초기 + 기본 병종부터 지금 병종까지 statMods의 합). 장수들의 최종 스탯은 그대로.
+- unitTypes: promotionBonus 칸 삭제. 승급 병종의 statMods를 "부모 대비 차이"로 다시 계산 (예: heavy-cavalry 공 1 방 2 속 -1)
+
+## 2026-10-08 15:56 — 스킬 · 병종
+- skills.tiger-cavalry-cavalry-charge.power: 1.6 → 1.7
+- skills.tiger-cavalry-cavalry-charge.counterRate: 0.25 → 0.5
+- skills.light-cavalry-cavalry-charge.power: 1.25 → 1.5
+- skills.heavy-cavalry-cavalry-charge.power: 1.25 → 1.5
+- skills.heavy-cavalry-cavalry-charge.counterRate: 0.25 → 0.35
+- skills.horse-archer-cavalry-charge.power: 1.25 → 1.5
+- unitTypes.cavalry.damageDealtByRow.back: 0.8 → 0.75
+- unitTypes.cavalry.vulnerability.magic: 0 → 20
+- unitTypes.light-cavalry.damageDealtByRow.back: 0.8 → 0.75
+- unitTypes.light-cavalry.vulnerability.magic: 0 → 20
+- unitTypes.light-cavalry.statMods.attack: 1 → 0
+- unitTypes.light-cavalry.statMods.action: 0 → 1
+- unitTypes.heavy-cavalry.statMods.attack: 1 → 0
+- unitTypes.heavy-cavalry.statMods.defense: 2 → 1
+- unitTypes.horse-archer.typeBonus.physical: 30 → 40
+- unitTypes.horse-archer.vulnerability.magic: 0 → 20
+- unitTypes.horse-archer.statMods.speed: 2 → 0
+- unitTypes.tiger-cavalry.statMods.attack: 2 → 1
+- unitTypes.tiger-cavalry.statMods.action: 0 → -1
+
+## 2026-10-08 16:00 — 스킬 · 병종
+- skills.light-infantry-infantry-attack.power: 1 → 1.25
+- skills.heavy-infantry-infantry-attack.power: 1 → 1.25
+- unitTypes.light-infantry.statMods.attack: 1 → 0
+- unitTypes.light-infantry.statMods.action: 0 → 1
+- unitTypes.heavy-infantry.statMods.attack: 1 → 0
+- unitTypes.heavy-infantry.statMods.defense: 2 → 1
+- unitTypes.assault-infantry.statMods.defense: 1 → 0
+- unitTypes.assault-infantry.statMods.speed: 0 → 1
+- unitTypes.assault-infantry.statMods.action: 0 → 1
+
+## 2026-10-08 16:00 — 밸런스 수치
+- balance.troopFactor.normalizeByScale: false → true
+- skills: 병종별 복사본 중 값과 이름이 같은 스킬을 하나로 합침 (56 → 30개). 겹친 이름은 번호를 다시 매김 (예: 돌격3은 중기병의 돌격). unitTypes의 basicSkillId, extraSkillIds를 합친 스킬로 바꿈
+
+## 2026-10-08 16:40 — 스킬 · 장수
+- skills.heavy-cavalry-cavalry-charge.power: 1.5 → 1.7
+- skills.heavy-cavalry-cavalry-charge.ignoreDefense: 1 → 1.5
+- skills.strong-bow-archer-shot.power: 1.3 → 1
+- skills.long-bow-archer-shot.power: 0.75 → 1.1
+- skills.assault-infantry-infantry-attack.power: 1 → 1.25
+- skills.assault-infantry-infantry-attack.behindHit: 0.3 → 0.4
+- characters.zhangFei.unitType: "iron-wall" → "shield"
+- characters.guanYu.unitType: "tiger-cavalry" → "infantry"
+- characters.liuBei.unitType: "royal-guard" → "infantry"
+
+## 2026-10-08 16:44 — 병종 · 장수
+- unitTypes.shield.statMods.attack: -1 → 0
+- unitTypes.shield.statMods.defense: 0 → 1
+- unitTypes.escort.statMods.attack: 1 → 0
+- unitTypes.escort.statMods.intellect: 0 → 1
+- unitTypes.heavy-shield.damageTakenByType.physical: 1 → 0.9
+- unitTypes.heavy-shield.statMods.attack: 1 → 0
+- unitTypes.heavy-shield.statMods.defense: 2 → 1
+- unitTypes.heavy-shield.statMods.intellect: 0 → 1
+- unitTypes.armored-guard.damageTakenByType.magic: 1 → 0.9
+- unitTypes.armored-guard.statMods.attack: 1 → 0
+- unitTypes.armored-guard.statMods.speed: 0 → 1
+- unitTypes.armored-guard.statMods.action: 0 → 1
+- unitTypes.iron-wall.damageTakenByType.physical: 1 → 0.9
+- unitTypes.iron-wall.statMods.attack: 1 → 0
+- unitTypes.iron-wall.statMods.intellect: 0 → 1
+- unitTypes.iron-wall.statMods.action: 0 → -1
+- characters.zhaoYun.stats.attack: 8 → 6
+
+## 2026-10-08 16:46 — 병종
+- unitTypes.infantry.vulnerability.magic: 0 → 20
+- unitTypes.shield.vulnerability.magic: 0 → 20
+- unitTypes.light-infantry.vulnerability.magic: 0 → 20
+- unitTypes.heavy-infantry.vulnerability.magic: 0 → 20
+- unitTypes.assault-infantry.vulnerability.magic: 0 → 20
+- unitTypes.royal-guard.vulnerability.magic: 0 → 20
+- unitTypes.escort.vulnerability.magic: 0 → 20
+- unitTypes.heavy-shield.vulnerability.magic: 0 → 20
+- unitTypes.armored-guard.vulnerability.magic: 0 → 10
+- unitTypes.iron-wall.vulnerability.magic: 0 → 20
+
+## 2026-10-08 16:46 — 병종
+- unitTypes.heavy-cavalry.vulnerability.magic: 0 → 20
+- unitTypes.tiger-cavalry.typeBonus.physical: 30 → 40
+- unitTypes.tiger-cavalry.vulnerability.magic: 0 → 20
+- skills.long-bow-archer-shot.name: 화살 공격3 → 관통 사격 (이름만 바꿈, 효과는 그대로)

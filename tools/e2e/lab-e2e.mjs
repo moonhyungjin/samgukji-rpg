@@ -163,13 +163,24 @@ try {
   await tabs('병종 · 스킬');
   await sleep(300);
   const data = await text('main');
-  check('병종 탭: 병종 카드, 스킬 표(계수, 방어 무시, 버프)', ['기본 AP', '사거리', '받는 물리', '반격 비율', '가드로 막힘', '방어 무시', '피해 무시 횟수', '무작위 가짓수'].every((k) => data.includes(k)));
+  check('병종 탭: 병종 카드, 스킬 표(계수, 방어 무시, 버프)', ['기본 AP', '사거리', '받는 물리', '반격 유발', '가드로 막힘', '방어 무시', '피해 무시 횟수', '가짓수 최소'].every((k) => data.includes(k)));
   check('병종 탭: 비어 있거나 NaN인 입력란이 없다', !(await evalJs(`[...document.querySelectorAll('main input[type=number]')].some(i => i.value === 'NaN' || i.value === '')`)));
   const treeInfo = await evalJs(`JSON.stringify({ tabs: document.querySelectorAll('button.family-tab').length, nodes: [...document.querySelectorAll('button.tree-node')].map(n => n.dataset.node) })`);
   check('병종 탭: 계열 탭(7)과 승급 트리(보병 계열 5종)가 나온다', JSON.parse(treeInfo).tabs === 7 && JSON.parse(treeInfo).nodes.length === 5, treeInfo);
   await selectUnit('cavalry', 'heavy-cavalry');
   check('트리에서 중기병을 누르면 그 병종 카드가 나온다 (스킬도 카드 안에 있다)', (await evalJs(`!!document.querySelector('section[data-unittype="heavy-cavalry"] [data-skills-of="heavy-cavalry"] table.skill-table')`)) === true && !(await evalJs(`!!document.querySelector('section[data-unittype="cavalry"]')`)));
-  check('같이 쓰는 스킬에는 "이 병종 전용으로 복제"가 있다', (await text('[data-skills-of="heavy-cavalry"]')).includes('이 병종 전용으로 복제'));
+  // 스킬 표 머리글을 누르면 정렬된다: 계수 오름차순 → 내림차순 → 원래 순서
+  const powers = () => evalJs(`JSON.stringify([...document.querySelectorAll('section.all-skills tbody tr')].map(r => Number(r.querySelectorAll('input[type=number]')[0].value)))`).then(JSON.parse);
+  const clickSort = (key) => evalJs(`document.querySelector('section.all-skills [data-sort="${key}"]').click()`);
+  const original = await powers();
+  await clickSort('power'); await sleep(150);
+  const asc = await powers();
+  await clickSort('power'); await sleep(150);
+  const desc = await powers();
+  await clickSort('power'); await sleep(150);
+  const back = await powers();
+  check('스킬 표: 머리글(계수)을 누르면 오름차순, 다시 누르면 내림차순, 세 번째는 원래 순서', asc.every((v, k) => k === 0 || asc[k - 1] <= v) && desc.every((v, k) => k === 0 || desc[k - 1] >= v) && JSON.stringify(back) === JSON.stringify(original) && asc.length > 20, `${asc.length}줄`);
+  check('혼자 쓰는 스킬은 카드에 "이 병종만 쓰는 스킬"이라고 나온다', (await text('[data-skills-of="heavy-cavalry"]')).includes('이 병종만 쓰는 스킬입니다'));
   await selectUnit('infantry');
   await evalJs('window.scrollTo(0, 0)'); await shot('lab-unittypes', true);
 
@@ -203,7 +214,18 @@ try {
   await sleep(300);
   const rows = await evalJs(`document.querySelectorAll('section.ed tbody tr').length`);
   check('장수 탭에 장수 표가 나온다', rows === JSON.parse(originals.characters).length, `${rows}줄`);
-  check('병종 보정을 반영한 실제 스탯과 총 AP가 나온다 (장비: 7 / 9 / 4 / 4, AP 5)', /7 \/ 9 \/ 4 \/ 4/.test(await evalJs(`document.querySelector('tr[data-id="zhangFei"]').textContent`)));
+  // 실제 스탯 = 초기 스탯 + 승급 길(기본 병종부터 지금 병종까지)의 스탯 보정 누적 (데이터에서 계산한다)
+  const expectedStats = (() => {
+    const types = readData('unitTypes');
+    const zf = readData('characters').find((c) => c.id === 'zhangFei');
+    const byId = Object.fromEntries(types.map((t) => [t.id, t]));
+    const parent = (id) => types.find((t) => t.promotesTo.includes(id))?.id;
+    const chain = [];
+    for (let id = zf.unitType; id; id = parent(id)) chain.unshift(byId[id]);
+    const stat = (k) => Math.max(0, zf.stats[k] + chain.reduce((sum, t) => sum + (t.statMods?.[k] ?? 0), 0));
+    return `${stat('attack')} / ${stat('defense')} / ${stat('intellect')} / ${stat('speed')}`;
+  })();
+  check(`승급 길의 스탯 보정을 반영한 실제 스탯이 나온다 (장비: ${expectedStats})`, (await evalJs(`document.querySelector('tr[data-id="zhangFei"]').textContent`)).includes(expectedStats));
   await shot('lab-characters');
 
   const guanBefore = readData('characters').find((c) => c.id === 'guanYu').stats.attack;

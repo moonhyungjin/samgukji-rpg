@@ -8,7 +8,7 @@
 // 확인하는 것: 수동 플레이(스킬 선택 → 캔버스 카드 클릭 / 목록 버튼 / 대기 / AI 위임), 애니메이션 재생, 건너뛰기, 다시 하기, 콘솔 오류.
 
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -117,83 +117,61 @@ try {
   await send('Runtime.enable');
   await send('Page.enable');
 
-  // 1. 수동 플레이: 스킬 선택 → 캔버스에서 대상 카드 클릭
+  // Target first: hover reveals options, clicking an option submits exactly once.
   await goto('?control=attacker&autostart=1&speed=0&seed=1');
-  await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('의 차례')`, 20000, '첫 플레이어 차례');
-  const heading = await text('.command h3');
-  check('첫 플레이어 차례에 커맨드 패널이 나온다', /차례/.test(heading), heading.trim());
-  const mine = ['장비', '관우', '조운', '황충', '제갈량', '방통'];
-  check('내 차례의 군단은 공격측(촉)이다', mine.some((n) => heading.includes(n)), heading.trim());
-
-  const skillLabel = await clickSkill();
-  check('스킬 버튼을 누르면 대상 목록이 나온다', !!skillLabel && (await waitFor(`document.querySelectorAll('.targets button').length > 0`, 3000)), String(skillLabel));
-  const targetName = (await text('.targets .target-name')).trim();
-  const preview = (await text('.targets .target-preview')).trim();
-  check('대상마다 예상 피해가 표시된다', /피해/.test(preview), `${targetName}: ${preview}`);
-  const allPreviews = await evalJs(`[...document.querySelectorAll('.targets .target-preview')].map(e => e.textContent).join(' | ')`);
-  check('같은 열에 가드 유닛이 있는 대상은 가드가 막을 확률이 표시된다', /가드가 막을 확률 \d+%/.test(allPreviews), allPreviews.slice(0, 90));
-  await shot('play-targets');
-
-  const pos = WEI_POS[targetName];
-  check('대상이 방어측 군단이다 (좌표 매핑 가능)', !!pos, targetName);
-  if (pos) {
-    const { x, y } = await canvasPoint(pos[0], pos[1]);
-    const logBefore = (await text('.log')).length;
-    await mouse(x, y);
-    const acted = await waitFor(`!!document.querySelector('.log')?.textContent.includes(${JSON.stringify('→ 방:' + targetName)})`, 8000, '캔버스 클릭 후 로그').catch(() => false);
-    check('캔버스에서 대상 카드를 클릭하면 공격이 실행된다', !!acted, `대상 ${targetName}, 클릭 좌표 (${x.toFixed(0)}, ${y.toFixed(0)})`);
-    await sleep(300);
-    const logAfter = (await text('.log')).length;
-    check('로그가 늘어난다', logAfter > logBefore, `${logBefore} → ${logAfter}`);
-  }
-  await waitFor(`!!(document.querySelector('.command h3')?.textContent.includes('의 차례') || document.querySelector('.command h3')?.textContent.includes('전투 종료'))`, 8000);
-  await shot('play-after-click');
-
-  // 1-2. 가드: 보병(장비) 차례까지 다른 군단은 대기로 넘기고, 가드를 쓴다
+  await waitFor(`!!document.querySelector('.card-action-trigger')`, 20000);
+  check('중앙 패널에는 공격/대기 선택 버튼이 없다', await evalJs(`!document.querySelector('.command [aria-pressed]') && ![...document.querySelectorAll('.command button')].some(b => b.textContent.includes('대기'))`));
+  const enemySelector = '.card-action-trigger[data-side="defender"]:not([data-actions="0"])';
+  const point = await evalJs(`(() => { const r = document.querySelector('${enemySelector}').getBoundingClientRect(); return { x:r.x+r.width/2, y:r.y+r.height/2 }; })()`);
+  const beforeHover = await text('.log');
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point });
+  await waitFor(`!!document.querySelector('.card-action-menu')`, 3000);
+  check('적 카드에 마우스를 올리면 공격과 예상 피해가 나온다', /피해/.test(await text('.card-action-menu')));
+  check('적 카드에는 가드·대기·지원 행동이 없다', await evalJs(`![...document.querySelectorAll('.card-action-option')].some(b => ['guard','wait','buff','heal'].includes(b.dataset.kind))`));
+  check('마우스를 올리는 것만으로 공격하지 않는다', beforeHover === await text('.log'));
+  await shot('card-enemy-actions');
+  const actionPoint = await evalJs(`(() => { const r = document.querySelector('.card-action-option').getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}; })()`);
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...actionPoint });
+  await mouse(actionPoint.x, actionPoint.y);
+  await waitFor(`document.querySelector('.log').textContent !== ${JSON.stringify(beforeHover)}`, 8000);
+  check('카드 메뉴의 공격 버튼으로 행동을 실행한다', true);
+  await waitFor(`!!document.querySelector('.card-action-trigger[data-self="true"]')`, 8000);
+  await evalJs(`document.querySelector('.card-action-trigger[data-self="true"]').click()`);
+  check('행동 중인 아군 카드에는 대기가 있고 공격은 없다', await evalJs(`!!document.querySelector('.card-action-option[data-kind="wait"]') && ![...document.querySelectorAll('.card-action-option span')].some(e => /^피해 /.test(e.textContent))`));
+  await shot('card-self-actions');
+  await evalJs(`document.querySelector('.card-action-trigger[data-self="true"]').dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', bubbles:true }))`);
+  check('Escape로 메뉴를 닫는다', await evalJs(`!document.querySelector('.card-action-menu')`));
+  await evalJs(`document.querySelector('.card-action-trigger[data-self="true"]').click()`);
+  await evalJs(`document.querySelector('.card-action-trigger[data-self="true"]').dispatchEvent(new KeyboardEvent('keydown', { key:'ArrowDown', bubbles:true }))`);
+  const actionFocused = await evalJs(`document.activeElement.classList.contains('card-action-option')`);
+  await evalJs(`document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', bubbles:true }))`);
+  check('키보드로 행동에 접근하고 Esc로 카드에 돌아온다', actionFocused && await evalJs(`document.activeElement.classList.contains('card-action-trigger') && !document.querySelector('.card-action-menu')`));
+  await evalJs(`document.querySelector('.card-action-trigger[data-self="true"]').click()`);
+  await mouse(10, 10);
+  check('카드 밖 클릭은 메뉴를 닫는다', await evalJs(`!document.querySelector('.card-action-menu')`));
   let guarded = false;
-  for (let i = 0; i < 14 && !guarded; i++) {
-    const h = await text('.command h3');
-    if (!h.includes('의 차례')) break;
-    if (h.includes('장비')) {
-      const label = await evalJs(`(() => { const b = [...document.querySelectorAll('.command .row button')].find(b => b.textContent.startsWith('가드')); if (!b) return false; const t = b.textContent; b.click(); return t; })()`);
-      // 이미 상대 공격을 막았다면 확률이 줄어 있으므로, 고정값이 아니라 버튼에 표시된 값이 로그와 일치하는지 본다
-      const rate = /막을 확률 (\d+)%/.exec(String(label))?.[1];
-      check('보병에게 가드 버튼이 있고 올린 뒤의 확률이 표시된다', !!rate, String(label));
-      const logged = await waitFor(`!!document.querySelector('.log')?.textContent.includes('장비 가드 확률 ${rate}%')`, 8000, '가드 로그').catch(() => false);
-      check('가드를 쓰면 버튼에 표시된 확률이 그대로 로그에 남는다', !!logged, `${rate}%`);
-      await sleep(400);
-      await shot('play-guard');
+  for (let i=0; i<18 && !guarded; i++) {
+    if (!(await text('.command h3')).includes('의 차례')) break;
+    await evalJs(`document.querySelector('.card-action-trigger[data-self="true"]').click()`);
+    const guard = await evalJs(`document.querySelector('.card-action-option[data-kind="guard"]')?.textContent`);
+    const before = await text('.log');
+    if (guard) {
+      await shot('card-guard-actions');
+      await evalJs(`document.querySelector('.card-action-option[data-kind="guard"]').click()`);
+      const rate = /막을 확률 (\d+)%/.exec(guard)?.[1];
+      await waitFor(`document.querySelector('.log').textContent !== ${JSON.stringify(before)}`, 8000);
+      check('자기 카드에서 가드 실행 후 표시 확률이 로그에 반영된다', (await text('.log')).includes('가드 확률 '+rate+'%'));
       guarded = true;
     } else {
-      const before = (await text('.log')).split('\n').length;
-      await clickButton('대기 (AP');
-      await waitFor(`document.querySelector('.log').textContent.split('\\n').length > ${before}`, 8000);
-      await waitFor(`!!(document.querySelector('.command h3')?.textContent.includes('의 차례') || document.querySelector('.command h3')?.textContent.includes('전투 종료'))`, 8000);
+      await evalJs(`document.querySelector('.card-action-option[data-kind="wait"]').click()`);
+      await waitFor(`document.querySelector('.log').textContent !== ${JSON.stringify(before)}`, 8000);
     }
+    await waitFor(`!!document.querySelector('.card-action-trigger') || document.querySelector('.command h3')?.textContent.includes('전투 종료')`, 8000);
   }
-  check('보병 차례까지 진행해 가드를 확인했다', guarded);
-
-  // 2. 대상 목록 버튼, 대기, AI 위임
-  const headingBefore = await text('.command h3');
-  await clickSkill();
-  await waitFor(`document.querySelectorAll('.targets button').length > 0`, 3000);
-  const countBefore = (await text('.log')).split('\n').length;
-  await evalJs(`document.querySelector('.targets button').click()`);
-  await waitFor(`document.querySelector('.log').textContent.split('\\n').length > ${countBefore}`, 8000);
-  check('대상 목록 버튼으로도 실행된다', true);
-  await waitFor(`document.querySelector('.command h3')?.textContent !== ${JSON.stringify(headingBefore)}`, 8000).catch(() => {});
-
-  if ((await text('.command h3')).includes('의 차례')) {
-    const before = (await text('.log')).split('\n').length;
-    await clickButton('대기 (AP');
-    await waitFor(`document.querySelector('.log').textContent.split('\\n').length > ${before}`, 8000);
-    check('대기 버튼이 동작한다', (await text('.log')).includes('대기'));
-  }
-
-  await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('의 차례')`, 8000).catch(() => {});
-  check('AI에게 맡기기 버튼이 있다', !!(await clickButton('AI에게 맡기기')));
-  await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('전투 종료')`, 30000, '전투 종료');
-  check('AI에게 맡기면 전투가 끝까지 진행된다', true, (await text('.command p')).trim().slice(0, 60));
+  check('대기로 차례를 넘기고 방패병 가드를 검증했다', guarded);
+  await clickButton('AI에게 맡기기');
+  await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('전투 종료')`, 30000);
+  check('AI 위임 후 카드 메뉴가 사라지고 전투가 끝난다', await evalJs(`!document.querySelector('.card-action-trigger')`));
   await shot('play-finished');
 
   // 3. 실제 속도 애니메이션(관전)
@@ -232,8 +210,8 @@ try {
   // 6. First art scene: same engine, real texture loads, battlefield hit target.
   await goto('?artTrial=1&control=attacker&speed=0&autostart=1');
   await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('유비')`, 20000, '유비 시험 전투');
-  await clickSkill();
-  await waitFor(`document.querySelectorAll('.targets button').length > 0`, 5000);
+  await evalJs(`document.querySelector('.card-action-trigger[data-side="defender"]').click()`);
+  await waitFor(`!!document.querySelector('.card-action-option')`, 5000);
   await shot('art-trial-targets');
   const dockClear = await evalJs(`(() => {
     const stage = document.querySelector('.stage').getBoundingClientRect();
@@ -245,6 +223,14 @@ try {
   check('중앙 지휘 패널이 양쪽 군단 카드를 가리지 않는다', dockClear);
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
   await sleep(400);
+  await evalJs(`document.querySelector('[aria-label="행동 메뉴 닫기"]')?.click()`);
+  await send('Emulation.setTouchEmulationEnabled', { enabled: true });
+  const touchPoint = await evalJs(`(() => { const r = document.querySelector('.card-action-trigger[data-side="defender"]').getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}; })()`);
+  await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [touchPoint] });
+  await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await waitFor(`!!document.querySelector('.card-action-option')`, 3000);
+  check('터치로 카드 메뉴를 열고 화면 안에서 행동을 고를 수 있다', await evalJs(`(() => { const r=document.querySelector('.card-action-menu').getBoundingClientRect(); return r.left>=0 && r.right<=innerWidth && r.top>=0; })()`));
+  await send('Emulation.setTouchEmulationEnabled', { enabled: false });
   const mobileClear = await evalJs(`(() => {
     const stage = document.querySelector('.stage').getBoundingClientRect();
     const dock = document.querySelector('.command-dock').getBoundingClientRect();
@@ -256,10 +242,9 @@ try {
   await sleep(400);
   const artLoads = await evalJs(`document.querySelector('.stage').dataset.artLoaded.split(',')`);
   check('전투 배경과 캐릭터 텍스처를 읽는다', ['field', 'liuBei', 'yellowSoldier', 'yellowCaptain', 'liuPortrait', 'yellowPortrait'].every(n => artLoads.includes(n)));
-  const fieldPoint = await evalJs(`(() => { const r = document.querySelector('.stage canvas').getBoundingClientRect(); const s = Math.min(r.width / 1280, r.height / 900); return {x:r.left+(r.width-1280*s)/2+870*s,y:r.top+(r.height-900*s)/2+254*s}; })()`);
-  await mouse(fieldPoint.x, fieldPoint.y);
+  await evalJs(`document.querySelector('.card-action-trigger[data-side="defender"]').click(); document.querySelector('.card-action-option').click()`);
   const armyClick = await waitFor(`!!document.querySelector('.log')?.textContent.includes('→ 방:황건 보병A')`, 8000).catch(() => false);
-  check('전장의 황건 군단을 클릭해 공격한다', !!armyClick);
+  check('황건 카드의 행동 메뉴에서 공격한다', !!armyClick);
   await shot('art-trial-after-hit');
 
   // Renderer fixture: replay explicit events without modifying game data or balancing outcomes.
@@ -273,7 +258,7 @@ try {
     wrapper.innerHTML = '<h2>원거리 연출 검토</h2><div class="stage"></div>';
     document.body.appendChild(wrapper);
     const ids = ['archer-shot', 'geomancer-shot', 'stratagem', 'poison-smoke'];
-    const names = ['화살 공격', '활 공격', '책략', '독연'];
+    const names = ['화살 공격', '활 공격', '책략', '도술'];
     const scene = await BattleScene.create(wrapper.querySelector('.stage'), {
       data: { skills: Object.fromEntries(ids.map((id, i) => [id, { name: names[i] }])) }, maxTurns: 40,
     });
@@ -387,6 +372,14 @@ try {
   for (const reversed of [false, true]) {
     await goto(`?a=${reversed ? 'wei' : 'shu'}&d=${reversed ? 'shu' : 'wei'}&control=${reversed ? 'defender' : 'attacker'}&speed=0&autostart=1`);
     await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('의 차례')`, 20000, '기병 포함 실제 편성');
+    // 그림은 관우가 기병 계열일 때만 붙는다 (관우의 병종은 Lab에서 바꾸는 값이라 데이터에서 읽는다)
+    const dataFile = (name) => JSON.parse(readFileSync(resolve('packages/game-data/data', `${name}.json`), 'utf-8'));
+    const guanYuType = dataFile('characters').find((c) => c.id === 'guanYu')?.unitType;
+    const guanYuIsCavalry = dataFile('unitTypes').find((t) => t.id === guanYuType)?.family === 'cavalry';
+    if (!guanYuIsCavalry) {
+      check(`관우와 공용 기병 텍스처 로드 (${reversed ? '방어측' : '공격측'}) — 관우가 기병 계열이 아니라 건너뜀`, true, guanYuType);
+      continue;
+    }
     check(`관우와 공용 기병 텍스처 로드 (${reversed ? '방어측' : '공격측'})`, await evalJs(`['guanYu','shuCavalry'].every(k => document.querySelector('.stage').dataset.artLoaded.split(',').includes(k))`));
     await shot(reversed ? 'cavalry-runtime-defender' : 'cavalry-runtime-attacker');
   }

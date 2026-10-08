@@ -75,6 +75,18 @@ describe('viewState: 이벤트만으로 최종 상태를 재구성한다', () =>
       expect(next.units.find((u) => u.uid === uid)).toMatchObject({ row: 'front', slot: index });
     });
   });
+
+  it('부활 이벤트는 전멸 표시를 지우고 병력, 열, 칸을 되돌린다', () => {
+    const engine = new BattleEngine({ ...base });
+    const initial = createViewState(engine.state.units, 50);
+    const target = initial.units.find((u) => u.side === 'defender')!;
+    const destroyed = applyEvent(initial, { type: 'unitDestroyed', round: 1, unit: target.uid, by: 'attacker:0' });
+    expect(destroyed.units.find((u) => u.uid === target.uid)).toMatchObject({ dead: true, troops: 0 });
+    const revived = applyEvent(destroyed, { type: 'revive', round: 2, source: 'defender:1', target: target.uid, troopsAfter: 200, row: 'back', slot: 1 });
+    expect(revived.units.find((u) => u.uid === target.uid)).toMatchObject({ dead: false, troops: 200, row: 'back', slot: 1 });
+    // 원본은 바뀌지 않는다
+    expect(destroyed.units.find((u) => u.uid === target.uid)!.dead).toBe(true);
+  });
 });
 
 describe('PlaySession', () => {

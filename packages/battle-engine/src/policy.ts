@@ -1,5 +1,5 @@
 import { DamageCalculator } from './damage';
-import { canBuff, chooseTarget, TargetSelector } from './targeting';
+import { canBuff, chooseTarget, reviveTargets, TargetSelector } from './targeting';
 import type { TargetPolicy } from './targeting';
 import type { Rng } from './rng';
 import type { BalanceConfig, BattleState, CharacterState, GameData, SkillData } from './types';
@@ -57,7 +57,16 @@ export function createDefaultPolicy(options: DefaultPolicyOptions = {}): Command
     const unitType = data.unitTypes[actor.unitType];
     const skills = [unitType.basicSkillId, ...unitType.extraSkillIds]
       .map((id) => data.skills[id])
-      .filter((s) => s.apCost <= actor.ap);
+      .filter((s) => s.apCost <= actor.ap)
+      // 쓸 수 있는 횟수가 정해진 스킬(부활 등)은 횟수가 남아 있을 때만 고른다
+      .filter((s) => s.kind === 'revive' || s.maxUses === undefined || (actor.skillUses?.[s.id] ?? 0) < s.maxUses);
+
+    // 전멸한 아군을 되살릴 수 있으면 가장 먼저 한다: 가장 병력이 큰 군단부터
+    const revive = skills.find((s) => s.kind === 'revive');
+    if (revive) {
+      const dead = reviveTargets(actor, state, revive).sort((a, b) => b.maxTroops - a.maxTroops);
+      if (dead.length > 0) return { kind: 'skill', skillId: revive.id, targetUid: dead[0].uid };
+    }
 
     const heal = skills.find((s) => s.kind === 'heal');
     if (heal) {
@@ -68,14 +77,15 @@ export function createDefaultPolicy(options: DefaultPolicyOptions = {}): Command
     }
 
     if (guardMode === 'protect' && unitType.guard) {
-      // 지킬 아군: 같은 열에서 아직 싸울 수 있는(AP가 남은) 아군. 다들 AP가 바닥났으면 지킬 필요가 없다.
+      // 지킬 아군: 지킬 수 있는 범위(같은 열 또는 모든 아군)에서 아직 싸울 수 있는(AP가 남은) 아군. 다들 AP가 바닥났으면 지킬 필요가 없다.
       const hasAllyToProtect = state.units.some(
-        (u) => u.side === actor.side && !u.isDead && u.uid !== actor.uid && u.row === actor.row && u.ap > 0,
+        (u) => u.side === actor.side && !u.isDead && u.uid !== actor.uid && (unitType.guard!.scope === 'all' || u.row === actor.row) && u.ap > 0,
       );
       if (hasAllyToProtect) {
         const guard = skills.find((s) => s.kind === 'guard');
         if (guard && actor.guardRate < guardTarget) return { kind: 'skill', skillId: guard.id, targetUid: actor.uid };
-        return { kind: 'wait' }; // 가드를 유지하며 AP를 아낀다
+        // 가드를 유지하며 AP를 아낀다. 공격해도 가드가 풀리지 않는 병종은 가드가 목표에 닿았으면 아래에서 공격한다.
+        if (!unitType.guard.keepOnAttack) return { kind: 'wait' };
       }
     }
 
