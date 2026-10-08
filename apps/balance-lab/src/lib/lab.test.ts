@@ -46,6 +46,7 @@ describe('편성 슬롯', () => {
     expect(lineup).toHaveLength(4);
     expect(lineup.filter((e) => e.row === 'front')).toHaveLength(2);
     expect(lineup.filter((e) => e.row === 'back')).toHaveLength(2);
+    expect(slotsFromLineup(lineup)).toEqual(slots);
   });
 
   it('레벨 덮어쓰기를 보존한다', () => {

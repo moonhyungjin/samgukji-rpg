@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { DEFAULT_ADDITIVE, DEFAULT_GAP, DEFAULT_TIERED } from '@samgukji/battle-engine';
+import { DEFAULT_ADDITIVE, DEFAULT_DEBUFFS, DEFAULT_GAP, DEFAULT_RATIO, DEFAULT_TIERED } from '@samgukji/battle-engine';
 import { setIn } from '../lib/path';
 import { filesSnapshot, syncWithFiles } from '../lib/fileSync';
 import type { DataFiles } from '../lib/fileSync';
@@ -60,6 +60,7 @@ export function normalizeState(saved: LabState): LabState {
         gap: saved.balance.damage.gap ?? { ...DEFAULT_GAP },
       },
       critical: saved.balance.critical ?? { chance: 10, multiplier: 1.5 },
+      debuffs: saved.balance.debuffs ?? structuredClone(DEFAULT_DEBUFFS),
       heal: saved.balance.heal.useTroopFactor === undefined ? { ...saved.balance.heal, useTroopFactor: false } : saved.balance.heal,
       action: saved.balance.action ?? { perAp: 2, cap: 10 },
       troopFactor: {
@@ -69,6 +70,7 @@ export function normalizeState(saved: LabState): LabState {
         relative: saved.balance.troopFactor.relative ?? { min: 0.5, max: 1.5, exponent: 0.5 },
         self: saved.balance.troopFactor.self ?? { min: 0.3, max: 1 },
         tiered: saved.balance.troopFactor.tiered ?? { ...DEFAULT_TIERED },
+        ratio: saved.balance.troopFactor.ratio ?? { ...DEFAULT_RATIO },
       },
     },
     sim: { ...defaults.sim, ...saved.sim },

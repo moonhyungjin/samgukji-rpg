@@ -6,6 +6,25 @@ import type { BalanceConfig, CharacterPool, CharacterState, GameData, LineupEntr
 export const ROW_CAPACITY = 3;
 export const MAX_UNITS_PER_SIDE = 6;
 
+/** 명시한 위치를 먼저 예약하고, 기존 편성의 생략된 위치만 빈칸에 배치한다. */
+export function resolveLineupSlots(lineup: readonly LineupEntry[]): number[] {
+  const used: Record<Row, Set<number>> = { front: new Set(), back: new Set() };
+  for (const entry of lineup) {
+    if (!used[entry.row]) throw new Error(`Invalid row: ${entry.row}`);
+    if (entry.slot === undefined) continue;
+    if (!Number.isInteger(entry.slot) || entry.slot < 0 || entry.slot >= ROW_CAPACITY) throw new Error(`Invalid slot: ${entry.slot}`);
+    if (used[entry.row].has(entry.slot)) throw new Error(`Duplicate slot: ${entry.row} ${entry.slot}`);
+    used[entry.row].add(entry.slot);
+  }
+  return lineup.map(entry => {
+    if (entry.slot !== undefined) return entry.slot;
+    const slot = [0, 1, 2].find(i => !used[entry.row].has(i));
+    if (slot === undefined) throw new Error(`${entry.row} row exceeds ${ROW_CAPACITY} units`);
+    used[entry.row].add(slot);
+    return slot;
+  });
+}
+
 /**
  * 무작위 편성. 캐릭터를 섞은 뒤 허용된 열에 하나씩 배치한다 (열당 최대 3군단).
  * 병종별/캐릭터별 승률을 편성 편향 없이 보기 위한 용도다.
@@ -85,7 +104,7 @@ export function buildUnits(side: Side, lineup: LineupEntry[], data: GameData, ba
   if (lineup.length === 0) throw new Error(`${side} lineup is empty`);
   if (lineup.length > MAX_UNITS_PER_SIDE) throw new Error(`${side} lineup exceeds ${MAX_UNITS_PER_SIDE} units`);
 
-  const rowCount: Record<Row, number> = { front: 0, back: 0 };
+  const slots = resolveLineupSlots(lineup);
   return lineup.map((entry, index) => {
     const character = data.characters[entry.characterId];
     if (!character) throw new Error(`Unknown character: ${entry.characterId}`);
@@ -95,11 +114,10 @@ export function buildUnits(side: Side, lineup: LineupEntry[], data: GameData, ba
     if (!unitType.allowedRows.includes(entry.row)) {
       throw new Error(`${character.name} (${unitType.id}) cannot be placed in the ${entry.row} row`);
     }
-    const slot = rowCount[entry.row]++;
-    if (slot >= ROW_CAPACITY) throw new Error(`${side} ${entry.row} row exceeds ${ROW_CAPACITY} units`);
+    const slot = slots[index];
 
     const level = entry.level ?? character.level;
-    const max = Math.max(1, Math.round(maxTroops(balance, level) * (unitType.troopScale ?? 1)));
+    const max = maxTroops(balance, level, unitType.troopScale ?? 1);
     // 스탯 = 캐릭터 스탯(초기) + 승급 길의 스탯 보정 누적 (뿌리 병종 + 1차 + ... + 지금 병종)
     const stats = applyStatMods(character.stats, statModsTotal(data.unitTypes, unitType.id));
     const maxAp = totalAp(balance, unitType.baseAp, stats.action);

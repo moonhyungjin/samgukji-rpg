@@ -538,3 +538,77 @@ Balance Lab의 "파일에 저장"을 누를 때마다 자동으로 덧붙는다 
 - unitTypes.qimen-master.statMods.defense: 0 → 1
 - unitTypes.qimen-master.statMods.speed: 1 → 0
 - unitTypes.qimen-master.statMods.action: 0 → 1
+
+## 2026-10-08 20:29 — 밸런스 수치
+- balance.action.cap: 10 → 9
+
+## 2026-10-08 21:25 — 밸런스 수치
+- balance.troopFactor.tiered.knee2: 5000 → 1500
+
+## 2026-10-08 21:40 — 밸런스 수치 (에이전트 수동 기록)
+메모: 사용자 결정. 최대 병력 = Lv1 250(모든 병종) + 레벨당 50 × 병종 병력 배율. 병력 보정을 내 최대 병력 대비 비율 구간식(ratio)으로
+- balance.troops.base: 150 → 250
+- balance.troopFactor.mode: "tiered" → "ratio"
+- + balance.troopFactor.ratio: {knee 0.8, knee2 0.5, knee3 0.3, rate2 0.3, rate3 0.5, floorTroops 250}
+
+## 2026-10-08 21:43 — 장수
+- characters.guanYu.unitType: "infantry" → "cavalry"
+
+## 2026-10-08 21:57 — 병종
+- unitTypes.cavalry.statMods.action: 0 → 1
+- unitTypes.heavy-cavalry.statMods.attack: 0 → 1
+- unitTypes.heavy-cavalry.statMods.speed: -1 → 0
+- unitTypes.charge-cavalry.statMods.speed: 0 → 1
+- unitTypes.tiger-cavalry.statMods.speed: -1 → 0
+- unitTypes.tiger-cavalry.statMods.action: -1 → 0
+
+## 2026-10-08 21:59 — 병종
+- unitTypes.archer.statMods.attack: 0 → 1
+- unitTypes.archer.statMods.speed: -1 → 0
+- unitTypes.archer.statMods.action: 0 → 1
+- unitTypes.strong-bow.statMods.attack: 2 → 1
+- unitTypes.strong-bow.statMods.speed: -1 → 1
+- unitTypes.long-bow.statMods.speed: 1 → 0
+- unitTypes.long-bow.statMods.action: 0 → 1
+- unitTypes.elite-archer.statMods.defense: 1 → 0
+- unitTypes.elite-archer.statMods.speed: 0 → 1
+- unitTypes.crossbow.statMods.speed: 1 → 0
+- unitTypes.crossbow.statMods.action: 0 → 1
+
+## 2026-10-08 22:00 — 병종
+- unitTypes.archer.vulnerability.physical: 0 → 10
+- unitTypes.archer.vulnerability.magic: 0 → 10
+- unitTypes.strong-bow.damageDealtByRow.front: 0.95 → 0.85
+- unitTypes.strong-bow.damageDealtByRow.back: 1 → 1.15
+- unitTypes.strong-bow.vulnerability.physical: 0 → 10
+- unitTypes.strong-bow.vulnerability.magic: 0 → 10
+- unitTypes.long-bow.vulnerability.physical: 0 → 10
+- unitTypes.long-bow.vulnerability.magic: 0 → 10
+- unitTypes.elite-archer.damageDealtByRow.front: 0.95 → 0.9
+- unitTypes.elite-archer.vulnerability.physical: 0 → 10
+- unitTypes.elite-archer.vulnerability.magic: 0 → 10
+- unitTypes.crossbow.vulnerability.physical: 0 → 10
+- unitTypes.crossbow.vulnerability.magic: 0 → 10
+
+## 2026-10-08 22:04 — 병종
+- unitTypes.geomancer.statMods.defense: -1 → 1
+- unitTypes.geomancer.statMods.action: 0 → 1
+- unitTypes.alchemist.statMods.action: 0 → 1
+- unitTypes.sage.statMods.action: 1 → 0
+- unitTypes.qimen-master.statMods.action: 1 → 0
+- unitTypes.healer.statMods.defense: 0 → 1
+- unitTypes.healer.statMods.speed: 2 → 0
+- unitTypes.maiden.statMods.defense: 1 → 0
+- unitTypes.maiden.statMods.intellect: 1 → 0
+- unitTypes.maiden.statMods.speed: 0 → 1
+- unitTypes.maiden.statMods.action: 0 → 1
+- unitTypes.grand-physician.statMods.defense: 1 → 0
+- unitTypes.grand-physician.statMods.action: 0 → 1
+
+## 2026-10-09 — 스킬 · 병종 · 밸런스 수치 (에이전트 수동 기록)
+메모: 디버프(화상, 역병) 추가. 사용자 결정 (설계 문서 01 6장, v0.53). 값은 [임시]
+- + balance.debuffs.burn: {name "화상", flat 50, ratio 0.2, rounds 2}
+- + balance.debuffs.plague: {name "역병", flat 30, ratio 0.15, rounds 3}
+- + skills.(stratagem, adviser-stratagem, jade-strategist-stratagem).debuff: {id "burn", chance 50}
+- + skills.(poison-smoke, alchemist-poison-smoke, sage-poison-smoke).debuff: {id "plague", chance 100}
+- + unitTypes.(maiden, immortal).cleanseOnHeal: true

@@ -102,6 +102,17 @@ export function describeChanges(baseline: DataFiles, current: DataFiles, memo: s
   const changed = changedFileNames(baseline, current);
   if (changed.length === 0) return null;
 
+  const lines = changeLines(baseline, current);
+  const shown = lines.slice(0, MAX_LOG_LINES);
+  const rest = lines.length - shown.length;
+  const title = `## ${formatTime(now)} — ${changed.map((n) => FILE_LABEL[n]).join(' · ')}`;
+  const note = memo.trim() ? `메모: ${memo.trim().replace(/\s*\n\s*/g, ' ')}\n` : '';
+  return `${title}\n${note}${shown.map((l) => `- ${l}`).join('\n')}${rest > 0 ? `\n- … 외 ${rest}건` : ''}\n`;
+}
+
+/** 두 벌의 차이를 "경로: 이전 값 → 새 값" 줄로 돌려준다 (변경 기록과 설정 비교가 같이 쓴다). */
+export function changeLines(baseline: DataFiles, current: DataFiles): string[] {
+  const changed = changedFileNames(baseline, current);
   const serialize = (files: DataFiles, name: FileName): Json => {
     switch (name) {
       case 'skills':
@@ -124,10 +135,5 @@ export function describeChanges(baseline: DataFiles, current: DataFiles, memo: s
     if (!changed.includes(name)) continue;
     lines.push(...describeFile(name, serialize(baseline, name), serialize(current, name)));
   }
-
-  const shown = lines.slice(0, MAX_LOG_LINES);
-  const rest = lines.length - shown.length;
-  const title = `## ${formatTime(now)} — ${changed.map((n) => FILE_LABEL[n]).join(' · ')}`;
-  const note = memo.trim() ? `메모: ${memo.trim().replace(/\s*\n\s*/g, ' ')}\n` : '';
-  return `${title}\n${note}${shown.map((l) => `- ${l}`).join('\n')}${rest > 0 ? `\n- … 외 ${rest}건` : ''}\n`;
+  return lines;
 }

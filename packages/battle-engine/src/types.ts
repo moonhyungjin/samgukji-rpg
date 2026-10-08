@@ -53,6 +53,38 @@ export interface SkillData {
   ignoreDefense?: number;
   /** kind가 buff일 때: 아군 하나의 스탯을 전투가 끝날 때까지 올린다 */
   buff?: BuffEffect;
+  /** 공격이 맞으면 chance(%) 확률로 디버프를 건다 (100이면 확정). id는 balance.debuffs의 키 */
+  debuff?: SkillDebuff;
+}
+
+export interface SkillDebuff {
+  id: string;
+  /** 걸릴 확률 (%) */
+  chance: number;
+}
+
+/**
+ * 디버프(상태이상) 한 종류의 값 (balance.debuffs). 라운드가 끝날 때마다 tick = flat + 걸린 타격 피해 × ratio 만큼 병력이 준다.
+ * 가드/결계로 막을 수 없고 반격도 없다. 같은 디버프를 다시 걸면 갱신된다 (설계 문서 01 6장).
+ */
+export interface DebuffConfig {
+  name: string;
+  flat: number;
+  ratio: number;
+  /** 지속 라운드 */
+  rounds: number;
+}
+
+/** 군단에 걸려 있는 디버프 */
+export interface ActiveDebuff {
+  id: string;
+  /** 라운드가 끝날 때 들어가는 피해 (걸릴 때 정해진다) */
+  tick: number;
+  roundsLeft: number;
+  /** 건 군단 (피해와 처치를 이 군단의 기록으로 센다) */
+  source: string;
+  /** 건 스킬 (스킬별 피해 통계에 더한다) */
+  skillId: string;
 }
 
 /** 버프로 오를 수 있는 스탯 */
@@ -142,10 +174,12 @@ export interface UnitTypeData {
   /** 병종 특성 id 목록 (GameData.traits 참조) */
   traitIds: string[];
   /**
-   * 병종의 병력 상한 배율. 군단 레벨로 정해진 최대 병력에 곱한다 (기본 1).
-   * 원작처럼 방패병/궁병 1.5, 도사/풍수사 0.7. 피해는 실제 병력 수로 계산한다 (balance.troopFactor.normalizeByScale이 false일 때).
+   * 병종의 병력 상한 배율 (기본 1). 레벨당 병력 상한 증가에 곱한다: 최대 병력 = base + perLevel × 이 값 × (레벨 − 1).
+   * Lv1은 모든 병종이 같다 (2026-10-08 사용자 결정).
    */
   troopScale?: number;
+  /** true이면 이 병종의 치유가 대상의 디버프를 모두 지운다 (가인, 신선). 생략하면 false */
+  cleanseOnHeal?: boolean;
   /** 병종 기본 AP. 전투 총 AP = 병종 기본 AP + 캐릭터 행동력으로 얻는 추가 AP (생략하면 0) */
   baseAp?: number;
   /** 징병 단가(병사 1명당 돈). 아직 전투에서는 쓰지 않는다 (돈 체계가 생기면 쓴다) */
@@ -193,7 +227,7 @@ export interface GameData {
   characters: Record<string, CharacterData>;
 }
 
-export type TroopFactorMode = 'absolute' | 'relative' | 'tiered';
+export type TroopFactorMode = 'absolute' | 'relative' | 'tiered' | 'ratio';
 
 export type DamageFormula = 'divide' | 'additive' | 'gap';
 
@@ -240,6 +274,22 @@ export interface TieredTroopFactor {
   capAtTroops: boolean;
 }
 
+/**
+ * ratio 방식 (2026-10-08 사용자 확정): 내 최대 병력 대비 현재 병력 비율을 구간마다 다른 효율로 센다.
+ * 100% → knee까지는 1%당 1%씩, knee → knee2는 1%당 rate2씩, knee2 → knee3는 1%당 rate3씩 보정이 줄고, knee3 아래는 그대로(하한).
+ * 병력이 floorTroops 명보다 적으면 비율과 상관없이 하한 보정이다.
+ */
+export interface RatioTroopFactor {
+  /** 비율 (0~1) */
+  knee: number;
+  knee2: number;
+  knee3: number;
+  rate2: number;
+  rate3: number;
+  /** 이 병력보다 적으면 하한 보정 (정수, 0이면 쓰지 않음) */
+  floorTroops: number;
+}
+
 export interface BalanceConfig {
   /** 총 전투 턴 한도 (교착 방지용 안전장치) */
   maxTurns: number;
@@ -266,6 +316,7 @@ export interface BalanceConfig {
     /** true이면 치유량에도 시전자의 병력 보정을 곱한다 (기본 false) */
     useTroopFactor?: boolean;
   };
+  /** 최대 병력 = base + perLevel × 병종 병력 배율(troopScale) × (레벨 − 1). Lv1은 모든 병종이 base (2026-10-08 사용자 확정) */
   troops: { base: number; perLevel: number };
   /**
    * 병력 → 피해 보정.
@@ -273,6 +324,7 @@ export interface BalanceConfig {
    * relative: 공격 스탯 기반 공격은 내 병력과 상대 병력을 비교하고(relative), 지력 기반 공격은 상대와 무관하게
    *   내 최대 병력 대비 현재 병력만 본다(self). 병종마다 최대 병력이 달라도 가득 찬 상태가 1.0이다.
    * tiered: 구간별 효율로 센 유효 병력 ÷ reference (TieredTroopFactor).
+   * ratio: 내 최대 병력 대비 비율을 구간별 효율로 센다 (RatioTroopFactor). 모든 공격과 치유에 같다.
    */
   troopFactor: {
     reference: number;
@@ -290,11 +342,14 @@ export interface BalanceConfig {
     /** relative 방식, 지력 기반 공격과 치유: clamp(현재 병력 / 최대 병력, min, max) */
     self?: { min: number; max: number };
     tiered?: TieredTroopFactor;
+    ratio?: RatioTroopFactor;
   };
   /** 기술에 counterRate가 없을 때의 반격 비율 */
   counter: { rate: number };
   /** 크리티컬(치명타): 일반공격/책략 공격이 chance(%)의 확률로 피해 × multiplier. 반격과 치유는 제외. 생략하거나 chance가 0이면 꺼진다 */
   critical?: { chance: number; multiplier: number };
+  /** 디버프 종류별 값 (키가 skill.debuff.id). 생략하면 디버프가 없다 */
+  debuffs?: Record<string, DebuffConfig>;
   morale: {
     /** 방어측 사기 시작값 (공격측 = 100 - 값). 제로섬 단일 막대 */
     defenderStart: number;
@@ -312,6 +367,8 @@ export interface BalanceConfig {
 export interface LineupEntry {
   characterId: string;
   row: Row;
+  /** 열 안의 고정 위치 0~2 (전열 1~3번, 후열 4~6번). 생략한 기존 편성은 빈칸 순서로 배치. */
+  slot?: number;
   /** Balance Lab에서 레벨을 덮어쓸 때 사용 */
   level?: number;
   /**
@@ -347,6 +404,8 @@ export interface CharacterState {
   skillUses?: Record<string, number>;
   /** 남은 피해 무시 횟수. 피해를 입을 때마다 1 줄고 그 피해는 0이 된다 */
   barrier: number;
+  /** 걸려 있는 디버프. 생략하면 없다 */
+  debuffs?: ActiveDebuff[];
   isDead: boolean;
 }
 
@@ -387,6 +446,13 @@ export type BattleEvent =
   | { type: 'buff'; round: number; source: string; target: string; changes: { stat: BuffStat; amount: number; value: number }[] }
   /** 피해 무시 횟수가 바뀌었다. gain: 도사의 결계, block: 피해를 무시했다 (이어지는 damage는 0) */
   | { type: 'barrier'; round: number; unit: string; charges: number; reason: 'gain' | 'block' }
+  /** 디버프 이벤트의 name은 표시용 이름(balance.debuffs[id].name)이다 */
+  /** 디버프가 걸렸다 (refresh: 이미 걸려 있던 것을 새 값으로 갱신). tick은 라운드가 끝날 때마다 들어갈 피해 */
+  | { type: 'debuffApply'; round: number; unit: string; source: string; debuffId: string; name: string; tick: number; rounds: number; refresh: boolean }
+  /** 라운드가 끝나 디버프 피해가 들어갔다. 병력이 0이 되면 이어서 unitDestroyed가 온다 */
+  | { type: 'debuffTick'; round: number; unit: string; source: string; debuffId: string; name: string; amount: number; troopsAfter: number }
+  /** 디버프가 끝났다. expire: 지속이 다 됨, cleanse: 치유로 해제 */
+  | { type: 'debuffEnd'; round: number; unit: string; debuffId: string; name: string; reason: 'expire' | 'cleanse' }
   | { type: 'morale'; round: number; defenderMorale: number }
   | { type: 'battleEnd'; winner: Side; endCause: EndCause; decidedBy: DecidedBy; rounds: number };
 

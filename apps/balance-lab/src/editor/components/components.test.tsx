@@ -36,13 +36,13 @@ describe('장수 편집기 화면', () => {
     expect(out).not.toContain('undefined');
     for (const c of characters) expect(out).toContain(`value="${c.name}"`);
     for (const label of ['공격', '방어', '지력', '속도', '행동력', '외교', '내정', '매력', '총 AP', '병력', '1회 피해', '실제 공/방/지/속']) expect(out).toContain(label);
-    // 장비: 실제 공/방/지/속 = 초기 스탯 + 병종 보정 + 승급 보너스, 병력 = 레벨 병력 × 병종 병력 배율 (현재 데이터에서 계산)
+    // 장비: 실제 공/방/지/속 = 초기 스탯 + 병종 보정 + 승급 보너스, 병력 = Lv1 병력 + 레벨당 증가 × 병종 병력 배율 × (레벨 − 1) (현재 데이터에서 계산)
     const row = out.slice(out.indexOf('data-id="zhangFei"'), out.indexOf('data-id="guanYu"'));
     const zf = gameData.characters.zhangFei;
     const d = derive(zf, gameData, defaultBalance)!;
     expect(row).toContain(`${d.finalStats.attack} / ${d.finalStats.defense} / ${d.finalStats.intellect} / ${d.finalStats.speed}`);
     expect(row).toContain(`<strong>${d.totalAp}</strong>`);
-    expect(row).toContain(String(Math.round(maxTroops(defaultBalance, zf.level) * (gameData.unitTypes[zf.unitType].troopScale ?? 1))));
+    expect(row).toContain(String(maxTroops(defaultBalance, zf.level, gameData.unitTypes[zf.unitType].troopScale ?? 1)));
   });
 
   it('수정된 줄, 새 장수 줄, 오류 줄을 구분해 칠한다', () => {
@@ -122,7 +122,7 @@ describe('병종 편집 화면', () => {
     const out = editor([...unitTypes, fresh], { changed: new Set(['cavalry']), issues: [{ level: 'error', id: 'unit1', message: '병종 새 병종: 오류' }] });
     expect(out).toMatch(/class="unittype changed" data-unittype="cavalry"/);
     expect(out).toMatch(/class="unittype added invalid" data-unittype="unit1"/);
-    expect(out).toContain(`병력 ${Math.round(maxTroops(defaultBalance, 15) * (gameData.unitTypes.cavalry.troopScale ?? 1))} · 전열/후열`); // 기병
+    expect(out).toContain(`병력 ${maxTroops(defaultBalance, 15, gameData.unitTypes.cavalry.troopScale ?? 1)} · 전열/후열`); // 기병
   });
 
 });

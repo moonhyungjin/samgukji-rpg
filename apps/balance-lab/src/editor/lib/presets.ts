@@ -1,4 +1,4 @@
-import { maxTroops } from '@samgukji/battle-engine';
+import { maxTroops, resolveLineupSlots } from '@samgukji/battle-engine';
 import type { BalanceConfig, GameData, LineupEntry, Row } from '@samgukji/battle-engine';
 import type { PresetDef } from '@samgukji/game-data';
 import type { Issue } from './editor';
@@ -14,17 +14,24 @@ export type PresetSlots = (LineupEntry | null)[];
 
 export function slotsFromLineup(lineup: readonly LineupEntry[]): PresetSlots {
   const slots: PresetSlots = Array.from({ length: MAX_UNITS }, () => null);
-  const next: Record<Row, number> = { front: 0, back: ROW_CAPACITY };
-  for (const entry of lineup) {
-    const index = next[entry.row]++;
-    if (index >= (entry.row === 'front' ? ROW_CAPACITY : MAX_UNITS)) continue;
+  const positions = resolveLineupSlots(lineup);
+  for (const [i, entry] of lineup.entries()) {
+    const index = (entry.row === 'front' ? 0 : ROW_CAPACITY) + positions[i];
     slots[index] = entry;
   }
   return slots;
 }
 
 export function lineupFromSlots(slots: PresetSlots): LineupEntry[] {
-  return slots.flatMap((entry, index) => (entry ? [{ ...entry, row: (index < ROW_CAPACITY ? 'front' : 'back') as Row }] : []));
+  const count: Record<Row, number> = { front: 0, back: 0 };
+  return slots.flatMap((entry, index) => {
+    if (!entry) return [];
+    const row: Row = index < ROW_CAPACITY ? 'front' : 'back';
+    const next = { ...entry, row };
+    delete next.slot;
+    if (index % ROW_CAPACITY !== count[row]++) next.slot = index % ROW_CAPACITY;
+    return [next];
+  });
 }
 
 /** 칸 하나에 장수를 넣는다 (빈 문자열이면 비운다). 레벨 덮어쓰기는 유지하지 않는다. */
@@ -50,7 +57,7 @@ export function normalizePreset(p: PresetDef): PresetDef {
   return {
     id: p.id,
     label: p.label,
-    lineup: p.lineup.map((e) => ({ characterId: e.characterId, row: e.row, ...(e.level === undefined ? {} : { level: e.level }), ...(e.unitType === undefined ? {} : { unitType: e.unitType }) })),
+    lineup: p.lineup.map((e) => ({ characterId: e.characterId, row: e.row, ...(e.slot === undefined ? {} : { slot: e.slot }), ...(e.level === undefined ? {} : { level: e.level }), ...(e.unitType === undefined ? {} : { unitType: e.unitType }) })),
   };
 }
 
@@ -103,6 +110,9 @@ export function validatePresets(list: readonly PresetDef[], data: GameData): Iss
       if (p.lineup.filter((e) => e.row === row).length > ROW_CAPACITY) issues.push({ level: 'error', id: p.id, message: `편성 ${who}: ${row === 'front' ? '전열' : '후열'}은 ${ROW_CAPACITY}군단까지입니다.` });
     }
     const used = new Set<string>();
+    try { resolveLineupSlots(p.lineup); } catch (error) {
+      issues.push({ level: 'error', id: p.id, message: `편성 ${who}: 슬롯 위치가 잘못되었습니다 (${error instanceof Error ? error.message : String(error)}).` });
+    }
     for (const e of p.lineup) {
       const character = data.characters[e.characterId];
       if (!character) {
@@ -149,7 +159,7 @@ export function summarizeLineup(lineup: readonly LineupEntry[], data: GameData, 
   const troops = lineup.reduce((sum, e) => {
     const c = data.characters[e.characterId];
     const unitType = c ? data.unitTypes[e.unitType ?? c.unitType] : undefined;
-    return c && unitType ? sum + Math.round(maxTroops(balance, e.level ?? c.level) * (unitType.troopScale ?? 1)) : sum;
+    return c && unitType ? sum + maxTroops(balance, e.level ?? c.level, unitType.troopScale ?? 1) : sum;
   }, 0);
   return { composition: `${names('front') || '-'} / ${names('back') || '-'}`, units: lineup.length, troops };
 }

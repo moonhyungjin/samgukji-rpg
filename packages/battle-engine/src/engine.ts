@@ -162,7 +162,15 @@ export class BattleEngine {
         if (!actor.isDead && actor.ap > 0) return actor;
       }
 
-      // 라운드 끝. 한 라운드 동안 아무도 대기 외 행동을 하지 않았으면 교착이다.
+      // 라운드 끝: 디버프 피해가 들어간다 (AP가 없어도). 그것으로 한쪽이 전멸하면 끝난다.
+      if (this.state.round > 0) {
+        this.tickDebuffs();
+        if (this.isWiped('attacker') || this.isWiped('defender')) {
+          this.endCause = 'wipe';
+          break;
+        }
+      }
+      // 한 라운드 동안 아무도 대기 외 행동을 하지 않았으면 교착이다.
       if (this.state.round > 0 && !this.roundActed) {
         this.endCause = 'stall';
         break;
@@ -357,7 +365,9 @@ export class BattleEngine {
       if (index > 0 && critical) hit = this.criticalAmount(hit);
       const guard = this.input.data.unitTypes[victim.unitType].guard;
       if (guard && victim.guardRate > 0 && victim.barrier === 0) this.setGuardRate(victim, Math.max(0, victim.guardRate - guard.decay), 'block');
-      this.skillStat(skill.id).damage += this.inflict(actor, victim, hit, 'attack', critical, index > 0);
+      const applied = this.inflict(actor, victim, hit, 'attack', critical, index > 0);
+      this.skillStat(skill.id).damage += applied;
+      this.tryDebuff(actor, victim, skill, applied);
     });
     this.hitBehind(actor, originalTarget, skill, critical);
 
@@ -405,12 +415,14 @@ export class BattleEngine {
     if (!row) throw new Error(`No room to revive ${target.name}`);
     actor.skillUses = { ...(actor.skillUses ?? {}), [skill.id]: (actor.skillUses?.[skill.id] ?? 0) + 1 };
     const troops = this.reviveTroops(target, skill);
-    const slot = this.state.units.filter((u) => u.side === target.side && !u.isDead && u.row === row).length;
+    const occupied = new Set(this.state.units.filter((u) => u.side === target.side && !u.isDead && u.row === row).map(u => u.slot));
+    const slot = row === target.row && !occupied.has(target.slot) ? target.slot : [0, 1, 2].find(i => !occupied.has(i))!;
     target.isDead = false;
     target.troops = troops;
     target.row = row;
     target.slot = slot;
     target.barrier = 0;
+    target.debuffs = [];
     target.guardRate = this.input.data.unitTypes[target.unitType].guard?.start ?? 0;
     this.report(actor).healing += troops;
     this.skillStat(skill.id).healing += troops;
@@ -482,7 +494,13 @@ export class BattleEngine {
 
   private performHeal(actor: CharacterState, target: CharacterState, skill: SkillData): void {
     const amount = this.calc.heal(actor, skill);
+    const cleanse = this.input.data.unitTypes[actor.unitType].cleanseOnHeal === true;
     for (const unit of this.areaRecipients(actor, target, skill)) {
+      // 해제하는 병종(가인, 신선)의 치유는 병력이 가득 차 있어도 디버프를 지운다
+      if (cleanse && unit.debuffs?.length) {
+        for (const d of unit.debuffs) this.emit({ type: 'debuffEnd', round: this.state.round, unit: unit.uid, debuffId: d.id, name: this.debuffName(d.id), reason: 'cleanse' });
+        unit.debuffs = [];
+      }
       const applied = Math.min(amount, unit.maxTroops - unit.troops);
       // 범위 치유에서 이미 가득 찬 아군은 건너뛴다 (대상 하나를 직접 고른 경우는 0이어도 그대로 기록한다)
       if (applied <= 0 && unit.uid !== target.uid) continue;
@@ -511,7 +529,63 @@ export class BattleEngine {
     if (critical) amount = this.criticalAmount(amount);
     const guard = this.input.data.unitTypes[behind.unitType].guard;
     if (guard && behind.guardRate > 0 && behind.barrier === 0) this.setGuardRate(behind, Math.max(0, behind.guardRate - guard.decay), 'block');
-    this.skillStat(skill.id).damage += this.inflict(actor, behind, amount, 'attack', critical, true);
+    const applied = this.inflict(actor, behind, amount, 'attack', critical, true);
+    this.skillStat(skill.id).damage += applied;
+    this.tryDebuff(actor, behind, skill, applied);
+  }
+
+  // ---------- 디버프 ----------
+
+  private debuffName(id: string): string {
+    return this.input.balance.debuffs?.[id]?.name ?? id;
+  }
+
+  /** 디버프가 걸릴 때 정해지는 틱 피해 = 고정값 + 걸린 타격 피해 × 비율 */
+  private debuffTick(skill: SkillData, hit: number): { id: string; tick: number; rounds: number; chance: number } | null {
+    const debuff = skill.debuff;
+    const config = debuff ? this.input.balance.debuffs?.[debuff.id] : undefined;
+    if (!debuff || !config || config.rounds <= 0) return null;
+    return { id: debuff.id, tick: Math.max(0, Math.round(config.flat + hit * config.ratio)), rounds: config.rounds, chance: debuff.chance };
+  }
+
+  /**
+   * 공격이 맞으면 스킬의 디버프를 건다. 실제로 깎인 피해가 0이면(결계 등) 걸지 않는다.
+   * 확률이 100 미만일 때만 난수를 쓴다. 같은 디버프는 새 값으로 갱신한다.
+   */
+  private tryDebuff(source: CharacterState, victim: CharacterState, skill: SkillData, applied: number): void {
+    if (applied <= 0 || victim.isDead) return;
+    const d = this.debuffTick(skill, applied);
+    if (!d) return;
+    if (d.chance < 100 && this.rng() * 100 >= d.chance) return;
+    const list = (victim.debuffs ??= []);
+    const refresh = list.some((x) => x.id === d.id);
+    victim.debuffs = [...list.filter((x) => x.id !== d.id), { id: d.id, tick: d.tick, roundsLeft: d.rounds, source: source.uid, skillId: skill.id }];
+    this.emit({ type: 'debuffApply', round: this.state.round, unit: victim.uid, source: source.uid, debuffId: d.id, name: this.debuffName(d.id), tick: d.tick, rounds: d.rounds, refresh });
+  }
+
+  /** 라운드가 끝날 때: 걸려 있는 디버프의 피해를 넣고 남은 라운드를 줄인다. 가드/결계로 막을 수 없고 반격도 없다 */
+  private tickDebuffs(): void {
+    for (const unit of this.state.units) {
+      if (unit.isDead || !unit.debuffs?.length) continue;
+      for (const debuff of [...unit.debuffs]) {
+        const source = this.state.units.find((u) => u.uid === debuff.source) ?? unit;
+        const amount = Math.min(debuff.tick, unit.troops);
+        unit.troops -= amount;
+        this.report(source).damageDealt += amount;
+        this.report(unit).damageTaken += amount;
+        this.skillStat(debuff.skillId).damage += amount;
+        this.emit({ type: 'debuffTick', round: this.state.round, unit: unit.uid, source: source.uid, debuffId: debuff.id, name: this.debuffName(debuff.id), amount, troopsAfter: unit.troops });
+        if (unit.troops <= 0) {
+          this.destroy(source, unit);
+          break;
+        }
+        debuff.roundsLeft--;
+        if (debuff.roundsLeft <= 0) {
+          unit.debuffs = unit.debuffs.filter((x) => x !== debuff);
+          this.emit({ type: 'debuffEnd', round: this.state.round, unit: unit.uid, debuffId: debuff.id, name: this.debuffName(debuff.id), reason: 'expire' });
+        }
+      }
+    }
   }
 
   /** 이 공격으로 맞는 군단들: 열 공격이면 대상이 있는 열의 살아 있는 군단 전체(대상이 첫 번째), 아니면 대상 하나 */
@@ -563,15 +637,19 @@ export class BattleEngine {
     const { morale } = this.input.balance;
     if (applied > 0) this.shiftMorale(target.side, morale.onHit);
 
-    if (target.troops <= 0) {
-      target.troops = 0;
-      target.isDead = true;
-      this.report(source).kills++;
-      this.emit({ type: 'unitDestroyed', round: this.state.round, unit: target.uid, by: source.uid });
-      this.shiftMorale(target.side, morale.onUnitDestroyed);
-      if (target.row === 'front') this.advanceRows(target.side);
-    }
+    if (target.troops <= 0) this.destroy(source, target);
     return applied;
+  }
+
+  /** 군단 전멸: 처치 기록, 사기, 전열이 비면 후열 전진. 걸려 있던 디버프는 사라진다 */
+  private destroy(source: CharacterState, target: CharacterState): void {
+    target.troops = 0;
+    target.isDead = true;
+    target.debuffs = [];
+    this.report(source).kills++;
+    this.emit({ type: 'unitDestroyed', round: this.state.round, unit: target.uid, by: source.uid });
+    this.shiftMorale(target.side, this.input.balance.morale.onUnitDestroyed);
+    if (target.row === 'front') this.advanceRows(target.side);
   }
 
   // ---------- 열 이동 ----------
@@ -581,9 +659,8 @@ export class BattleEngine {
     const alive = this.state.units.filter((u) => u.side === side && !u.isDead);
     if (alive.length === 0 || alive.some((u) => u.row === 'front')) return;
     alive.sort((a, b) => a.slot - b.slot);
-    alive.forEach((u, i) => {
+    alive.forEach((u) => {
       u.row = 'front';
-      u.slot = i;
     });
     this.emit({ type: 'rowAdvance', round: this.state.round, side, units: alive.map((u) => u.uid) });
   }

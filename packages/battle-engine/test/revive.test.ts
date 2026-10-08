@@ -71,13 +71,22 @@ describe('부활 (skill.kind = revive)', () => {
     expect(() => revive(engine, 'attacker:0')).toThrow(/Illegal/);
   });
 
-  it('되살아난 군단은 원래 열의 맨 끝 칸에 선다', () => {
+  it('되살아난 군단은 원래 빈자리로 돌아와 살아 있는 군단과 겹치지 않는다', () => {
     const engine = new BattleEngine(input(team));
     kill(engine, 'attacker:0');
     revive(engine, 'attacker:0');
     const revived = unit(engine, 'attacker:0');
     expect(revived.row).toBe('front');
-    expect(revived.slot).toBe(1); // 전열에는 살아 있는 보병 한 명이 이미 있다
+    expect(revived.slot).toBe(0); // 2번에는 살아 있는 보병이 남아 있다
+    expect(new Set(engine.state.units.filter(u => !u.isDead && u.side === 'attacker').map(u => `${u.row}:${u.slot}`)).size).toBe(4);
+  });
+
+  it('원래 자리가 점유됐으면 같은 열의 실제 빈자리를 고른다', () => {
+    const engine = new BattleEngine(input(team));
+    kill(engine, 'attacker:0');
+    unit(engine, 'attacker:1').slot = 0;
+    revive(engine, 'attacker:0');
+    expect(unit(engine, 'attacker:0').slot).toBe(1);
   });
 
   it('원래 열이 꽉 차 있으면 반대 열로 돌아오고, 둘 다 꽉 차면 대상이 될 수 없다', () => {

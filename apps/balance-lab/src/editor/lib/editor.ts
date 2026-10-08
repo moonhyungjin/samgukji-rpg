@@ -93,7 +93,7 @@ export function derive(c: CharacterData, data: GameData, balance: BalanceConfig)
   if (!unitType) return null;
   // 실제 스탯 = 초기 스탯 + 승급 길의 스탯 보정 누적 (엔진 buildUnits와 같다)
   const finalStats = applyStatMods(c.stats, statModsTotal(data.unitTypes, unitType.id));
-  const troops = Math.max(1, Math.round(maxTroops(balance, c.level) * (unitType.troopScale ?? 1)));
+  const troops = maxTroops(balance, c.level, unitType.troopScale ?? 1);
   const skill = data.skills[unitType.basicSkillId];
   let sampleDamage: number | null = null;
   try {

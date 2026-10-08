@@ -72,6 +72,7 @@ export function SkillTable({ ids }: { ids: readonly string[] }) {
               </button>
             </th>
           ))}
+          <th title="공격이 맞으면 거는 디버프와 확률. 디버프 값(틱 피해, 지속)은 밸런스 탭">디버프</th>
           <th>버프 · 부활</th>
         </tr>
       </thead>
@@ -123,6 +124,7 @@ export function SkillTable({ ids }: { ids: readonly string[] }) {
             <td>{s.kind === 'attack' ? <NumberField path={`data.skills.${s.id}.behindHit`} step={0.05} min={0} fallback={0} hint="전열 대상을 칠 때 같은 칸 번호 후열 군단도 함께 침 (그 군단 기준 피해 × 이 값). 0이면 없음" /> : null}</td>
             <td>{s.kind === 'attack' ? <NumberField path={`data.skills.${s.id}.rowAttack`} step={0.05} min={0} fallback={0} hint="조준한 대상이 있는 열 전체를 침 (각 군단 기준 피해 × 이 값). 0이면 단일 대상. 가드로 대신 맞기는 없음" /> : null}</td>
             <td>{s.kind === 'buff' || s.kind === 'heal' ? <SelectField path={`data.skills.${s.id}.area`} options={[{ value: '', label: '대상 하나' }, { value: 'row', label: '그 열 전체' }, { value: 'all', label: '아군 전체' }]} /> : null}</td>
+            <td>{s.kind === 'attack' ? <DebuffCell skill={s} /> : null}</td>
             <td>
               {s.kind === 'revive' ? (
                 <span className="param-grid">
@@ -151,5 +153,31 @@ export function SkillTable({ ids }: { ids: readonly string[] }) {
       </tbody>
     </table>
     </div>
+  );
+}
+
+/** 디버프 칸: 디버프 종류(없음 / balance.debuffs의 종류)와 걸릴 확률(%) */
+function DebuffCell({ skill }: { skill: SkillData }) {
+  const { state, update } = useLab();
+  const kinds = Object.entries(state.balance.debuffs ?? {});
+  const choose = (id: string) =>
+    update((st) => {
+      const { debuff: _old, ...rest } = st.data.skills[skill.id];
+      const next: SkillData = id ? { ...rest, debuff: { id, chance: skill.debuff?.chance ?? 100 } } : rest;
+      return { ...st, data: { ...st.data, skills: { ...st.data.skills, [skill.id]: next } } };
+    });
+  return (
+    <span className="param-grid">
+      <select aria-label={`${skill.id} 디버프`} value={skill.debuff?.id ?? ''} onChange={(e) => choose(e.target.value)}>
+        <option value="">없음</option>
+        {kinds.map(([id, d]) => (
+          <option key={id} value={id}>
+            {d.name}
+          </option>
+        ))}
+        {skill.debuff && !state.balance.debuffs?.[skill.debuff.id] ? <option value={skill.debuff.id}>{skill.debuff.id} (없는 디버프)</option> : null}
+      </select>
+      {skill.debuff ? <NumberField label="확률 %" path={`data.skills.${skill.id}.debuff.chance`} min={0} max={100} step={5} hint="100이면 맞으면 확정" /> : null}
+    </span>
   );
 }

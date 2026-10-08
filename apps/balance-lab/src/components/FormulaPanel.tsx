@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { DEFAULT_ADDITIVE, DEFAULT_GAP, DEFAULT_TIERED } from '@samgukji/battle-engine';
+import { DEFAULT_ADDITIVE, DEFAULT_GAP, DEFAULT_RATIO, DEFAULT_TIERED } from '@samgukji/battle-engine';
 import { useLab } from '../lab/LabContext';
 
 /** 숫자는 굵게 보여 준다 (지금 Lab에 들어 있는 값) */
@@ -64,8 +64,19 @@ export function FormulaPanel() {
       </Line>
     );
 
+  const ratio = b.troopFactor.ratio ?? DEFAULT_RATIO;
+  const pctOf = (r: number) => `${Math.round(r * 100)}%`;
   const troopFactor =
-    mode === 'tiered' ? (
+    mode === 'ratio' ? (
+      <>
+        <Line label="병력 보정">
+          내 병력 ÷ 내 최대 병력(가득 차면 1)을 구간별 효율로: 100% → <N>{pctOf(ratio.knee)}</N> 효율 1, → <N>{pctOf(ratio.knee2)}</N> 효율 <N>{ratio.rate2}</N>, → <N>{pctOf(ratio.knee3)}</N> 효율 <N>{ratio.rate3}</N>, 그 아래는 하한
+        </Line>
+        <Line>
+          병력이 <N>{ratio.floorTroops}</N>명보다 적으면 비율과 상관없이 하한입니다.
+        </Line>
+      </>
+    ) : mode === 'tiered' ? (
       <>
         <Line label="병력 보정">
           유효 병력 ÷ <N>{b.troopFactor.reference}</N>
@@ -91,9 +102,11 @@ export function FormulaPanel() {
     );
 
   return (
-    <section className="panel formula-panel">
-      <h3>지금 피해 공식</h3>
-      <p className="note">굵은 숫자가 지금 Lab에 들어 있는 값입니다. 값을 고치면 이 식도 같이 바뀝니다.</p>
+    <details className="panel formula-panel">
+      <summary>
+        <h3>공식 전체를 글로 보기</h3>
+      </summary>
+      <p className="note">굵은 숫자가 지금 Lab에 들어 있는 값입니다. 값을 고치면 이 식도 같이 바뀝니다. 반격, 치유, 가드의 설명도 여기 있습니다.</p>
       <Line label="최종 피해">
         기본 피해 × 병력 보정 × 대상 열 배수 × 가드 배수 × 받는 피해 배수{b.morale.maxEffect > 0 ? ' × 사기 보정' : null}
         {crit && crit.chance > 0 ? (
@@ -113,6 +126,6 @@ export function FormulaPanel() {
           지력 × <N>{b.heal.scale}</N> × 스킬 계수{b.heal.useTroopFactor ? ' × 병력 보정' : '　(병력 보정은 곱하지 않음)'}
         </Line>
       </div>
-    </section>
+    </details>
   );
 }

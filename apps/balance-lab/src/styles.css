@@ -1313,3 +1313,425 @@ button.goto {
   gap: 4px;
   flex-wrap: wrap;
 }
+
+/* 병종 상성표 */
+.matchup-table {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.matchup-table th,
+.matchup-table td {
+  border: 1px solid var(--border);
+  padding: 4px 6px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.matchup-table th small {
+  display: block;
+  color: var(--muted);
+  font-weight: normal;
+  font-size: 11px;
+}
+
+.matchup-table tbody th {
+  text-align: left;
+  background: var(--panel-2);
+}
+
+.matchup-table .mu-corner {
+  color: var(--muted);
+  font-weight: normal;
+}
+
+.matchup-table td {
+  min-width: 72px;
+}
+
+.matchup-table td .num {
+  display: block;
+  font-size: 15px;
+}
+
+.mu-hits,
+.mu-counter {
+  display: block;
+  font-size: 11px;
+}
+
+.mu-counter {
+  color: var(--muted);
+}
+
+.mu-h1 {
+  background: rgba(239, 91, 91, 0.45);
+}
+
+.mu-h2 {
+  background: rgba(239, 91, 91, 0.25);
+}
+
+.mu-h3 {
+  background: rgba(240, 169, 59, 0.2);
+}
+
+.mu-h4 {
+  background: rgba(91, 140, 255, 0.15);
+}
+
+.mu-h5 {
+  background: rgba(91, 140, 255, 0.3);
+}
+
+.mu-none {
+  color: var(--muted);
+}
+
+.mu-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.mu-legend span {
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* 설정 비교 */
+.compare-pick td,
+.compare-pick th {
+  padding: 4px 8px;
+}
+
+.pick-order {
+  margin-left: 4px;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.row-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.compare-table {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.compare-table th,
+.compare-table td {
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.compare-table thead th small {
+  display: block;
+  color: var(--muted);
+  font-weight: normal;
+  font-size: 11px;
+}
+
+.compare-table thead th small.err {
+  color: var(--err);
+  white-space: normal;
+  max-width: 220px;
+}
+
+.compare-table td.num {
+  text-align: right;
+}
+
+.compare-table td.num .delta {
+  margin-left: 6px;
+}
+
+.compare-group th {
+  text-align: left;
+  background: var(--panel-2);
+}
+
+.compare-label {
+  color: var(--muted);
+}
+
+.compare-diff {
+  margin: 4px 0;
+}
+
+.compare-diff ul {
+  margin: 4px 0;
+  font-size: 12px;
+  font-family: Consolas, monospace;
+}
+
+/* 밸런스 탭: 패널마다 한 줄, 칸은 고른 폭으로 */
+.fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px 16px;
+  margin: 8px 0;
+  align-items: start;
+}
+
+.fields-grid .field {
+  margin-bottom: 0;
+}
+
+.fields-grid input,
+.fields-grid select {
+  width: 100%;
+}
+
+.balance-page .panel {
+  margin-bottom: 0;
+}
+
+/* 하위 탭 (시뮬레이션 안) */
+.sub-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+button.tab.sub {
+  font-size: 13px;
+  padding: 4px 12px;
+}
+
+/* 병종을 넣어 계산 */
+.pair-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: flex-end;
+  margin: 8px 0;
+}
+
+.pair-table,
+.troop-table {
+  margin-top: 8px;
+}
+
+.troop-table th {
+  text-align: right;
+  font-weight: normal;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.troop-table th:first-child {
+  text-align: left;
+}
+
+.troop-preview {
+  margin-top: 16px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--border);
+}
+
+/* 공식 실험대 */
+.formula-step {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0 6px 6px 0;
+}
+
+.step-name {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: var(--text);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.chip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 96px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+}
+
+.chip-label {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.chip input[type='number'] {
+  width: 84px;
+}
+
+.chip input[type='range'] {
+  width: 120px;
+}
+
+.chip small {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.chip.coef {
+  border-color: #b8913a;
+  background: rgba(255, 209, 102, 0.08);
+}
+
+.chip.coef input {
+  color: #ffd166;
+  font-weight: bold;
+}
+
+.chip.out .num {
+  font-size: 16px;
+  color: #ffd166;
+}
+
+.chip.out.big {
+  border-color: var(--accent);
+}
+
+.chip.out.big .num {
+  font-size: 24px;
+  color: #fff;
+}
+
+.op {
+  font-size: 18px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.legend-var,
+.legend-coef {
+  padding: 0 4px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+
+.legend-coef {
+  border-color: #b8913a;
+  color: #ffd166;
+}
+
+/* 병력 보정 게이지 */
+.troop-gauge {
+  max-width: 720px;
+}
+
+.gauge-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0;
+}
+
+.gauge-label {
+  flex: 0 0 210px;
+  font-size: 13px;
+}
+
+.gauge-row input[type='range'] {
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+
+.gauge-readout {
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+.gauge-readout .num.big {
+  font-size: 20px;
+  color: #ffd166;
+  margin: 0 4px;
+}
+
+.gauge-readout .arrow {
+  margin: 0 8px;
+  color: var(--muted);
+}
+
+.gauge-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 4px 0 10px;
+}
+
+.gauge-chart .grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.gauge-chart .tick,
+.gauge-chart .mark-label {
+  fill: var(--muted);
+  font-size: 10px;
+}
+
+.gauge-chart .mark {
+  stroke: var(--muted);
+  stroke-dasharray: 3 3;
+  stroke-width: 1;
+}
+
+.gauge-chart .curve {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.gauge-chart .now {
+  stroke: #ffd166;
+  stroke-width: 1.5;
+}
+
+.gauge-chart .now-dot {
+  fill: #ffd166;
+}
+
+.hp-bar {
+  display: flex;
+  height: 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.hp-left {
+  background: var(--ok);
+}
+
+.hp-lost {
+  background: var(--err);
+}
+
+details.formula-panel > summary {
+  cursor: pointer;
+}
+
+details.formula-panel > summary h3 {
+  display: inline;
+}

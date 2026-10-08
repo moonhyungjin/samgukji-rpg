@@ -83,15 +83,21 @@ export function applyEvent(state: ViewState, event: BattleEvent): ViewState {
     case 'damage':
     case 'heal':
       return patch(state, event.target, { troops: event.troopsAfter });
+    case 'debuffTick':
+      return patch(state, event.unit, { troops: event.troopsAfter });
+    case 'debuffApply':
+    case 'debuffEnd':
+      // 디버프 표시(아이콘 등)는 아직 없다. 병력 변화는 debuffTick이 처리한다.
+      return state;
     case 'unitDestroyed':
       return patch(state, event.unit, { troops: 0, dead: true });
     case 'revive':
       return patch(state, event.target, { troops: event.troopsAfter, dead: false, row: event.row, slot: event.slot });
     case 'rowAdvance': {
-      const order = new Map(event.units.map((uid, index) => [uid, index] as const));
+      const advancing = new Set(event.units);
       return {
         ...state,
-        units: state.units.map((u) => (order.has(u.uid) ? { ...u, row: 'front' as const, slot: order.get(u.uid)! } : u)),
+        units: state.units.map((u) => (advancing.has(u.uid) ? { ...u, row: 'front' as const } : u)),
       };
     }
     case 'guardChange':

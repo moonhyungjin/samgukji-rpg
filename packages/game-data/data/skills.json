@@ -52,7 +52,11 @@
     "scalesWith": "intellect",
     "power": 1,
     "apCost": 1,
-    "counterable": false
+    "counterable": false,
+    "debuff": {
+      "id": "burn",
+      "chance": 50
+    }
   },
   {
     "id": "poison-smoke",
@@ -61,7 +65,11 @@
     "scalesWith": "intellect",
     "power": 1,
     "apCost": 1,
-    "counterable": false
+    "counterable": false,
+    "debuff": {
+      "id": "plague",
+      "chance": 100
+    }
   },
   {
     "id": "heal",
@@ -217,7 +225,11 @@
     "scalesWith": "intellect",
     "power": 1.3,
     "apCost": 1,
-    "counterable": false
+    "counterable": false,
+    "debuff": {
+      "id": "burn",
+      "chance": 50
+    }
   },
   {
     "id": "tactician-inspire",
@@ -248,7 +260,11 @@
     "scalesWith": "intellect",
     "power": 1.3,
     "apCost": 1,
-    "counterable": false
+    "counterable": false,
+    "debuff": {
+      "id": "plague",
+      "chance": 100
+    }
   },
   {
     "id": "sorcerer-ward",
@@ -309,7 +325,11 @@
     "power": 1.3,
     "apCost": 2,
     "counterable": false,
-    "rowAttack": 0.7
+    "rowAttack": 0.7,
+    "debuff": {
+      "id": "burn",
+      "chance": 50
+    }
   },
   {
     "id": "grand-tactician-inspire",
@@ -341,7 +361,11 @@
     "scalesWith": "intellect",
     "power": 2,
     "apCost": 1,
-    "counterable": false
+    "counterable": false,
+    "debuff": {
+      "id": "plague",
+      "chance": 100
+    }
   },
   {
     "id": "qimen-master-ward",

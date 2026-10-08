@@ -147,13 +147,14 @@ export function explainDamage(data: GameData, balance: BalanceConfig, input: Exp
   const strengthA = calc.strength(attacker);
   const strengthD = calc.strength(defender);
   let troopFormula: string;
-  if (mode === 'tiered') troopFormula = `병력 ${fmt(strengthA)} → 유효 병력 ${fmt(tieredTroops(balance, strengthA))} ÷ ${balance.troopFactor.reference}`;
+  if (mode === 'ratio') troopFormula = `병력 ${attacker.troops} ÷ 최대 병력 ${attacker.maxTroops} = ${Math.round((attacker.troops / attacker.maxTroops) * 100)}% → 구간별 효율${attacker.troops < (balance.troopFactor.ratio?.floorTroops ?? 0) ? ' (하한 병력 아래라 하한)' : ''}`;
+  else if (mode === 'tiered') troopFormula = `병력 ${fmt(strengthA)} → 유효 병력 ${fmt(tieredTroops(balance, strengthA))} ÷ ${balance.troopFactor.reference}`;
   else if (mode === 'relative')
     troopFormula = physical
       ? `(내 병력 ${fmt(strengthA)} ÷ 상대 병력 ${fmt(strengthD)})^${balance.troopFactor.relative?.exponent ?? 0.5}`
       : `내 병력 ${attacker.troops} ÷ 내 최대 병력 ${attacker.maxTroops}`;
   else troopFormula = `병력 ${fmt(strengthA)} ÷ ${balance.troopFactor.reference}`;
-  add('배수', `병력 보정 (${mode === 'tiered' ? '구간식' : mode === 'relative' ? '상대 비교' : '절대'})`, troopFormula, `× ${fmt(troop)}`);
+  add('배수', `병력 보정 (${mode === 'ratio' ? '비율 구간식' : mode === 'tiered' ? '구간식' : mode === 'relative' ? '상대 비교' : '절대'})`, troopFormula, `× ${fmt(troop)}`);
   add('배수', '대상 열 배수', `${aType.name}이(가) ${input.defenderRow === 'front' ? '전열' : '후열'}을 칠 때 (병종 "주는 피해")`, `× ${fmt(rowMul)}`);
   add('배수', '받는 피해 배수', `${dType.name}이(가) ${physical ? '물리 공격' : '책략'}으로 맞을 때 (병종 "받는 피해")`, `× ${fmt(type)}`);
   add('배수', '가드 배수', input.defenderGuarding && dType.guard ? `${dType.name} 가드 중 받는 피해` : '가드 중이 아님', `× ${fmt(guard)}`);
@@ -234,14 +235,14 @@ export function explainDamage(data: GameData, balance: BalanceConfig, input: Exp
   src({
     label: '공식 계수',
     value: formula === 'gap' ? `공격 계수 ${balance.damage.attackScale}, 격차 1점당 ${gapCfg.perPoint}, 하한 ${gapCfg.min}` : formula === 'additive' ? `공격 ×${(balance.damage.additive ?? DEFAULT_ADDITIVE).attackMul}, 방어 ×${(balance.damage.additive ?? DEFAULT_ADDITIVE).defenseMul}` : `공격 계수 ${balance.damage.attackScale}, 방어 계수 ${balance.damage.defenseScale}`,
-    where: '밸런스 수치 탭 > 피해 공식 값',
+    where: '밸런스 탭 > 피해 공식',
     tab: 'balance',
     used: true,
     note: formula === 'gap' ? '격차식' : formula === 'additive' ? '원작식' : '처음 공식',
   });
-  src({ label: '병력 보정 방식', value: mode === 'tiered' ? '구간식' : mode === 'relative' ? '상대 비교' : '절대', where: '밸런스 수치 탭 > 병력', tab: 'balance', used: true, note: balance.troopFactor.normalizeByScale === false ? '피해는 실제 병력 수로 계산합니다 (병력이 많은 병종이 더 셉니다)' : '병종 병력 배율은 피해에 영향을 주지 않습니다 (환산 병력)' });
+  src({ label: '병력 보정 방식', value: mode === 'ratio' ? '비율 구간식' : mode === 'tiered' ? '구간식' : mode === 'relative' ? '상대 비교' : '절대', where: '밸런스 탭 > 병력', tab: 'balance', used: true, note: balance.troopFactor.normalizeByScale === false ? '피해는 실제 병력 수로 계산합니다 (병력이 많은 병종이 더 셉니다)' : '병종 병력 배율은 피해에 영향을 주지 않습니다 (환산 병력)' });
   src({ label: `병력 배율 (${aType.name})`, value: `× ${fmt(aType.troopScale ?? 1)}`, where: `병종 · 스킬 탭 > ${aType.name} 카드 > 병력 배율`, tab: 'data', anchor: unitAnchor(aType.id), used: true, note: balance.troopFactor.normalizeByScale === false ? '최대 병력을 정하고, 실제 병력이 많으면 피해도 큽니다' : '최대 병력(HP)만 정하고 피해에는 영향이 없습니다' });
-  if (balance.critical && balance.critical.chance > 0) src({ label: '크리티컬', value: `${balance.critical.chance}% 확률로 ×${balance.critical.multiplier}`, where: '밸런스 수치 탭 > 치명타', tab: 'balance', used: true, note: '반격과 치유에는 적용되지 않습니다' });
+  if (balance.critical && balance.critical.chance > 0) src({ label: '크리티컬', value: `${balance.critical.chance}% 확률로 ×${balance.critical.multiplier}`, where: '밸런스 탭 > 피해 공식 > 모든 공식에 공통', tab: 'balance', used: true, note: '반격과 치유에는 적용되지 않습니다' });
 
   return { ok: true, explanation: { rows, sources, damage, counter, critical } };
 }

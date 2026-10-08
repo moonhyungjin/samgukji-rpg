@@ -20,7 +20,7 @@
     "id": "guanYu",
     "name": "관우",
     "rank": "elite",
-    "unitType": "infantry",
+    "unitType": "cavalry",
     "level": 15,
     "stats": {
       "attack": 8,

@@ -150,7 +150,7 @@ export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed
               {field(
                 '병력 배율',
                 <input type="number" min={0.05} step={0.05} aria-label={`${u.id} 병력 배율`} value={u.troopScale ?? 1} onChange={(e) => onEdit(u.id, { troopScale: num(e.target.value) })} />,
-                '같은 레벨에서 최대 병력에 곱하는 값 (원작의 병종별 병력 상한)',
+                '레벨이 오를 때 병력 상한이 늘어나는 배율. 레벨당 증가 = 밸런스의 "레벨당 병력 상한 증가" × 이 값 (Lv1은 모든 병종이 같다)',
               )}
               {field(
                 '증원 단가',
@@ -290,6 +290,10 @@ export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed
                 <input type="number" min={0} step={0.1} aria-label={`${u.id} 반격 배율`} value={u.counterPower ?? 1} onChange={(e) => onEdit(u.id, { counterPower: num(e.target.value) })} />,
                 '이 병종이 반격할 때 반격 피해에 곱함 (반격 비율은 공격한 쪽 스킬의 값이고, 이 값은 반격하는 쪽의 세기)',
               )}
+              <label className="ufield check-field" title="이 병종이 치유하면 대상의 디버프(화상, 역병 등)를 모두 지운다">
+                <span>치유 시 디버프 해제</span>
+                <input type="checkbox" aria-label={`${u.id} 치유 시 디버프 해제`} checked={u.cleanseOnHeal === true} onChange={(e) => onEdit(u.id, { cleanseOnHeal: e.target.checked })} />
+              </label>
             </div>
 
             <div className="usection">스킬</div>

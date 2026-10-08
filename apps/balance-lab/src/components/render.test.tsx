@@ -8,9 +8,11 @@ import type { SimulationHook } from '../lab/useSimulation';
 import { BalanceTab } from './BalanceTab';
 import { BattleTab } from './BattleTab';
 import { CharactersTab } from './CharactersTab';
+import { CompareTab } from './CompareTab';
 import { DamageCalculatorPanel } from './DamageCalculatorPanel';
 import { DataTab } from './DataTab';
 import { LineupEditor } from './LineupEditor';
+import { MatchupTab } from './MatchupTab';
 import { PresetsTab } from './PresetsTab';
 import { SaveBar } from './SaveBar';
 import { SettingsTab } from './SettingsTab';
@@ -28,19 +30,17 @@ const state = createDefaultState();
 const idle: SimulationHook = { report: null, previous: null, running: false, error: null, elapsedMs: 0, run: () => {} };
 
 describe('Balance Lab 화면 렌더링', () => {
-  it('밸런스 수치 탭', () => {
+  it('밸런스 탭: 패널과 행동력 → AP, 병력 보정 방식', () => {
     const html = render(<BalanceTab />);
     expectClean(html);
     expect(html).toContain('피해 공식');
     expect(html).toContain('사기');
-    // 행동력 → AP 설정
     expect(html).toContain('행동력 → AP');
     expect(html).toContain('행동력 몇 마다 AP 1');
-    // 병력 보정 방식 선택과 상대 비교 설정
-    for (const label of ['병력 보정 방식', '[상대 비교] 하한', '[상대 비교] 상한', '[상대 비교] 지수', '[지력 기반] 하한', '[지력 기반] 상한']) expect(html).toContain(label);
+    expect(html).toContain('병력 보정 방식');
   });
 
-  it('밸런스 수치 탭 맨 위에 지금 값이 들어간 피해 공식이 식의 모양으로 나온다', () => {
+  it('밸런스 탭 맨 위에 공식 실험대와 공식 전체 글이 나온다', () => {
     const html = render(<BalanceTab />);
     const { balance } = createDefaultState();
     expect(html).toContain('지금 피해 공식');
@@ -48,25 +48,36 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(html).toContain('병력 보정');
     if (balance.damage.formula === 'gap') {
       expect(html).toContain('격차 배율');
-      expect(html).toContain(`<b class="num">${balance.damage.attackScale}</b>`);
       expect(html).toContain(`<b class="num">${balance.damage.gap!.perPoint}</b>`);
     }
     if (balance.critical?.chance) expect(html).toContain('크리티컬');
+    for (const label of ['지금 피해 공식 (실험대)', '① 기본값', '② 기본 피해', '③ 최종 피해', '공격 병종', '방어 병종', '스킬 계수', '병력 보정 게이지', '공식 전체를 글로 보기']) expect(html).toContain(label);
+    // 실험대의 최종 피해와 병력 패널 게이지의 피해는 같은 계산이다
+    const finals = [...html.matchAll(/피해 <b class="num big">([\d,]+)<\/b>/g)].map((m) => m[1]);
+    const explorerFinal = html.match(/최종 피해<\/span><b class="num">([\d,]+)<\/b>/)?.[1];
+    expect(finals).toHaveLength(2);
+    expect(new Set([...finals, explorerFinal]).size).toBe(1);
   });
 
-  it('밸런스 수치 탭: 지금 공식에서 쓰지 않는 칸은 흐리게 표시한다', () => {
+  it('밸런스 탭: 고른 피해 공식과 병력 보정 방식의 칸만 나온다', () => {
     const html = render(<BalanceTab />);
-    const state = createDefaultState();
-    const labels = [...html.matchAll(/<label class="field unused"[^>]*><span>([^<]*)<\/span>/g)].map((m) => m[1]);
-    if (state.balance.damage.formula === 'gap') {
-      expect(labels).toContain('[원작식] 공격 1당');
-      expect(labels).toContain('[기존] 방어 계수 (defenseScale)');
-      expect(labels).not.toContain('[격차식] 격차 1점당 비율');
+    const { balance } = createDefaultState();
+    const formula = balance.damage.formula ?? 'divide';
+    const mode = balance.troopFactor.mode ?? 'absolute';
+    // 드롭다운 문구와 겹치지 않는 칸 이름으로 확인한다
+    const byFormula = { gap: '병종 보정 나누기', additive: '방어 1당 빼기', divide: '방어 계수 (defenseScale)' } as const;
+    for (const [f, label] of Object.entries(byFormula)) {
+      if (f === formula) expect(html).toContain(label);
+      else expect(html).not.toContain(label);
     }
-    if ((state.balance.troopFactor.mode ?? 'absolute') !== 'tiered') expect(labels).toContain('[구간식] 꺾이는 지점');
-    // 공식과 무관한 값은 흐리게 하지 않는다
-    expect(labels).not.toContain('최소 피해');
-    expect(labels).not.toContain('치명타 확률 % (0이면 꺼짐)');
+    const byMode = { tiered: '유효 병력 하한', absolute: '보정 상한', relative: '[상대 비교] 지수', ratio: '하한 병력 (명)' } as const;
+    for (const [m, label] of Object.entries(byMode)) {
+      if (m === mode) expect(html).toContain(label);
+      else expect(html).not.toContain(label);
+    }
+    // 공통 칸은 늘 나온다
+    expect(html).toContain('최소 피해');
+    expect(html).toContain('치명타 확률 % (0이면 꺼짐)');
   });
 
   it('피해 계산기: 병종 중심으로 값의 출처와 계산 과정이 나온다', () => {
@@ -78,6 +89,20 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(html).toContain('병종 보정');
     expect(html).toContain('대상 취약');
     expect(html).toContain('병종 · 스킬 탭 &gt;');
+  });
+
+  it('설정 비교: 저장된 파일 값과 지금 작업 값을 고를 수 있다', () => {
+    const html = render(<CompareTab />);
+    expectClean(html);
+    for (const label of ['설정 저장', '비교할 설정 고르기', '저장된 파일 값', '지금 작업 값', '같은 조건으로 돌려서 비교']) expect(html).toContain(label);
+  });
+
+  it('병종 상성표: 1차 병종끼리의 표가 나온다', () => {
+    const html = render(<MatchupTab />);
+    expectClean(html);
+    expect(html).toContain('병종 상성표');
+    expect(html).toContain('공격 ＼ 방어');
+    for (const u of Object.values(state.data.unitTypes).filter((u) => !Object.values(state.data.unitTypes).some((p) => p.id !== u.id && p.promotesTo.includes(u.id)))) expect(html).toContain(u.name);
   });
 
   it('병종 · 스킬 탭: 계열 탭과 승급 트리, 선택한 병종의 카드, 카드 안의 스킬이 보인다', () => {

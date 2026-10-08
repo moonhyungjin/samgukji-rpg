@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyStatMods, apFromAction, createRng, DEFAULT_TIERED, relativeTroopFactor, selfTroopFactor, tieredTroopFactor, tieredTroops, totalAp, deriveSeed, effectiveStat, maxTroops, moraleMultiplier, troopFactor } from '../src';
+import { applyStatMods, apFromAction, createRng, DEFAULT_TIERED, relativeTroopFactor, selfTroopFactor, tieredTroopFactor, tieredTroops, totalAp, deriveSeed, effectiveStat, maxTroops, moraleMultiplier, ratioTroopFactor, troopFactor } from '../src';
 import { testBalance } from './fixtures';
 
 describe('rng', () => {
@@ -29,6 +29,41 @@ describe('maxTroops', () => {
     expect(maxTroops(testBalance, 1)).toBe(300);
     expect(maxTroops(testBalance, 15)).toBe(1000);
     expect(maxTroops(testBalance, 30)).toBe(1750);
+  });
+
+  it('병종 병력 배율은 레벨당 증가에만 곱한다 (Lv1은 모든 병종이 같다)', () => {
+    expect(maxTroops(testBalance, 1, 1.5)).toBe(300);
+    expect(maxTroops(testBalance, 15, 1.5)).toBe(300 + 75 * 14);
+    expect(maxTroops(testBalance, 15, 0.8)).toBe(300 + 40 * 14);
+  });
+});
+
+describe('병력 보정: 비율 구간식 (ratioTroopFactor)', () => {
+  const balance = { ...testBalance, troopFactor: { ...testBalance.troopFactor, mode: 'ratio' as const, ratio: { knee: 0.8, knee2: 0.5, knee3: 0.3, rate2: 0.3, rate3: 0.5, floorTroops: 250 } } };
+  const at = (pct: number, max = 1000) => ratioTroopFactor(balance, Math.round((max * pct) / 100), max);
+
+  it('가득 차면 1, 첫 지점까지는 비율 그대로', () => {
+    expect(at(100)).toBeCloseTo(1, 9);
+    expect(at(90)).toBeCloseTo(0.9, 9);
+    expect(at(80)).toBeCloseTo(0.8, 9);
+  });
+
+  it('첫 → 둘째 지점은 효율 0.3, 둘째 → 셋째 지점은 효율 0.5, 그 아래는 그대로', () => {
+    expect(at(65)).toBeCloseTo(0.8 - 0.15 * 0.3, 9);
+    expect(at(50)).toBeCloseTo(0.71, 9);
+    expect(at(40)).toBeCloseTo(0.66, 9);
+    expect(at(30)).toBeCloseTo(0.61, 9);
+    expect(at(10)).toBeCloseTo(0.61, 9);
+  });
+
+  it('병력이 하한 병력보다 적으면 비율과 상관없이 하한', () => {
+    // 최대 300이면 90%(270)는 하한 병력(250) 이상이라 0.9, 80%(240)는 하한 아래라 0.61
+    expect(at(90, 300)).toBeCloseTo(0.9, 9);
+    expect(at(80, 300)).toBeCloseTo(0.61, 9);
+  });
+
+  it('병력 배율이 달라도 같은 비율이면 같은 보정이다', () => {
+    expect(ratioTroopFactor(balance, 650, 1300)).toBeCloseTo(ratioTroopFactor(balance, 475, 950), 9);
   });
 });
 

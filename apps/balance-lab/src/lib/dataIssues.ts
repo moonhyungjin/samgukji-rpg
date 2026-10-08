@@ -26,6 +26,10 @@ export function dataIssues(files: DataFiles): DataIssues {
     ...findNonFinite(Object.values(data.skills)).map((p) => ({ level: 'error' as const, message: `스킬 ${p}이(가) 숫자가 아닙니다.` })),
     ...findNonFinite(Object.values(data.traits)).map((p) => ({ level: 'error' as const, message: `특성 ${p}이(가) 숫자가 아닙니다.` })),
     ...findNonFinite(balance).map((p) => ({ level: 'error' as const, message: `밸런스 수치 ${p}이(가) 숫자가 아닙니다.` })),
+    // 스킬이 거는 디버프는 balance.debuffs에 있어야 한다
+    ...Object.values(data.skills)
+      .filter((s) => s.debuff && !balance.debuffs?.[s.debuff.id])
+      .map((s) => ({ level: 'error' as const, message: `스킬 ${s.name}의 디버프 "${s.debuff!.id}"가 밸런스의 디버프 목록에 없습니다.` })),
   ];
   const all = [...unitTypes, ...characters, ...presetIssues, ...numbers];
   return { unitTypes, characters, presets: presetIssues, numbers, all, errors: all.filter((i) => i.level === 'error') };

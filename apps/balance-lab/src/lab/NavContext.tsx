@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-export type LabTab = 'sim' | 'battle' | 'calc' | 'balance' | 'data' | 'characters' | 'presets' | 'settings';
+export type LabTab = 'sim' | 'compare' | 'battle' | 'calc' | 'matchup' | 'balance' | 'data' | 'characters' | 'presets' | 'settings';
 
 interface Nav {
   /** 이동하려는 요소(CSS 선택자). 이동한 화면이 필요한 선택 상태를 맞추는 데 쓴다 */

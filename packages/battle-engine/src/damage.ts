@@ -1,4 +1,4 @@
-import { effectiveStat, moraleMultiplier, relativeTroopFactor, selfTroopFactor, tieredTroopFactor, troopFactor } from './stats';
+import { effectiveStat, moraleMultiplier, ratioTroopFactor, relativeTroopFactor, selfTroopFactor, tieredTroopFactor, troopFactor } from './stats';
 import type { AdditiveDamage, BalanceConfig, GapDamage, CharacterState, GameData, SkillData, TraitData } from './types';
 
 export const DEFAULT_ADDITIVE: AdditiveDamage = { attackMul: 10, defenseMul: 8, intellectMul: 10, resistMul: 7, min: 10, scale: 10 };
@@ -49,6 +49,7 @@ export class DamageCalculator {
   troopMultiplier(attacker: CharacterState, defender: CharacterState, physical: boolean): number {
     const b = this.balance;
     const mode = b.troopFactor.mode ?? 'absolute';
+    if (mode === 'ratio') return ratioTroopFactor(b, attacker.troops, attacker.maxTroops);
     if (mode === 'tiered') return tieredTroopFactor(b, this.strength(attacker));
     if (mode === 'relative') {
       return physical ? relativeTroopFactor(b, this.strength(attacker), this.strength(defender)) : selfTroopFactor(b, attacker.troops, attacker.maxTroops);
@@ -167,7 +168,7 @@ export class DamageCalculator {
     if (!b.heal.useTroopFactor) return Math.round(base);
     const mode = b.troopFactor.mode ?? 'absolute';
     const factor =
-      mode === 'relative' ? selfTroopFactor(b, healer.troops, healer.maxTroops) : mode === 'tiered' ? tieredTroopFactor(b, this.strength(healer)) : troopFactor(b, this.strength(healer));
+      mode === 'ratio' ? ratioTroopFactor(b, healer.troops, healer.maxTroops) : mode === 'relative' ? selfTroopFactor(b, healer.troops, healer.maxTroops) : mode === 'tiered' ? tieredTroopFactor(b, this.strength(healer)) : troopFactor(b, this.strength(healer));
     return Math.round(base * factor);
   }
 }

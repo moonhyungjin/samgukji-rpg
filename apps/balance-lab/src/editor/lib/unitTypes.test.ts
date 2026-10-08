@@ -108,9 +108,10 @@ describe('병종 요약과 변경 비교', () => {
   it('레벨 15 기준 최대 병력과 배치 가능한 열을 보여 준다', () => {
     const base = normalizeUnitType(gameData.unitTypes.cavalry);
     // 레벨 1 병력과 레벨당 증가는 Lab에서 바뀔 수 있으므로 현재 값에서 계산한다
-    const lv15 = defaultBalance.troops.base + defaultBalance.troops.perLevel * 14;
-    expect(unitTypeSummary({ ...base, troopScale: 0.8, allowedRows: ['front', 'back'] }, defaultBalance)).toEqual({ troops: Math.round(lv15 * 0.8), rows: '전열/후열' });
-    expect(unitTypeSummary({ ...base, troopScale: 1, allowedRows: ['back'] }, defaultBalance)).toEqual({ troops: lv15, rows: '후열' });
+    // 병력 배율은 레벨당 증가에만 곱한다
+    const lv15 = (scale: number) => Math.round(defaultBalance.troops.base + defaultBalance.troops.perLevel * scale * 14);
+    expect(unitTypeSummary({ ...base, troopScale: 0.8, allowedRows: ['front', 'back'] }, defaultBalance)).toEqual({ troops: lv15(0.8), rows: '전열/후열' });
+    expect(unitTypeSummary({ ...base, troopScale: 1, allowedRows: ['back'] }, defaultBalance)).toEqual({ troops: lv15(1), rows: '후열' });
   });
 
   it('저장본과 비교해 수정/추가/삭제를 알려 준다', () => {

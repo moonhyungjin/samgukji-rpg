@@ -53,7 +53,7 @@ describe('장수 편집기 로직', () => {
     expect(d.finalStats.attack).toBe(Math.max(0, zhangFei.stats.attack + mods.attack)); // 승급 길의 스탯 보정 합
     expect(d.finalStats.speed).toBe(Math.max(0, zhangFei.stats.speed + mods.speed));
     expect(d.totalAp).toBe((type.baseAp ?? 0) + Math.ceil(d.finalStats.action / 2)); // 기본 AP + 행동력 2마다 1
-    expect(d.troops).toBe(Math.round(maxTroops(defaultBalance, zhangFei.level) * (type.troopScale ?? 1)));
+    expect(d.troops).toBe(maxTroops(defaultBalance, zhangFei.level, type.troopScale ?? 1));
     expect(d.sampleDamage).toBeGreaterThan(0);
     expect(derive({ ...zhangFei, unitType: 'nothing' }, gameData, defaultBalance)).toBeNull();
   });

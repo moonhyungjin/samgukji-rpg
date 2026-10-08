@@ -34,6 +34,12 @@ export function formatEvent(event: BattleEvent, names: ReadonlyMap<string, strin
       return event.reason === 'gain'
         ? `    결계 → ${name(event.unit)} (피해 ${event.charges}회 무시)`
         : `    결계가 피해를 무시 → ${name(event.unit)} (남은 ${event.charges}회)`;
+    case 'debuffApply':
+      return `    ${event.name}${event.refresh ? ' 갱신' : ''} → ${name(event.unit)} (${event.rounds}라운드, 라운드마다 ${event.tick})`;
+    case 'debuffTick':
+      return `    ${event.name} 피해 ${event.amount} → ${name(event.unit)} (병력 ${event.troopsAfter})`;
+    case 'debuffEnd':
+      return `    ${name(event.unit)} ${event.name} ${event.reason === 'cleanse' ? '해제' : '끝남'}`;
     case 'unitDestroyed':
       return `    ✕ ${name(event.unit)} 전멸`;
     case 'revive':

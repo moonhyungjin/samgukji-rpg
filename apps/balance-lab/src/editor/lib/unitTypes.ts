@@ -47,6 +47,7 @@ export function normalizeUnitType(u: UnitTypeData): UnitTypeData {
     typeBonus: { physical: Number(u.typeBonus?.physical ?? 0), magic: Number(u.typeBonus?.magic ?? 0) },
     vulnerability: { physical: Number(u.vulnerability?.physical ?? 0), magic: Number(u.vulnerability?.magic ?? 0) },
     statMods: { attack: Number(mods.attack), defense: Number(mods.defense), intellect: Number(mods.intellect), speed: Number(mods.speed), action: Number(mods.action) },
+    ...(u.cleanseOnHeal === true ? { cleanseOnHeal: true } : {}),
     ...(u.guard
       ? { guard: { start: Number(u.guard.start), gain: Number(u.guard.gain), gainPerIntellect: Number(u.guard.gainPerIntellect ?? 0), decay: Number(u.guard.decay), damageTaken: Number(u.guard.damageTaken ?? 1), scope: u.guard.scope === 'all' ? 'all' : 'row', interceptsMagic: u.guard.interceptsMagic === true, keepOnAttack: u.guard.keepOnAttack === true } }
       : {}),
@@ -198,7 +199,7 @@ export function promotionPathLabel(list: readonly UnitTypeData[], id: string): s
 /** 병종 카드에 보여 줄 계산값: 레벨 15 기준 최대 병력과 총 AP(행동력 0 기준 = 기본 AP) */
 export function unitTypeSummary(u: UnitTypeData, balance: BalanceConfig): { troops: number; rows: string } {
   const rows = (['front', 'back'] as Row[]).filter((r) => u.allowedRows.includes(r)).map((r) => (r === 'front' ? '전열' : '후열'));
-  return { troops: Math.max(1, Math.round(maxTroops(balance, 15) * (u.troopScale ?? 1))), rows: rows.join('/') || '-' };
+  return { troops: maxTroops(balance, 15, u.troopScale ?? 1), rows: rows.join('/') || '-' };
 }
 
 export function changedUnitTypeIds(saved: readonly UnitTypeData[], current: readonly UnitTypeData[]): { changed: string[]; added: string[]; removed: string[] } {

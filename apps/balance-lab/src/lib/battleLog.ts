@@ -42,6 +42,15 @@ export function formatBattleLog(result: BattleResult, data: GameData): string[] 
       case 'barrier':
         lines.push(e.reason === 'gain' ? `    결계 → ${name(e.unit)} (피해 ${e.charges}회 무시)` : `    결계가 피해를 무시 → ${name(e.unit)} (남은 ${e.charges}회)`);
         break;
+      case 'debuffApply':
+        lines.push(`    ${e.name}${e.refresh ? ' 갱신' : ''} → ${name(e.unit)} (${e.rounds}라운드, 라운드 끝마다 ${e.tick})`);
+        break;
+      case 'debuffTick':
+        lines.push(`    ${e.name} 피해 ${e.amount} → ${name(e.unit)} 병력 ${e.troopsAfter}`);
+        break;
+      case 'debuffEnd':
+        lines.push(`    ${name(e.unit)} ${e.name} ${e.reason === 'cleanse' ? '해제 (치유)' : '끝남'}`);
+        break;
       case 'unitDestroyed':
         lines.push(`    ✕ ${name(e.unit)} 전멸 (${name(e.by)})`);
         break;

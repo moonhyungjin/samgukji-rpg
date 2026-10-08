@@ -95,7 +95,18 @@ const clickButton = (label) =>
   evalJs(`(() => { const b = [...document.querySelectorAll('button')].find(b => b.textContent.includes(${JSON.stringify(label)})); if (!b) return false; b.click(); return true; })()`);
 
 
-const tabs = async (label) => evalJs(`(() => { const b = [...document.querySelectorAll('button.tab')].find(b => b.textContent.trim() === ${JSON.stringify(label)}); if (!b) return false; b.click(); return true; })()`);
+const clickTab = (label) => evalJs(`(() => { const b = [...document.querySelectorAll('button.tab')].find(b => b.textContent.trim() === ${JSON.stringify(label)}); if (!b) return false; b.click(); return true; })()`);
+// 설정 비교, 전투 1회, 피해 계산기는 시뮬레이션 탭 안의 하위 탭이다. 보이지 않으면 시뮬레이션 탭을 먼저 연다
+const tabs = async (label) => {
+  if (await clickTab(label)) return true;
+  await clickTab('시뮬레이션');
+  await sleep(150);
+  return clickTab(label);
+};
+/** 라벨 글자로 찾은 입력칸/선택칸의 값을 바꾼다 (Lab의 NumberField/SelectField에는 aria-label이 없다) */
+const setByLabel = (label, value) =>
+  evalJs(`(() => { const l = [...document.querySelectorAll('main label.field')].find(l => l.querySelector('span')?.textContent.trim() === ${JSON.stringify(label)}); const el = l?.querySelector('input, select'); if (!el) return 'missing'; const proto = el.tagName === 'SELECT' ? HTMLSelectElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, ${JSON.stringify(String(value))}); el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); return 'ok'; })()`);
+const valueByLabel = (label) => evalJs(`[...document.querySelectorAll('main label.field')].find(l => l.querySelector('span')?.textContent.trim() === ${JSON.stringify(label)})?.querySelector('input, select')?.value ?? null`);
 /** 병종 탭에서 계열 탭과 트리 노드를 눌러 병종을 고른다 (카드는 선택한 병종 하나만 그린다) */
 const selectUnit = async (rootId, id = rootId) => {
   await evalJs(`document.querySelector('button.family-tab[data-root="${rootId}"]')?.click()`);
@@ -143,18 +154,107 @@ try {
   await load();
 
   // ---- 1. 기존 화면 ----
-  await tabs('밸런스 수치');
+  await tabs('밸런스');
   await sleep(300);
   const bal = await text('main');
-  check('밸런스 탭: 행동력 → AP 설정', bal.includes('행동력 몇 마다 AP 1') && bal.includes('공격 계수'));
+  check('밸런스 탭: 행동력 → AP 설정', bal.includes('행동력 몇 마다 AP 1'));
   check('밸런스 탭: 지금 값이 들어간 피해 공식이 식으로 나온다', bal.includes('지금 피해 공식') && bal.includes('최종 피해') && bal.includes('병력 보정'));
+  check('밸런스 탭: 공식 실험대(①②③ 단계)와 병력 보정 게이지가 나온다', bal.includes('① 기본값') && bal.includes('③ 최종 피해') && (await evalJs(`document.querySelectorAll('svg.gauge-chart path.curve').length`)) === 2);
   await shot('lab-balance', true);
+  // 실험대: 게이지를 끌면 병력 보정과 피해가 바뀌고, 실험값은 저장 대상이 아니다
+  const finalDamage = () => evalJs(`document.querySelector('.formula-explorer .chip.out.big .num').textContent`);
+  const gaugeReadout = () => evalJs(`document.querySelector('.formula-explorer .gauge-readout').textContent`);
+  const damage0 = await finalDamage();
+  const readout0 = await gaugeReadout();
+  const troops0 = Number(await evalJs(`document.querySelector('input[aria-label="공격 쪽 병력 게이지"]').value`));
+  await setValue('input[aria-label="공격 쪽 병력 게이지"]', Math.round(troops0 / 4));
+  await sleep(200);
+  const damageDragged = await finalDamage();
+  const readoutDragged = await gaugeReadout();
+  check('실험대: 공격 쪽 병력 게이지를 끌면 병력 보정과 최종 피해가 바뀐다', damageDragged !== damage0 && readoutDragged !== readout0, `${damage0} → ${damageDragged}`);
+  await evalJs(`[...document.querySelectorAll('.formula-explorer .troop-gauge button')].find(b => b.textContent === '가득').click()`);
+  await sleep(200);
+  check('실험대: "가득"을 누르면 처음 피해로 돌아온다', (await finalDamage()) === damage0);
+  const power0 = Number(await evalJs(`document.querySelector('input[aria-label^="실험 스킬 계수"][type=range]').value`));
+  await setValue('input[aria-label^="실험 스킬 계수"][type=range]', power0 * 2);
+  await sleep(200);
+  const damagePower = Number((await finalDamage()).replace(/,/g, ''));
+  check('실험대: 스킬 계수 슬라이더를 두 배로 하면 피해가 약 두 배가 되고, 저장 대상이 아니다', Math.abs(damagePower / Number(damage0.replace(/,/g, '')) - 2) < 0.05 && (await text('.savebar .badge')).includes('프로젝트 파일과 같음'), `${damage0} → ${damagePower}`);
+  await evalJs(`[...document.querySelectorAll('.formula-explorer button')].find(b => b.textContent === '병종 값으로 되돌리기').click()`);
+  await sleep(200);
+  // 노란 칸(공식 계수)은 실제 밸런스 값이다
+  const coefBefore = await evalJs(`document.querySelector('.formula-explorer .chip.coef input').value`);
+  await setValue('.formula-explorer .chip.coef input', Number(coefBefore) + 5);
+  await sleep(300);
+  const coefBadge = (await text('.savebar .badge')).trim();
+  const damageCoef = await finalDamage();
+  await setValue('.formula-explorer .chip.coef input', coefBefore);
+  await sleep(300);
+  check('실험대: 노란 칸(공식 계수)을 고치면 피해가 바뀌고 저장 대상이 된다, 되돌리면 같음', damageCoef !== damage0 && coefBadge.includes('저장 안 됨') && (await finalDamage()) === damage0, `${coefBadge}, ${damage0} → ${damageCoef}`);
+  // 피해 공식을 고르면 그 공식의 칸만 나온다 (확인 뒤 원래 공식으로 되돌린다)
+  const formulaBefore = await valueByLabel('피해 공식');
+  await setByLabel('피해 공식', 'divide');
+  await sleep(200);
+  const divideText = await text('main');
+  await setByLabel('피해 공식', 'additive');
+  await sleep(200);
+  const additiveText = await text('main');
+  await setByLabel('피해 공식', formulaBefore);
+  await sleep(200);
+  check('밸런스 탭: 피해 공식을 고르면 그 공식의 칸만 나온다', divideText.includes('방어 계수 (defenseScale)') && !divideText.includes('방어 1당 빼기') && additiveText.includes('방어 1당 빼기') && !additiveText.includes('방어 계수 (defenseScale)'), `원래 ${formulaBefore}`);
+  // 병력 칸을 고치면 병력 패널의 게이지가 바로 바뀐다
+  const previewRow = () => evalJs(`document.querySelector('.troop-preview .troop-gauge').textContent`);
+  const rowBefore = await previewRow();
+  const baseBefore = await valueByLabel('Lv1 최대 병력 (모든 병종)');
+  await setByLabel('Lv1 최대 병력 (모든 병종)', Number(baseBefore) * 2);
+  await sleep(200);
+  const rowAfter = await previewRow();
+  await setByLabel('Lv1 최대 병력 (모든 병종)', baseBefore);
+  await sleep(200);
+  check('밸런스 탭: 병력 값을 고치면 병력 패널의 게이지가 바로 바뀐다', rowBefore !== rowAfter && (await previewRow()) === rowBefore, `${rowBefore} → ${rowAfter}`);
+  const debuffPanel = await text('section[data-panel="debuffs"]');
+  const balanceDebuffs = readData('balance').debuffs ?? {};
+  check('밸런스 탭: 디버프 패널에 디버프마다 고정값·비율·지속과 거는 스킬이 나온다', Object.values(balanceDebuffs).every((d) => debuffPanel.includes(d.name)) && debuffPanel.includes('고정값') && debuffPanel.includes('지속 (라운드)') && debuffPanel.includes('이 디버프를 거는 스킬'), Object.keys(balanceDebuffs).join(','));
+  check('밸런스 탭: 되돌리면 "프로젝트 파일과 같음"', (await text('.savebar .badge')).includes('프로젝트 파일과 같음'), (await text('.savebar .badge')).trim());
 
   await tabs('피해 계산기');
   await sleep(300);
   const calcText = await text('main');
   check('피해 계산기 탭: 값의 출처 표와 계산 과정이 나온다', ['공식에 들어가는 값과 출처', '병종 보정', '대상 취약', '수정하러 가기', '계산 과정', '최종 피해'].every((k) => calcText.includes(k)));
   await shot('lab-calc', true);
+
+  await tabs('병종 상성표');
+  await sleep(300);
+  const muInfo = await evalJs(`JSON.stringify({ rows: document.querySelectorAll('table.matchup-table tbody tr').length, cols: document.querySelectorAll('table.matchup-table thead th').length - 1 })`).then(JSON.parse);
+  const unitList = readData('unitTypes');
+  const roots = unitList.filter((u) => !unitList.some((p) => p.id !== u.id && p.promotesTo.includes(u.id))).length;
+  check(`병종 상성표 탭: 기본 병종 ${roots} × ${roots} 표가 나온다`, muInfo.rows === roots && muInfo.cols === roots, JSON.stringify(muInfo));
+  const shieldCell = () => evalJs(`[...document.querySelectorAll('table.matchup-table tbody tr')][0].querySelectorAll('td')[1].querySelector('.num').textContent`).then(Number);
+  const plainShield = await shieldCell();
+  await evalJs(`document.querySelector('input[aria-label="상성표 가드 중"]').click()`);
+  await sleep(200);
+  check('병종 상성표: 가드 중을 켜면 방패병이 받는 피해가 줄어든다', (await shieldCell()) < plainShield, `${plainShield} → ${await shieldCell()}`);
+  await evalJs(`document.querySelector('input[aria-label="상성표 가드 중"]').click()`);
+  await shot('lab-matchup', true);
+
+  await tabs('설정 비교');
+  await sleep(300);
+  await setValue('input[aria-label="설정 이름"]', 'e2e 설정');
+  await clickButton('지금 작업 값을 설정으로 저장');
+  await sleep(300);
+  const picks = await evalJs(`JSON.stringify([...document.querySelectorAll('table.compare-pick tbody tr')].map(r => [r.children[1].textContent, r.querySelector('input').checked, r.children[3].textContent]))`).then(JSON.parse);
+  check('설정 비교: 저장한 설정이 목록에 생기고 비교에 들어간다 (지금 값과 같음)', picks.length === 3 && picks[2][0] === 'e2e 설정' && picks.every((p) => p[1]) && picks[2][2] === '같음', JSON.stringify(picks));
+  await evalJs(`[...document.querySelectorAll('button')].find(b => b.textContent.includes('1,000회씩 실행')).click()`);
+  await waitFor(`!!document.querySelector('table.compare-table')`, 60000, '설정 비교 실행');
+  const cmp = await evalJs(`JSON.stringify({ cols: document.querySelectorAll('table.compare-table thead th').length - 1, rows: document.querySelectorAll('table.compare-table tbody td.compare-label').length, deltas: document.querySelectorAll('table.compare-table .delta').length })`).then(JSON.parse);
+  check('설정 비교: 같은 값 세 벌을 같은 시드로 돌리면 결과가 같다 (차이 표시 없음)', cmp.cols === 3 && cmp.rows > 10 && cmp.deltas === 0, JSON.stringify(cmp));
+  await shot('lab-compare', true);
+  await evalJs(`window.confirm = () => true; [...document.querySelectorAll('table.compare-pick button')].find(b => b.textContent === '지우기').click()`);
+  await sleep(200);
+  check('설정 비교: 저장한 설정을 지울 수 있다', (await evalJs(`document.querySelectorAll('table.compare-pick tbody tr').length`)) === 2);
+
+  await tabs('피해 계산기');
+  await sleep(300);
   // "수정하러 가기"를 누르면 병종 · 스킬 탭으로 이동한다
   await evalJs(`[...document.querySelectorAll('button.goto')].find((b) => b.closest('tr').textContent.includes('병종 보정')).click()`);
   await sleep(500);
@@ -181,6 +281,12 @@ try {
   const back = await powers();
   check('스킬 표: 머리글(계수)을 누르면 오름차순, 다시 누르면 내림차순, 세 번째는 원래 순서', asc.every((v, k) => k === 0 || asc[k - 1] <= v) && desc.every((v, k) => k === 0 || desc[k - 1] >= v) && JSON.stringify(back) === JSON.stringify(original) && asc.length > 20, `${asc.length}줄`);
   check('혼자 쓰는 스킬은 카드에 "이 병종만 쓰는 스킬"이라고 나온다', (await text('[data-skills-of="heavy-cavalry"]')).includes('이 병종만 쓰는 스킬입니다'));
+  // 디버프 칸: 데이터에 디버프가 있는 스킬은 그 디버프가 골라져 있다
+  const skillWithDebuff = readData('skills').find((s) => s.debuff);
+  if (skillWithDebuff) {
+    const selected = await evalJs(`document.querySelector('section.all-skills select[aria-label="${skillWithDebuff.id} 디버프"]')?.value ?? null`);
+    check(`스킬 표: 디버프 칸에 ${skillWithDebuff.name}의 디버프(${skillWithDebuff.debuff.id})가 골라져 있다`, selected === skillWithDebuff.debuff.id, String(selected));
+  }
   await selectUnit('infantry');
   await evalJs('window.scrollTo(0, 0)'); await shot('lab-unittypes', true);
 
@@ -277,8 +383,8 @@ try {
   const cavBefore = readData('unitTypes').find((u) => u.id === 'cavalry').troopScale;
   const cavNew = cavBefore === 0.75 ? 0.85 : 0.75;
   const balanceNow = readData('balance');
-  const lv15 = balanceNow.troops.base + balanceNow.troops.perLevel * 14;
-  const cavTroops = Math.round(lv15 * cavNew);
+  // 병력 배율은 레벨당 병력 상한 증가에 곱한다 (Lv15 = Lv1 병력 + 레벨당 증가 × 배율 × 14)
+  const cavTroops = Math.round(balanceNow.troops.base + balanceNow.troops.perLevel * cavNew * 14);
   await setValue('input[aria-label="cavalry 병력 배율"]', cavNew);
   await sleep(300);
   check(`병력 배율을 고치면 카드의 병력 요약이 바뀐다 (${cavBefore} → ${cavNew}, 병력 ${cavTroops})`, (await text('section[data-unittype="cavalry"] .badge')).includes(`병력 ${cavTroops}`));
@@ -319,6 +425,7 @@ try {
   await sleep(200);
   check('빈 새 편성은 오류로 표시되고 저장되지 않는다', (await text('.saveissues')).includes('군단이 하나도 없습니다'));
   await setValue('select[aria-label="preset1 전열 1"]', 'weiYan');
+  await setValue('select[aria-label="preset1 후열 3"]', 'huangZhong');
   await sleep(300);
   check('새 편성에 장수를 넣으면 오류가 사라진다', !(await text('.saveissues')).includes('군단이 하나도 없습니다'));
   await tabs('전투 1회');
@@ -330,6 +437,10 @@ try {
   await sleep(2500);
   await waitFor(`document.querySelectorAll('button.tab').length > 0`, 30000, '새로고침 뒤 Lab');
   const presetsSaved = readData('presets');
+  await tabs('기본 편성');
+  check('6번 슬롯의 빈칸을 저장하고 다시 불러와도 압축하지 않는다',
+    presetsSaved.find(p => p.id === 'preset1').lineup.some(e => e.characterId === 'huangZhong' && e.row === 'back' && e.slot === 2) &&
+    await evalJs(`document.querySelector('select[aria-label="preset1 후열 3"]').value === 'huangZhong' && document.querySelector('select[aria-label="preset1 후열 1"]').value === ''`));
   check('편성을 저장하면 presets.json에 기록된다', presetsSaved.length === JSON.parse(originals.presets).length + 1 && presetsSaved.find((p) => p.id === 'shuStart').lineup.some((e) => e.characterId === 'huangZhong' && e.row === 'back'));
   writeData('presets', JSON.parse(originals.presets));
   await sleep(1500);

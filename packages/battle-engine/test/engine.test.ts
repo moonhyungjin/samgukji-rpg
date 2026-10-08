@@ -231,15 +231,16 @@ describe('BattleEngine: 편성 검증', () => {
     expect(() => runBattle(input({ attacker: four }))).toThrow(/exceeds/);
   });
 
-  it('병종의 troopScale이 최대 병력에 곱해진다 (같은 레벨에서 풍수사 절반)', () => {
+  it('병종의 troopScale은 레벨당 병력 상한 증가에 곱해진다 (Lv1은 같고, 레벨이 오를수록 차이가 난다)', () => {
     const data = { ...testData, unitTypes: { ...testData.unitTypes, geo: { ...testData.unitTypes.geo, troopScale: 0.5 } } };
     const engine = new BattleEngine(
       input({ data, attacker: [{ characterId: 'inf', row: 'front' }, { characterId: 'geo', row: 'back' }], defender: [{ characterId: 'inf', row: 'front' }] }),
     );
     const byId = (id: string) => engine.state.units.find((u) => u.characterId === id)!;
     expect(byId('inf').maxTroops).toBe(1000);
-    expect(byId('geo').maxTroops).toBe(500);
-    expect(byId('geo').troops).toBe(500);
+    // 300 + 50 × 0.5 × 14
+    expect(byId('geo').maxTroops).toBe(650);
+    expect(byId('geo').troops).toBe(650);
   });
 
   it('troopScale을 생략하면 1배다', () => {

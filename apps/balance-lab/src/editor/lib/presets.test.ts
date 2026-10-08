@@ -61,9 +61,11 @@ describe('편성 칸 편집', () => {
     const two = setSlot(one, 4, 'huangZhong');
     expect(two.lineup).toEqual([
       { characterId: 'zhangFei', row: 'front' },
-      { characterId: 'huangZhong', row: 'back' },
+      { characterId: 'huangZhong', row: 'back', slot: 1 },
     ]);
-    expect(setSlot(two, 0, '').lineup).toEqual([{ characterId: 'huangZhong', row: 'back' }]);
+    expect(setSlot(two, 0, '').lineup).toEqual([{ characterId: 'huangZhong', row: 'back', slot: 1 }]);
+    const saved = parsePresets(serializePresets([two]))[0];
+    expect(slotsFromLineup(saved.lineup).map(s => s?.characterId ?? null)).toEqual(['zhangFei', null, null, null, 'huangZhong', null]);
   });
 
   it('새 편성과 복제는 겹치지 않는 id를 받는다', () => {
@@ -122,7 +124,7 @@ describe('편성 요약과 변경 비교', () => {
     const front = presets.shuStart.map((e) => gameData.unitTypes[e.unitType ?? gameData.characters[e.characterId].unitType].name).join(' · ');
     expect(s.composition).toBe(`${front} / -`);
     expect(s.units).toBe(3);
-    const expected = presets.shuStart.reduce((sum, e) => { const c = gameData.characters[e.characterId]; return sum + Math.round(maxTroops(defaultBalance, e.level ?? c.level) * (gameData.unitTypes[e.unitType ?? c.unitType].troopScale ?? 1)); }, 0);
+    const expected = presets.shuStart.reduce((sum, e) => { const c = gameData.characters[e.characterId]; return sum + maxTroops(defaultBalance, e.level ?? c.level, gameData.unitTypes[e.unitType ?? c.unitType].troopScale ?? 1); }, 0);
     expect(s.troops).toBe(expected);
     expect(summarizeLineup(presets.yellowHard, gameData, defaultBalance).composition).toBe('방패병 · 보병 · 보병 / 궁병');
   });
