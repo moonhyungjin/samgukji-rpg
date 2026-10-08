@@ -1307,3 +1307,9 @@ button.goto {
   min-width: 10px;
   font-size: 9px;
 }
+
+.unit-picker {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}

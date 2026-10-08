@@ -3,16 +3,16 @@
     "id": "zhangFei",
     "name": "장비",
     "rank": "elite",
-    "unitType": "shield",
+    "unitType": "heavy-shield",
     "level": 15,
     "stats": {
-      "attack": 6,
+      "attack": 7,
       "defense": 8,
       "intellect": 4,
       "speed": 4,
       "action": 3,
-      "diplomacy": 5,
-      "politics": 5,
+      "diplomacy": 2,
+      "politics": 2,
       "charm": 5
     }
   },
@@ -23,14 +23,14 @@
     "unitType": "infantry",
     "level": 15,
     "stats": {
-      "attack": 7,
+      "attack": 8,
       "defense": 6,
       "intellect": 6,
       "speed": 5,
       "action": 3,
-      "diplomacy": 5,
+      "diplomacy": 4,
       "politics": 5,
-      "charm": 5
+      "charm": 6
     }
   },
   {
@@ -40,14 +40,14 @@
     "unitType": "cavalry",
     "level": 15,
     "stats": {
-      "attack": 6,
-      "defense": 7,
+      "attack": 7,
+      "defense": 6,
       "intellect": 6,
-      "speed": 8,
+      "speed": 7,
       "action": 3,
-      "diplomacy": 5,
-      "politics": 5,
-      "charm": 5
+      "diplomacy": 4,
+      "politics": 4,
+      "charm": 7
     }
   },
   {
@@ -57,7 +57,7 @@
     "unitType": "archer",
     "level": 15,
     "stats": {
-      "attack": 9,
+      "attack": 6,
       "defense": 4,
       "intellect": 5,
       "speed": 5,
@@ -76,12 +76,12 @@
     "stats": {
       "attack": 3,
       "defense": 3,
-      "intellect": 10,
+      "intellect": 9,
       "speed": 6,
       "action": 1,
-      "diplomacy": 5,
-      "politics": 5,
-      "charm": 5
+      "diplomacy": 7,
+      "politics": 8,
+      "charm": 8
     }
   },
   {
@@ -93,12 +93,12 @@
     "stats": {
       "attack": 2,
       "defense": 3,
-      "intellect": 9,
-      "speed": 5,
+      "intellect": 8,
+      "speed": 6,
       "action": 1,
-      "diplomacy": 5,
-      "politics": 5,
-      "charm": 5
+      "diplomacy": 8,
+      "politics": 7,
+      "charm": 3
     }
   },
   {
@@ -108,9 +108,9 @@
     "unitType": "infantry",
     "level": 15,
     "stats": {
-      "attack": 8,
+      "attack": 6,
       "defense": 7,
-      "intellect": 4,
+      "intellect": 5,
       "speed": 6,
       "action": 3,
       "diplomacy": 5,
@@ -126,7 +126,7 @@
     "level": 15,
     "stats": {
       "attack": 5,
-      "defense": 5,
+      "defense": 6,
       "intellect": 6,
       "speed": 4,
       "action": 3,
@@ -142,14 +142,14 @@
     "unitType": "shield",
     "level": 15,
     "stats": {
-      "attack": 8,
-      "defense": 9,
+      "attack": 7,
+      "defense": 8,
       "intellect": 3,
       "speed": 5,
       "action": 3,
-      "diplomacy": 5,
-      "politics": 5,
-      "charm": 5
+      "diplomacy": 1,
+      "politics": 1,
+      "charm": 3
     }
   },
   {
@@ -159,13 +159,13 @@
     "unitType": "cavalry",
     "level": 15,
     "stats": {
-      "attack": 8,
-      "defense": 6,
-      "intellect": 5,
+      "attack": 6,
+      "defense": 7,
+      "intellect": 6,
       "speed": 6,
       "action": 3,
-      "diplomacy": 5,
-      "politics": 5,
+      "diplomacy": 3,
+      "politics": 7,
       "charm": 5
     }
   },
@@ -176,14 +176,14 @@
     "unitType": "cavalry",
     "level": 15,
     "stats": {
-      "attack": 8,
+      "attack": 7,
       "defense": 6,
       "intellect": 6,
-      "speed": 8,
-      "action": 3,
-      "diplomacy": 5,
-      "politics": 5,
-      "charm": 5
+      "speed": 6,
+      "action": 4,
+      "diplomacy": 3,
+      "politics": 4,
+      "charm": 6
     }
   },
   {
@@ -193,14 +193,14 @@
     "unitType": "archer",
     "level": 15,
     "stats": {
-      "attack": 8,
+      "attack": 7,
       "defense": 5,
-      "intellect": 5,
-      "speed": 8,
+      "intellect": 6,
+      "speed": 7,
       "action": 3,
-      "diplomacy": 5,
+      "diplomacy": 3,
       "politics": 5,
-      "charm": 5
+      "charm": 6
     }
   },
   {
@@ -212,12 +212,12 @@
     "stats": {
       "attack": 2,
       "defense": 3,
-      "intellect": 9,
+      "intellect": 8,
       "speed": 5,
       "action": 1,
-      "diplomacy": 5,
-      "politics": 5,
-      "charm": 5
+      "diplomacy": 6,
+      "politics": 9,
+      "charm": 6
     }
   },
   {
@@ -227,14 +227,14 @@
     "unitType": "infantry",
     "level": 15,
     "stats": {
-      "attack": 9,
-      "defense": 7,
-      "intellect": 3,
+      "attack": 7,
+      "defense": 8,
+      "intellect": 2,
       "speed": 5,
-      "action": 3,
-      "diplomacy": 5,
-      "politics": 5,
-      "charm": 5
+      "action": 2,
+      "diplomacy": 1,
+      "politics": 1,
+      "charm": 3
     }
   },
   {
@@ -245,13 +245,13 @@
     "level": 15,
     "stats": {
       "attack": 1,
-      "defense": 3,
-      "intellect": 10,
+      "defense": 2,
+      "intellect": 9,
       "speed": 6,
       "action": 1,
-      "diplomacy": 5,
-      "politics": 5,
-      "charm": 5
+      "diplomacy": 4,
+      "politics": 7,
+      "charm": 7
     }
   },
   {

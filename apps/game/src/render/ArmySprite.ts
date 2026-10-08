@@ -120,7 +120,7 @@ export class ArmySprite {
     // Limit unusually long edited names without changing the actual name in the card.
     this.label.scale.x = Math.min(1, 174 / Math.max(1, this.label.getLocalBounds().width));
     this.nameplate.clear().roundRect(-width / 2, 0, width, status ? 38 : 24, 3)
-      .fill({ color: 0x102023, alpha: .94 }).stroke({ color: this.targetable ? 0xffd46c : this.acting ? 0x91e6ff : 0x86764e, width: 1 });
+      .fill({ color: 0x102023, alpha: .94 }).stroke({ color: this.targetable ? 0xffd46c : this.acting ? 0xf5c842 : 0x86764e, width: 1 });
   }
 
   private addFigure(spec: SpriteSpec, textures: BattleTextures, x: number, y: number, height: number) {
@@ -143,7 +143,15 @@ export class ArmySprite {
   }
   private drawSelection() {
     this.selection.clear();
-    if (!this.dead && (this.acting || this.targetable)) this.selection.ellipse(0, 0, 90, 17).stroke({ width: 3, color: this.targetable ? 0xffd46c : 0x91e6ff });
+    if (!this.dead && (this.acting || this.targetable)) {
+      if (this.acting) {
+        this.selection.ellipse(0, 0, 94, 20).fill({ color: 0xf5c842, alpha: 0.2 });
+        this.selection.ellipse(0, 0, 94, 20).stroke({ width: 3, color: 0xf5c842 });
+        this.selection.ellipse(0, 0, 99, 23).stroke({ width: 1, color: 0xffe680, alpha: 0.65 });
+      } else {
+        this.selection.ellipse(0, 0, 90, 18).stroke({ width: 2.5, color: 0xffa94d });
+      }
+    }
     this.drawNameplate();
   }
   setStatus(guard: number, barrier: number) {

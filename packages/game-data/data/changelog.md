@@ -416,3 +416,125 @@ Balance Lab의 "파일에 저장"을 누를 때마다 자동으로 덧붙는다 
 - unitTypes.tiger-cavalry.typeBonus.physical: 30 → 40
 - unitTypes.tiger-cavalry.vulnerability.magic: 0 → 20
 - skills.long-bow-archer-shot.name: 화살 공격3 → 관통 사격 (이름만 바꿈, 효과는 그대로)
+
+## 2026-10-08 17:13 — 스킬 · 병종
+- skills.long-bow-archer-shot.power: 1.1 → 1
+- skills.long-bow-archer-shot.behindHit: (없음) → 0.4
+- unitTypes.cavalry.troopScale: 0.9 → 0.8
+
+## 2026-10-09 — 병종 · 스킬
+메모: 경기병의 2차 승급을 궁기병에서 돌격기병으로 바꾸고 관통 돌격을 기병에 추가 (값은 임시).
+- unitTypes.horse-archer → charge-cavalry (궁기병 → 돌격기병), range 2 → 1, extraSkillIds: + pierce-cavalry-charge
+- skills: + pierce-cavalry-charge(관통 돌격: 돌격2 값 + behindHit 0.4), horse-archer-cavalry-charge id → cavalry-charge-2
+- skills.assault-infantry-infantry-attack.name: 관통 돌격 → 관통 공격
+
+## 2026-10-08 17:17 — 병종
+- unitTypes.shield.recruit.reinforce: 12 → 20
+
+## 2026-10-08 17:18 — 병종
+- unitTypes.cavalry.recruit.reinforce: 30 → 36
+- unitTypes.cavalry.recruit.replenish: 2 → 4
+- unitTypes.cavalry.recruit.dismiss: 2 → 4
+
+## 2026-10-08 17:41 — 장수
+- characters.zhangFei.unitType: "shield" → "heavy-shield"
+- characters.zhangFei.stats.attack: 6 → 7
+- characters.zhangFei.stats.diplomacy: 5 → 2
+- characters.zhangFei.stats.politics: 5 → 2
+- characters.guanYu.stats.attack: 7 → 8
+- characters.guanYu.stats.diplomacy: 5 → 4
+- characters.guanYu.stats.charm: 5 → 6
+- characters.zhaoYun.stats.attack: 6 → 7
+- characters.zhaoYun.stats.defense: 7 → 6
+- characters.zhaoYun.stats.speed: 8 → 7
+- characters.zhaoYun.stats.diplomacy: 5 → 4
+- characters.zhaoYun.stats.politics: 5 → 4
+- characters.zhaoYun.stats.charm: 5 → 7
+- characters.huangZhong.stats.attack: 9 → 6
+- characters.zhugeLiang.stats.intellect: 10 → 9
+- characters.zhugeLiang.stats.diplomacy: 5 → 7
+- characters.zhugeLiang.stats.politics: 5 → 8
+- characters.zhugeLiang.stats.charm: 5 → 8
+- characters.pangTong.stats.intellect: 9 → 8
+- characters.pangTong.stats.speed: 5 → 6
+- characters.pangTong.stats.diplomacy: 5 → 8
+- characters.pangTong.stats.politics: 5 → 7
+- characters.pangTong.stats.charm: 5 → 3
+- characters.weiYan.stats.attack: 8 → 6
+- characters.weiYan.stats.intellect: 4 → 5
+- characters.liuBei.stats.defense: 5 → 6
+- characters.xuChu.stats.attack: 8 → 7
+- characters.xuChu.stats.defense: 9 → 8
+- characters.xuChu.stats.diplomacy: 5 → 3
+- characters.xuChu.stats.politics: 5 → 2
+- characters.xuChu.stats.charm: 5 → 3
+- characters.xiahouDun.stats.attack: 8 → 6
+- characters.xiahouDun.stats.defense: 6 → 7
+- characters.xiahouDun.stats.intellect: 5 → 6
+- characters.xiahouDun.stats.diplomacy: 5 → 3
+- characters.xiahouDun.stats.politics: 5 → 7
+- characters.zhangLiao.stats.attack: 8 → 7
+- characters.zhangLiao.stats.speed: 8 → 6
+- characters.zhangLiao.stats.action: 3 → 4
+- characters.zhangLiao.stats.diplomacy: 5 → 3
+- characters.zhangLiao.stats.politics: 5 → 4
+- characters.zhangLiao.stats.charm: 5 → 6
+- characters.xiahouYuan.stats.attack: 8 → 7
+- characters.xiahouYuan.stats.intellect: 5 → 6
+- characters.xiahouYuan.stats.speed: 8 → 7
+- characters.xiahouYuan.stats.diplomacy: 5 → 3
+- characters.xiahouYuan.stats.charm: 5 → 6
+- characters.xunYu.stats.intellect: 9 → 8
+- characters.xunYu.stats.diplomacy: 5 → 6
+- characters.xunYu.stats.politics: 5 → 9
+- characters.xunYu.stats.charm: 5 → 6
+- characters.guoJia.stats.defense: 3 → 2
+- characters.guoJia.stats.intellect: 10 → 9
+- characters.guoJia.stats.diplomacy: 5 → 4
+- characters.guoJia.stats.politics: 5 → 7
+- characters.guoJia.stats.charm: 5 → 7
+
+## 2026-10-08 17:42 — 장수
+- characters.xuChu.stats.diplomacy: 3 → 1
+- characters.xuChu.stats.politics: 2 → 1
+- characters.dianWei.stats.attack: 9 → 7
+- characters.dianWei.stats.defense: 7 → 8
+- characters.dianWei.stats.intellect: 3 → 2
+- characters.dianWei.stats.action: 3 → 2
+- characters.dianWei.stats.diplomacy: 5 → 1
+- characters.dianWei.stats.politics: 5 → 1
+- characters.dianWei.stats.charm: 5 → 3
+
+## 2026-10-08 17:51 — 병종
+- unitTypes.grand-tactician.basicSkillId: "stratagem" → "adviser-stratagem"
+
+## 2026-10-08 18:03 — 스킬 · 병종
+- skills.qimen-master-ward.apCost: 2 → 3
+- unitTypes.infantry.statMods.speed: 0 → 1
+- unitTypes.infantry.statMods.action: 0 → 1
+- unitTypes.shield.statMods.action: 0 → 1
+- unitTypes.strategist.statMods.action: 0 → 1
+- unitTypes.taoist.statMods.action: 0 → 1
+- unitTypes.heavy-infantry.statMods.intellect: 0 → 1
+- unitTypes.assault-infantry.statMods.action: 1 → 0
+- unitTypes.royal-guard.statMods.intellect: 0 → 1
+- unitTypes.escort.statMods.action: 0 → 1
+- unitTypes.armored-guard.statMods.action: 1 → 0
+- unitTypes.iron-wall.statMods.attack: 0 → 1
+- unitTypes.iron-wall.statMods.action: -1 → 0
+- unitTypes.adviser.statMods.intellect: 2 → 1
+- unitTypes.adviser.statMods.speed: 0 → 1
+- unitTypes.jade-strategist.statMods.defense: 1 → 0
+- unitTypes.jade-strategist.statMods.speed: 0 → 1
+- unitTypes.grand-tactician.statMods.speed: 1 → 0
+- unitTypes.grand-tactician.statMods.action: 0 → 1
+- unitTypes.alchemist.statMods.intellect: 2 → 1
+- unitTypes.sorcerer.statMods.intellect: 1 → 0
+- unitTypes.sorcerer.statMods.action: 0 → 1
+- unitTypes.sage.statMods.defense: 0 → 1
+- unitTypes.sage.statMods.intellect: 2 → 1
+- unitTypes.sage.statMods.speed: -1 → 0
+- unitTypes.sage.statMods.action: 0 → 1
+- unitTypes.qimen-master.statMods.defense: 0 → 1
+- unitTypes.qimen-master.statMods.speed: 1 → 0
+- unitTypes.qimen-master.statMods.action: 0 → 1

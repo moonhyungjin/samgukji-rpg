@@ -15,6 +15,8 @@ type Patch = Partial<Omit<UnitTypeData, 'statMods' | 'damageTakenByType' | 'dama
   guard?: Partial<NonNullable<UnitTypeData['guard']>> | null;
 };
 
+const SKILL_KIND_ORDER = ['attack', 'heal', 'guard', 'buff', 'revive'] as const;
+const SKILL_KIND_LABEL: Record<(typeof SKILL_KIND_ORDER)[number], string> = { attack: '공격', heal: '회복', guard: '가드', buff: '버프', revive: '부활' };
 const signed = (n: number) => (n > 0 ? `+${n}` : String(n));
 const DEPTH_NAME = (depth: number) => (depth === 0 ? '0차' : `${depth}차`);
 
@@ -47,6 +49,19 @@ export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed
   const skills = Object.values(data.skills);
   // 같은 이름의 스킬(공격, 가드 …)은 쓰는 병종 이름을 붙여 구분한다
   const nameCount = skills.reduce<Record<string, number>>((m, s) => ({ ...m, [s.name]: (m[s.name] ?? 0) + 1 }), {});
+  /** 스킬 선택 목록: 종류(공격/회복/가드/버프/부활)별로 묶어 모든 스킬을 보여 준다. 병종이 쓸 수 있는 스킬을 제한하지 않는다 */
+  const skillOptions = (include: (s: (typeof skills)[number]) => boolean) =>
+    SKILL_KIND_ORDER.map((kind) => ({ kind, items: skills.filter((s) => s.kind === kind && include(s)) }))
+      .filter((g) => g.items.length > 0)
+      .map((g) => (
+        <optgroup key={g.kind} label={SKILL_KIND_LABEL[g.kind]}>
+          {g.items.map((s) => (
+            <option key={s.id} value={s.id}>
+              {skillLabel(s.id, s.name)}
+            </option>
+          ))}
+        </optgroup>
+      ));
   const skillLabel = (id: string, name: string) => {
     const owner = nameCount[name] > 1 ? skillUsers(data.unitTypes, id)[0] : undefined;
     return owner ? `${name} · ${owner.name}` : name;
@@ -282,13 +297,7 @@ export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed
               {field(
                 '일반공격',
                 <select aria-label={`${u.id} 일반공격`} value={u.basicSkillId} onChange={(e) => onEdit(u.id, { basicSkillId: e.target.value })}>
-                  {skills
-                    .filter((s) => s.id === u.basicSkillId || u.extraSkillIds.includes(s.id))
-                    .map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.id})
-                      </option>
-                    ))}
+                  {skillOptions(() => true)}
                   {!data.skills[u.basicSkillId] && <option value={u.basicSkillId}>{u.basicSkillId} (없음)</option>}
                 </select>,
               )}
@@ -309,13 +318,7 @@ export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed
                 onChange={(e) => e.target.value && onEdit(u.id, { extraSkillIds: toggle(u.extraSkillIds, e.target.value, true) })}
               >
                 <option value="">+ 스킬 추가…</option>
-                {skills
-                  .filter((s) => !u.extraSkillIds.includes(s.id))
-                  .map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {skillLabel(s.id, s.name)}
-                    </option>
-                  ))}
+                {skillOptions((sk) => sk.id !== u.basicSkillId && !u.extraSkillIds.includes(sk.id))}
               </select>
             </div>
             {renderSkills?.(u)}

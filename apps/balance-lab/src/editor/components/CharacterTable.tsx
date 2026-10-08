@@ -1,3 +1,4 @@
+import { UnitTypePicker } from './UnitTypePicker';
 import type { BalanceConfig, CharacterData, CharacterRank, GameData, LineupEntry } from '@samgukji/battle-engine';
 import { RANK_LABEL, STAT_FIELDS, derive, presetsUsing } from '../lib/editor';
 import type { Issue } from '../lib/editor';
@@ -59,14 +60,7 @@ export function CharacterTable({ list, visibleIds, savedIds, changed, issues, da
                     <input className="name-input" aria-label={`${c.id} 이름`} value={c.name} onChange={(e) => onEdit(c.id, { name: e.target.value })} />
                   </td>
                   <td>
-                    <select aria-label={`${c.id} 병종`} value={c.unitType} onChange={(e) => onEdit(c.id, { unitType: e.target.value })}>
-                      {unitTypes.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.name}
-                        </option>
-                      ))}
-                      {!data.unitTypes[c.unitType] && <option value={c.unitType}>{c.unitType} (없음)</option>}
-                    </select>
+                    <UnitTypePicker label={`${c.id} 병종`} value={c.unitType} unitTypes={data.unitTypes} onChange={(unitType) => onEdit(c.id, { unitType })} />
                   </td>
                   <td>
                     <select aria-label={`${c.id} 등급`} value={c.rank ?? 'elite'} onChange={(e) => onEdit(c.id, { rank: e.target.value as CharacterRank })}>

@@ -17,7 +17,18 @@ export interface SceneOptions {
   artUnits?: readonly Pick<ViewUnit, 'characterId' | 'family'>[];
 }
 
-const MORALE_BAR = { x: 390, y: 48, w: 500, h: 14 };
+const MORALE_BAR = { x: 420, y: 44, w: 440, h: 14 };
+
+function inferFactionName(units: readonly ViewUnit[], side: 'attacker' | 'defender'): string {
+  const sideUnits = units.filter(u => u.side === side);
+  if (sideUnits.length === 0) return side === 'attacker' ? '공격군' : '방어군';
+  const text = sideUnits.map(u => `${u.name} ${u.characterId}`).join(' ');
+  if (text.includes('황건') || text.includes('yt')) return '황건군';
+  if (text.includes('유비') || text.includes('관우') || text.includes('장비') || text.includes('촉') || text.includes('shu')) return '촉  군';
+  if (text.includes('조조') || text.includes('하후') || text.includes('허저') || text.includes('위') || text.includes('wei')) return '위  군';
+  if (text.includes('손') || text.includes('주유') || text.includes('오') || text.includes('wu')) return '오  군';
+  return side === 'attacker' ? '공격군' : '방어군';
+}
 
 /**
  * PixiJS로 전투를 그린다. 규칙은 계산하지 않고, 컨트롤러가 넘겨 주는 엔진 이벤트를 재생하기만 한다.
@@ -30,7 +41,10 @@ export class BattleScene implements SceneLike {
   private readonly effectsLayer = new Container();
   private readonly overlayLayer = new Container();
   private readonly moraleBar = new Graphics();
+  private readonly moraleCenterLabel: Text;
   private readonly roundText: Text;
+  private readonly attackerTitle: Text;
+  private readonly defenderTitle: Text;
   private readonly attackerMoraleText: Text;
   private readonly defenderMoraleText: Text;
   private readonly sprites = new Map<string, UnitSprite>();
@@ -65,18 +79,36 @@ export class BattleScene implements SceneLike {
   ) {
     this.app.stage.addChild(this.world);
 
-    this.world.addChild(this.drawBackground(), this.armyLayer, this.armyLabels, this.unitsLayer, this.effectsLayer, this.moraleBar, this.overlayLayer);
+    this.roundText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 15, fill: 0xf5eedb, fontWeight: 'bold' } });
+    this.roundText.anchor.set(.5, 0.5);
+    this.roundText.position.set(640, 22);
 
-    this.roundText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 20, fill: 0xe4e8f0, fontWeight: 'bold' } });
-    this.roundText.anchor.set(.5, 0);
-    this.roundText.position.set(640, 10);
-    this.attackerMoraleText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 15, fill: SIDE_COLOR.attacker, fontWeight: 'bold' } });
+    this.attackerTitle = new Text({ text: '공격군', style: { fontFamily: FONT, fontSize: 20, fill: 0xf5eedb, fontWeight: 'bold' } });
+    this.attackerTitle.anchor.set(0.5, 0.5);
+    this.attackerTitle.position.set(220, 35);
+
+    this.defenderTitle = new Text({ text: '방어군', style: { fontFamily: FONT, fontSize: 20, fill: 0xf5eedb, fontWeight: 'bold' } });
+    this.defenderTitle.anchor.set(0.5, 0.5);
+    this.defenderTitle.position.set(1060, 35);
+
+    this.moraleCenterLabel = new Text({ text: '사기', style: { fontFamily: FONT, fontSize: 10, fill: 0xe5d8b8, fontWeight: 'bold' } });
+    this.moraleCenterLabel.anchor.set(0.5, 0.5);
+    this.moraleCenterLabel.position.set(640, MORALE_BAR.y + MORALE_BAR.h / 2);
+
+    this.attackerMoraleText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 13, fill: 0x60a5fa, fontWeight: 'bold' } });
     this.attackerMoraleText.anchor.set(1, 0.5);
-    this.attackerMoraleText.position.set(MORALE_BAR.x - 12, MORALE_BAR.y + MORALE_BAR.h / 2);
-    this.defenderMoraleText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 15, fill: SIDE_COLOR.defender, fontWeight: 'bold' } });
+    this.attackerMoraleText.position.set(MORALE_BAR.x - 10, MORALE_BAR.y + MORALE_BAR.h / 2);
+
+    this.defenderMoraleText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 13, fill: 0xf87171, fontWeight: 'bold' } });
     this.defenderMoraleText.anchor.set(0, 0.5);
-    this.defenderMoraleText.position.set(MORALE_BAR.x + MORALE_BAR.w + 12, MORALE_BAR.y + MORALE_BAR.h / 2);
-    this.world.addChild(this.roundText, this.attackerMoraleText, this.defenderMoraleText);
+    this.defenderMoraleText.position.set(MORALE_BAR.x + MORALE_BAR.w + 10, MORALE_BAR.y + MORALE_BAR.h / 2);
+
+    this.world.addChild(
+      this.drawBackground(), this.armyLayer, this.armyLabels, this.unitsLayer,
+      this.effectsLayer, this.moraleBar, this.moraleCenterLabel, this.overlayLayer,
+      this.roundText, this.attackerTitle, this.defenderTitle,
+      this.attackerMoraleText, this.defenderMoraleText,
+    );
 
     this.app.renderer.on('resize', () => this.fit());
     this.fit();
@@ -102,6 +134,8 @@ export class BattleScene implements SceneLike {
       this.armyLayer.addChild(sprite.army.root);
       this.armyLabels.addChild(sprite.army.annotation);
     }
+    this.attackerTitle.text = inferFactionName(state.units, 'attacker');
+    this.defenderTitle.text = inferFactionName(state.units, 'defender');
     this.updateRound(state.round);
     this.morale = state.defenderMorale;
     this.drawMorale(state.defenderMorale);
@@ -291,22 +325,53 @@ export class BattleScene implements SceneLike {
     } else {
       layer.addChild(new Graphics().rect(0, 70, WORLD_W, 425).fill(0x626953));
     }
-    g.rect(0, 0, WORLD_W, 70).fill(0x0c1417).stroke({ width: 2, color: 0x9b8150 });
-    g.rect(0, 495, WORLD_W, WORLD_H - 495).fill(0x0c1417);
+
+    // 최상단 헤더 배경 (Y: 0~70)
+    g.rect(0, 0, WORLD_W, 70).fill(0x0a0e14);
+    g.moveTo(0, 70).lineTo(WORLD_W, 70).stroke({ width: 2, color: 0xc8a96e });
+
+    // 좌측 진영 현판 (W: 160, H: 46, center: 220, 35)
+    g.roundRect(140, 12, 160, 46, 6).fill(0x0d1f1c).stroke({ width: 2, color: 0xc8a96e });
+    g.roundRect(144, 16, 152, 38, 4).stroke({ width: 1, color: 0x5a482b });
+    g.circle(146, 18, 1.5).fill(0xf5eedb);
+    g.circle(294, 18, 1.5).fill(0xf5eedb);
+    g.circle(146, 52, 1.5).fill(0xf5eedb);
+    g.circle(294, 52, 1.5).fill(0xf5eedb);
+
+    // 우측 진영 현판 (W: 160, H: 46, center: 1060, 35)
+    g.roundRect(980, 12, 160, 46, 6).fill(0x1f1214).stroke({ width: 2, color: 0xc8a96e });
+    g.roundRect(984, 16, 152, 38, 4).stroke({ width: 1, color: 0x5a482b });
+    g.circle(986, 18, 1.5).fill(0xf5eedb);
+    g.circle(1134, 18, 1.5).fill(0xf5eedb);
+    g.circle(986, 52, 1.5).fill(0xf5eedb);
+    g.circle(1134, 52, 1.5).fill(0xf5eedb);
+
+    // 중앙 라운드 현판 (center: 640, 22)
+    g.roundRect(550, 8, 180, 28, 4).fill(0x10151c).stroke({ width: 1.5, color: 0xc8a96e });
+    g.roundRect(553, 11, 174, 22, 2).stroke({ width: 1, color: 0x4a3d24 });
+
+    // 하단 전체 배경
+    g.rect(0, 495, WORLD_W, WORLD_H - 495).fill(0x0a0e13);
+
+    // 전장-하단 분리 프레임 (Y: 493~499)
+    g.rect(0, 493, WORLD_W, 6).fill(0x181c24);
+    g.moveTo(0, 493).lineTo(WORLD_W, 493).stroke({ width: 1.5, color: 0xc8a96e });
+    g.moveTo(0, 499).lineTo(WORLD_W, 499).stroke({ width: 1.5, color: 0x6e5c38 });
+    // 중앙 브라켓 장식
+    g.roundRect(WORLD_W / 2 - 45, 490, 90, 12, 2).fill(0x10151c).stroke({ width: 1.5, color: 0xc8a96e });
+
+    // 하단 카드 베이스 영역 (좌/우)
     for (const x of [24, 798]) {
-      g.rect(x, 499, 458, 390).fill(0x111d1e).stroke({ width: 2, color: 0x9b8150 });
-      g.rect(x + 4, 503, 450, 382).stroke({ width: 1, color: 0x4e4938 });
+      g.roundRect(x, 499, 458, 390, 4).fill(0x0e1217).stroke({ width: 2, color: 0x6e5c38 });
+      g.roundRect(x + 4, 503, 450, 382, 2).stroke({ width: 1, color: 0x2e271a });
+      // 모서리 L자 금속 브라켓
+      const w = 458, h = 390, b = 14;
+      g.moveTo(x + b, 499).lineTo(x, 499).lineTo(x, 499 + b).stroke({ width: 2, color: 0xc8a96e });
+      g.moveTo(x + w - b, 499).lineTo(x + w, 499).lineTo(x + w, 499 + b).stroke({ width: 2, color: 0xc8a96e });
+      g.moveTo(x + b, 499 + h).lineTo(x, 499 + h).lineTo(x, 499 + h - b).stroke({ width: 2, color: 0xc8a96e });
+      g.moveTo(x + w - b, 499 + h).lineTo(x + w, 499 + h).lineTo(x + w, 499 + h - b).stroke({ width: 2, color: 0xc8a96e });
     }
-    g.moveTo(0, 495).lineTo(WORLD_W, 495).stroke({ width: 3, color: 0xc3a15d });
-    for (const side of ['attacker', 'defender'] as const) {
-      const title = new Text({
-        text: SIDE_LABEL[side],
-        style: { fontFamily: FONT, fontSize: 25, fill: 0xf1e6cf, fontWeight: 'bold' },
-      });
-      title.anchor.set(0.5, 0);
-      title.position.set(side === 'attacker' ? 200 : 1080, 12);
-      layer.addChild(title);
-    }
+
     const versus = new Text({ text: '군단 지휘\n\n아래에서 행동 선택', style: { fontFamily: FONT, fontSize: 18, fill: 0xbfa879, align: 'center', fontWeight: 'bold' } });
     versus.anchor.set(0.5);
     versus.position.set(WORLD_W / 2, 670);
@@ -316,7 +381,7 @@ export class BattleScene implements SceneLike {
   }
 
   private updateRound(round: number): void {
-    this.roundText.text = round === 0 ? '전투 준비' : `라운드 ${round} / ${this.options.maxTurns}`;
+    this.roundText.text = round === 0 ? '전투 준비' : `${round} 라운드`;
   }
 
   /** 사기 바: 공격측(파랑)이 왼쪽, 방어측(빨강)이 오른쪽. 합이 항상 100인 제로섬 막대 */
@@ -325,11 +390,17 @@ export class BattleScene implements SceneLike {
     const attacker = 100 - defenderMorale;
     const g = this.moraleBar;
     g.clear();
-    g.roundRect(x, y, w, h, 6).fill(0x232a3a);
+    // 트랙 배경
+    g.roundRect(x, y, w, h, 3).fill(0x12171e).stroke({ width: 1.5, color: 0x7a6948 });
     const split = (w * attacker) / 100;
-    if (split > 0) g.roundRect(x, y, Math.max(split, 6), h, 6).fill(SIDE_COLOR.attacker);
-    if (split < w) g.roundRect(x + split, y, Math.max(w - split, 6), h, 6).fill(SIDE_COLOR.defender);
-    g.rect(x + split - 1.5, y - 3, 3, h + 6).fill(0xffffff);
+    if (split > 0) g.roundRect(x, y, Math.max(split, 3), h, 3).fill(0x2563eb);
+    if (split < w) g.roundRect(x + split, y, Math.max(w - split, 3), h, 3).fill(0xdc2626);
+    // 중앙 분할선
+    g.rect(x + split - 1, y - 2, 2, h + 4).fill(0xffffff);
+
+    // 중앙 "사기" 배지
+    g.roundRect(640 - 18, y - 1, 36, h + 2, 3).fill(0x0a0e14).stroke({ width: 1, color: 0xc8a96e });
+
     this.attackerMoraleText.text = `사기 ${attacker.toFixed(0)}`;
     this.defenderMoraleText.text = `${defenderMorale.toFixed(0)} 사기`;
   }

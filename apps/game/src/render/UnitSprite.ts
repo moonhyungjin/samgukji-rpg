@@ -11,6 +11,20 @@ import type { Clock } from './tween';
 
 const DEAD_ALPHA = 0.32;
 
+function getCharacterSeal(characterId: string | undefined, name: string): string {
+  const id = characterId ?? '';
+  if (id.includes('liuBei') || name.includes('유비')) return '劉';
+  if (id.includes('guanYu') || name.includes('관우')) return '關';
+  if (id.includes('zhangFei') || name.includes('장비')) return '張';
+  if (id.includes('caoCao') || name.includes('조조')) return '曺';
+  if (id.includes('dianWei') || name.includes('전위')) return '典';
+  if (id.includes('xuChu') || name.includes('허저')) return '許';
+  if (id.includes('xiahou') || name.includes('하후')) return '夏';
+  if (id.includes('weiYan') || name.includes('위연')) return '魏';
+  if (id.includes('yt') || id.includes('yellow') || name.includes('황건')) return '黃';
+  return name.charAt(0) || '將';
+}
+
 /** 군단 카드 하나. 이름, 병종, 병력 바, AP 칸을 그리고 연출(돌진, 흔들림, 사라짐)을 담당한다. */
 export class UnitSprite {
   readonly root = new Container();
@@ -58,41 +72,65 @@ export class UnitSprite {
     this.troops = unit.troops;
     this.ap = unit.ap;
 
-    const bg = new Graphics().rect(0, 0, this.cardWidth, CARD_H).fill(0x10191b).stroke({ width: 2, color: 0x9b8150 });
-    bg.rect(4, 4, this.cardWidth - 8, CARD_H - 8).stroke({ width: 1, color: 0x4e4938 });
+    // 어두운 흑철/먹색 카드 배경 및 엔틱 골드 이중 테두리
+    const bg = new Graphics().roundRect(0, 0, this.cardWidth, CARD_H, 4).fill(0x10151c).stroke({ width: 2, color: 0x6e5c38 });
+    bg.roundRect(3, 3, this.cardWidth - 6, CARD_H - 6, 2).stroke({ width: 1, color: 0x2e271a });
+    const cw = this.cardWidth, ch = CARD_H, cb = 8;
+    bg.moveTo(cb, 0).lineTo(0, 0).lineTo(0, cb).stroke({ width: 1.5, color: 0xc8a96e });
+    bg.moveTo(cw - cb, 0).lineTo(cw, 0).lineTo(cw, cb).stroke({ width: 1.5, color: 0xc8a96e });
+    bg.moveTo(cb, ch).lineTo(0, ch).lineTo(0, ch - cb).stroke({ width: 1.5, color: 0xc8a96e });
+    bg.moveTo(cw - cb, ch).lineTo(cw, ch).lineTo(cw, ch - cb).stroke({ width: 1.5, color: 0xc8a96e });
+
     const faceSize = this.wideSlot === undefined ? 60 : 100;
-    const portrait = new Graphics().rect(6, 6, faceSize, faceSize).fill(0x203030).stroke({ width: 1, color: 0xb69a60 });
+    const portrait = new Graphics().roundRect(6, 6, faceSize, faceSize, 3).fill(0x182026).stroke({ width: 1.5, color: 0x8a7243 });
     portrait.rect(6, 6, 3, faceSize).fill(FAMILY_COLOR[unit.family]);
     const glyph = new Text({ text: FAMILY_GLYPH[unit.family], style: { fontFamily: FONT, fontSize: 30, fill: 0xffffff, fontWeight: 'bold' } });
     glyph.anchor.set(0.5);
     glyph.position.set(6 + faceSize / 2, 6 + faceSize / 2);
 
-    const name = new Text({ text: unit.name, style: { fontFamily: FONT, fontSize: 18, fill: 0xffffff, fontWeight: 'bold' } });
-    name.position.set(76, 8);
+    const nameX = this.wideSlot === undefined ? 74 : 116;
+    const nameY = this.wideSlot === undefined ? 7 : 8;
+    const name = new Text({ text: unit.name, style: { fontFamily: FONT, fontSize: this.wideSlot === undefined ? 18 : 22, fill: 0xffffff, fontWeight: 'bold' } });
+    name.position.set(nameX, nameY);
+
+    // 성씨/진영 한자 인장 배지
+    const sealText = getCharacterSeal(unit.characterId, unit.name);
+    const sealBadge = new Graphics();
+    const sealX = nameX;
+    const sealY = this.wideSlot === undefined ? 30 : 38;
+    const sealSize = 17;
+    const sealColor = unit.side === 'attacker' ? 0x133826 : 0x4a1818;
+    sealBadge.roundRect(sealX, sealY, sealSize, sealSize, 3).fill(sealColor).stroke({ width: 1, color: 0xc8a96e });
+    const sealLabel = new Text({
+      text: sealText,
+      style: { fontFamily: FONT, fontSize: 10, fill: 0xf5eedb, fontWeight: 'bold' },
+    });
+    sealLabel.anchor.set(0.5);
+    sealLabel.position.set(sealX + sealSize / 2, sealY + sealSize / 2);
+
     const subtitle = this.subtitle = new Text({
       text: `${FAMILY_LABEL[unit.family]} · ${unit.row === 'front' ? '전열' : '후열'}`,
-      style: { fontFamily: FONT, fontSize: 12, fill: 0x9aa4b8 },
+      style: { fontFamily: FONT, fontSize: 11, fill: 0xa0aec0 },
     });
-    subtitle.position.set(76, 30);
-    this.troopsText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 13, fill: 0xe4e8f0 } });
-    this.troopsText.position.set(this.cardWidth - 10, 49);
+    subtitle.position.set(sealX + sealSize + 6, sealY + 1);
+
+    this.troopsText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 11, fill: 0xf1f5f9, fontWeight: 'bold' } });
+    this.troopsText.position.set(this.cardWidth - 10, this.wideSlot === undefined ? 49 : 42);
     this.troopsText.anchor.set(1, 0);
-    this.troopsText.style.fontSize = 11;
 
     // 전멸하면 병력 글자와 바를 숨기고 그 자리에 "전멸"을 보여 준다 (이름과 겹치지 않게)
     this.deadText = new Text({ text: '전멸', style: { fontFamily: FONT, fontSize: 24, fill: 0xff6b6b, fontWeight: 'bold' } });
     this.deadText.anchor.set(0, 0.5);
-    this.deadText.position.set(76, 66);
+    this.deadText.position.set(nameX, 66);
     this.deadText.visible = false;
 
     this.flashOverlay.roundRect(0, 0, this.cardWidth, CARD_H, 10).fill(0xff3b3b);
     this.flashOverlay.alpha = 0;
 
     // AP와 분리한 맨 아래 상태 줄. 가드 확률이 0이면 숨긴다.
-    this.guardText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 12, fill: 0xbfd6ff, fontWeight: 'bold' } });
+    this.guardText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 10, fill: 0x93c5fd, fontWeight: 'bold' } });
     this.guardText.anchor.set(0, 0.5);
     this.guardText.position.set(this.infoLeft + 4, 102);
-    this.guardText.style.fontSize = 10;
 
     // 가드 배지 뒤에 버프/결계를 놓고 카드 너비 안으로 맞춘다.
     this.buffText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 11, fill: 0xffd166, fontWeight: 'bold' } });
@@ -102,15 +140,9 @@ export class UnitSprite {
     this.barrier = unit.barrier;
 
     this.root.addChild(
-      bg, portrait, glyph, name, subtitle, this.troopsText, this.hpBar, this.pips, this.apText,
+      bg, portrait, glyph, sealBadge, sealLabel, name, subtitle, this.troopsText, this.hpBar, this.pips, this.apText,
       this.guardBadge, this.guardText, this.buffText, this.flashOverlay, this.ring, this.deadText,
     );
-    if (this.wideSlot !== undefined) {
-      name.position.set(120, 10); name.style.fontSize = 24;
-      subtitle.position.set(120, 40);
-      this.troopsText.y = 40; this.troopsText.style.fontSize = 13;
-      this.deadText.position.set(120, 66);
-    }
     name.scale.x = Math.min(1, (this.cardWidth - name.x - 12) / Math.max(1, name.width));
     const art = unitArt(unit);
     if (art?.portrait && textures[art.portrait]) {
@@ -163,7 +195,7 @@ export class UnitSprite {
     if (rate > 0) {
       this.guardText.text = `가드 ${Math.round(rate)}%`;
       const w = this.guardText.width + 14;
-      this.guardBadge.rect(this.infoLeft, 94, w, 16).fill(0x26302b).stroke({ width: 1, color: 0xb39a65 });
+      this.guardBadge.roundRect(this.infoLeft, 94, w, 16, 3).fill(0x182422).stroke({ width: 1, color: 0xc8a96e });
     }
     this.drawBuffs();
     this.updateGuardVisibility();
@@ -315,38 +347,49 @@ export class UnitSprite {
     g.clear();
     const left = this.infoLeft;
     const width = this.cardWidth - left - 10;
-    const y = this.wideSlot === undefined ? 69 : 62;
-    g.roundRect(left, y, width, 9, 3).fill(0x080e10).stroke({ width: 1, color: 0x8d998f });
+    const y = this.wideSlot === undefined ? 66 : 64;
+    g.roundRect(left, y, width, 10, 3).fill(0x0c1116).stroke({ width: 1, color: 0x475569 });
     const ratio = Math.max(0, Math.min(1, value / this.maxTroops));
-    if (ratio > 0) g.roundRect(left + 2, y + 2, (width - 4) * ratio, 5, 2).fill(ratio > 0.5 ? 0x70cd74 : ratio > 0.25 ? 0xe0b341 : 0xe05a5a);
+    if (ratio > 0) {
+      g.roundRect(left + 2, y + 2, (width - 4) * ratio, 6, 2).fill(ratio > 0.5 ? 0x22c55e : ratio > 0.25 ? 0xeab308 : 0xef4444);
+    }
     this.troopsText.text = `${Math.round(value)} / ${this.maxTroops}`;
   }
 
   private drawPips(): void {
     const g = this.pips;
     g.clear();
-    this.apText.text = `AP ${this.ap}/${this.maxAp}`;
-    this.apText.position.set(this.infoLeft, 81);
+    this.apText.text = 'AP';
+    this.apText.style.fontSize = 10;
+    this.apText.style.fill = 0xd1d5db;
+    this.apText.style.fontWeight = 'bold';
+    const py = 81;
+    this.apText.position.set(this.infoLeft, py + 1);
     const start = this.infoLeft + this.apText.width + 8;
-    const step = Math.min(17, (this.cardWidth - 10 - start) / Math.max(1, this.maxAp));
+    const step = Math.min(18, (this.cardWidth - 10 - start) / Math.max(1, this.maxAp));
     // Large edited AP totals retain an exact number instead of unreadable tiny squares.
     if (step < 5) return;
     for (let i = 0; i < this.maxAp; i++) {
       const x = start + i * step;
-      g.rect(x, 81, step - 3, 10).fill(i < this.ap ? 0xe6c45a : 0x252c2f)
-        .stroke({ width: 1, color: i < this.ap ? 0xffde89 : 0x596269 });
+      const filled = i < this.ap;
+      g.roundRect(x, py, step - 3, 11, 2)
+        .fill(filled ? 0xf5c842 : 0x1e2530)
+        .stroke({ width: 1, color: filled ? 0xffea85 : 0x3b4554 });
     }
   }
 
   private drawRing(): void {
     this.ring.clear();
     if (this.targetable || this.acting) {
-      const color = this.targetable ? 0xffe4a0 : 0xe6b64e;
-      this.ring.rect(-2, -2, this.cardWidth + 4, CARD_H + 4).stroke({ width: this.acting ? 3 : 2, color });
+      const color = this.targetable ? 0xffa94d : 0xf5c842;
+      this.ring.roundRect(-2, -2, this.cardWidth + 4, CARD_H + 4, 4).stroke({ width: this.acting ? 2.5 : 2, color });
+      if (this.acting) {
+        this.ring.roundRect(1, 1, this.cardWidth - 2, CARD_H - 2, 2).stroke({ width: 1, color: 0xfff0b5, alpha: 0.75 });
+      }
       for (const x of [0, this.cardWidth]) {
         const dir = x === 0 ? 1 : -1;
-        this.ring.moveTo(x, 12).lineTo(x, 0).lineTo(x + dir * 14, 0)
-          .moveTo(x, CARD_H - 12).lineTo(x, CARD_H).lineTo(x + dir * 14, CARD_H)
+        this.ring.moveTo(x, 14).lineTo(x, 0).lineTo(x + dir * 16, 0)
+          .moveTo(x, CARD_H - 14).lineTo(x, CARD_H).lineTo(x + dir * 16, CARD_H)
           .stroke({ width: 3, color });
       }
     }

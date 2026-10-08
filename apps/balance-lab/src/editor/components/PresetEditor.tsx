@@ -1,3 +1,4 @@
+import { rootIdOf } from '../lib/unitTypes';
 import type { BalanceConfig, CharacterData, GameData } from '@samgukji/battle-engine';
 import type { PresetDef } from '@samgukji/game-data';
 import type { Issue } from '../lib/editor';
@@ -23,6 +24,7 @@ interface Props {
 /** 기본 편성 목록. 칸마다 장수를 골라 전열 3 + 후열 3을 짠다. */
 export function PresetEditor({ presets, savedIds, changed, issues, characters, data, balance, onEdit, onSetSlot, onSetUnitType, onDuplicate, onRevert, onRemove }: Props) {
   const bad = new Set(issues.filter((i) => i.level === 'error' && i.id !== undefined).map((i) => i.id));
+  const unitTypeList = Object.values(data.unitTypes);
   const typeName = (c: CharacterData) => data.unitTypes[c.unitType]?.name ?? c.unitType;
 
   return (
@@ -89,7 +91,8 @@ export function PresetEditor({ presets, savedIds, changed, issues, characters, d
                             <select aria-label={`${p.id} ${row === 'front' ? '전열' : '후열'} ${i + 1} 병종`} title="이 편성에서 지금 맡은 병종 (승급 단계). 기본은 장수의 병종" value={slot.unitType ?? ''} onChange={(e) => onSetUnitType(p.id, index, e.target.value || undefined)}>
                               <option value="">장수 병종 (기본)</option>
                               {Object.values(data.unitTypes)
-                                .filter((u) => u.allowedRows.includes(row))
+                                // 장수의 병종과 같은 승급 계열만 (이미 다른 계열을 고른 값은 그대로 보인다)
+                                .filter((u) => u.id === slot.unitType || (u.allowedRows.includes(row) && (!slotChar || rootIdOf(unitTypeList, u.id) === rootIdOf(unitTypeList, slotChar.unitType))))
                                 .map((u) => (
                                   <option key={u.id} value={u.id}>
                                     {u.name}

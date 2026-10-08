@@ -45,8 +45,8 @@
       "attack": 0,
       "defense": 0,
       "intellect": 0,
-      "speed": 0,
-      "action": 0
+      "speed": 1,
+      "action": 1
     }
   },
   {
@@ -73,7 +73,7 @@
     "troopScale": 1.5,
     "baseAp": 3,
     "recruit": {
-      "reinforce": 12,
+      "reinforce": 20,
       "replenish": 1,
       "dismiss": 1
     },
@@ -98,7 +98,7 @@
       "defense": 1,
       "intellect": 0,
       "speed": -1,
-      "action": 0
+      "action": 1
     },
     "guard": {
       "start": 50,
@@ -130,12 +130,12 @@
       "heavy-cavalry"
     ],
     "traitIds": [],
-    "troopScale": 0.9,
+    "troopScale": 0.8,
     "baseAp": 2,
     "recruit": {
-      "reinforce": 30,
-      "replenish": 2,
-      "dismiss": 2
+      "reinforce": 36,
+      "replenish": 4,
+      "dismiss": 4
     },
     "damageTakenByType": {
       "physical": 1,
@@ -260,7 +260,7 @@
       "defense": 0,
       "intellect": 1,
       "speed": 0,
-      "action": 0
+      "action": 1
     }
   },
   {
@@ -312,7 +312,7 @@
       "defense": 0,
       "intellect": 0,
       "speed": 1,
-      "action": 0
+      "action": 1
     }
   },
   {
@@ -379,10 +379,10 @@
     "range": 2,
     "canCounter": true,
     "counterPower": 1,
-    "basicSkillId": "horse-archer-cavalry-charge",
+    "basicSkillId": "cavalry-charge-2",
     "extraSkillIds": [],
     "promotesTo": [
-      "horse-archer"
+      "charge-cavalry"
     ],
     "traitIds": [],
     "troopScale": 0.9,
@@ -466,19 +466,21 @@
     }
   },
   {
-    "id": "horse-archer",
-    "name": "궁기병",
+    "id": "charge-cavalry",
+    "name": "돌격기병",
     "family": "cavalry",
     "tier": 3,
     "allowedRows": [
       "front",
       "back"
     ],
-    "range": 2,
+    "range": 1,
     "canCounter": true,
     "counterPower": 1,
-    "basicSkillId": "horse-archer-cavalry-charge",
-    "extraSkillIds": [],
+    "basicSkillId": "cavalry-charge-2",
+    "extraSkillIds": [
+      "pierce-cavalry-charge"
+    ],
     "promotesTo": [],
     "traitIds": [],
     "troopScale": 0.9,
@@ -652,7 +654,7 @@
     "statMods": {
       "attack": 0,
       "defense": 1,
-      "intellect": 0,
+      "intellect": 1,
       "speed": -1,
       "action": 0
     }
@@ -701,7 +703,7 @@
       "defense": 0,
       "intellect": 0,
       "speed": 1,
-      "action": 1
+      "action": 0
     }
   },
   {
@@ -746,7 +748,7 @@
     "statMods": {
       "attack": 1,
       "defense": 1,
-      "intellect": 0,
+      "intellect": 1,
       "speed": 0,
       "action": 0
     }
@@ -799,7 +801,7 @@
       "defense": 0,
       "intellect": 1,
       "speed": 1,
-      "action": 0
+      "action": 1
     },
     "guard": {
       "start": 50,
@@ -919,7 +921,7 @@
       "defense": 1,
       "intellect": 0,
       "speed": 1,
-      "action": 1
+      "action": 0
     },
     "guard": {
       "start": 50,
@@ -974,11 +976,11 @@
       "magic": 20
     },
     "statMods": {
-      "attack": 0,
+      "attack": 1,
       "defense": 1,
       "intellect": 1,
       "speed": 0,
-      "action": -1
+      "action": 0
     },
     "guard": {
       "start": 50,
@@ -1229,8 +1231,8 @@
     "statMods": {
       "attack": 0,
       "defense": 0,
-      "intellect": 2,
-      "speed": 0,
+      "intellect": 1,
+      "speed": 1,
       "action": 0
     }
   },
@@ -1328,9 +1330,9 @@
     },
     "statMods": {
       "attack": 0,
-      "defense": 1,
+      "defense": 0,
       "intellect": 1,
-      "speed": 0,
+      "speed": 1,
       "action": 0
     }
   },
@@ -1346,7 +1348,7 @@
     "range": 3,
     "canCounter": false,
     "counterPower": 1,
-    "basicSkillId": "stratagem",
+    "basicSkillId": "adviser-stratagem",
     "extraSkillIds": [
       "grand-tactician-inspire"
     ],
@@ -1379,8 +1381,8 @@
       "attack": 0,
       "defense": 0,
       "intellect": 1,
-      "speed": 1,
-      "action": 0
+      "speed": 0,
+      "action": 1
     }
   },
   {
@@ -1429,7 +1431,7 @@
     "statMods": {
       "attack": 0,
       "defense": 0,
-      "intellect": 2,
+      "intellect": 1,
       "speed": 0,
       "action": 0
     }
@@ -1480,9 +1482,9 @@
     "statMods": {
       "attack": 0,
       "defense": 1,
-      "intellect": 1,
+      "intellect": 0,
       "speed": 0,
-      "action": 0
+      "action": 1
     }
   },
   {
@@ -1528,10 +1530,10 @@
     },
     "statMods": {
       "attack": 0,
-      "defense": 0,
-      "intellect": 2,
-      "speed": -1,
-      "action": 0
+      "defense": 1,
+      "intellect": 1,
+      "speed": 0,
+      "action": 1
     }
   },
   {
@@ -1577,10 +1579,10 @@
     },
     "statMods": {
       "attack": 0,
-      "defense": 0,
+      "defense": 1,
       "intellect": 1,
-      "speed": 1,
-      "action": 0
+      "speed": 0,
+      "action": 1
     }
   },
   {

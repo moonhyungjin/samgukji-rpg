@@ -130,7 +130,7 @@
     "ignoreDefense": 2
   },
   {
-    "id": "horse-archer-cavalry-charge",
+    "id": "cavalry-charge-2",
     "name": "돌격2",
     "kind": "attack",
     "scalesWith": "attack",
@@ -140,6 +140,19 @@
     "counterRate": 0.25,
     "guardable": true,
     "ignoreDefense": 1
+  },
+  {
+    "id": "pierce-cavalry-charge",
+    "name": "관통 돌격",
+    "kind": "attack",
+    "scalesWith": "attack",
+    "power": 1.5,
+    "apCost": 1,
+    "counterable": true,
+    "counterRate": 0.25,
+    "guardable": true,
+    "ignoreDefense": 1,
+    "behindHit": 0.4
   },
   {
     "id": "heavy-cavalry-cavalry-charge",
@@ -190,11 +203,12 @@
     "name": "관통 사격",
     "kind": "attack",
     "scalesWith": "attack",
-    "power": 1.1,
+    "power": 1,
     "apCost": 1,
     "counterable": false,
     "guardable": true,
-    "ignoreDefense": 0
+    "ignoreDefense": 0,
+    "behindHit": 0.4
   },
   {
     "id": "adviser-stratagem",
@@ -253,7 +267,7 @@
   },
   {
     "id": "assault-infantry-infantry-attack",
-    "name": "관통 돌격",
+    "name": "관통 공격",
     "kind": "attack",
     "scalesWith": "attack",
     "power": 1.25,
@@ -335,7 +349,7 @@
     "kind": "buff",
     "scalesWith": "intellect",
     "power": 0,
-    "apCost": 2,
+    "apCost": 3,
     "counterable": false,
     "buff": {
       "type": "barrier",
