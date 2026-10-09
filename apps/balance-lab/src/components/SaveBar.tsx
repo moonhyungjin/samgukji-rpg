@@ -31,7 +31,7 @@ export function SaveBar() {
   const [saving, setSaving] = useState(false);
   const [memo, setMemo] = useState('');
 
-  const current: DataFiles = useMemo(() => ({ data: state.data, balance: state.balance, presets: state.presets, campaign: state.campaign }), [state.data, state.balance, state.presets, state.campaign]);
+  const current: DataFiles = useMemo(() => ({ data: state.data, balance: state.balance, presets: state.presets, campaign: state.campaign, map: state.map }), [state.data, state.balance, state.presets, state.campaign, state.map]);
   const changed = useMemo(() => changedFileNames(baseline, current), [baseline, current]);
   const issues = useMemo(() => dataIssues(current), [current]);
   const dirty = changed.length > 0;
@@ -77,7 +77,7 @@ export function SaveBar() {
 
   const revert = () => {
     const clone = JSON.parse(JSON.stringify(baseline)) as DataFiles;
-    update((s) => ({ ...s, data: clone.data, balance: clone.balance, presets: clone.presets, campaign: clone.campaign }));
+    update((s) => ({ ...s, data: clone.data, balance: clone.balance, presets: clone.presets, campaign: clone.campaign, map: clone.map }));
     setNotice(null);
   };
 

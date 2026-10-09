@@ -7,6 +7,7 @@ import { CharactersTab } from './components/CharactersTab';
 import { CompareTab } from './components/CompareTab';
 import { DamageCalculatorPanel } from './components/DamageCalculatorPanel';
 import { DataTab } from './components/DataTab';
+import { MapTab } from './components/MapTab';
 import { MatchupTab } from './components/MatchupTab';
 import { PresetsTab } from './components/PresetsTab';
 import { SaveBar } from './components/SaveBar';
@@ -36,6 +37,7 @@ const TABS = [
   { id: 'characters', label: '장수' },
   { id: 'presets', label: '기본 편성' },
   { id: 'campaign', label: '캠페인' },
+  { id: 'map', label: '지도' },
   { id: 'settings', label: '경고 기준 · 가져오기' },
 ] as const;
 
@@ -132,6 +134,7 @@ function Shell() {
         {tab === 'characters' && <CharactersTab />}
         {tab === 'presets' && <PresetsTab />}
         {tab === 'campaign' && <CampaignTab />}
+        {tab === 'map' && <MapTab />}
         {tab === 'settings' && <SettingsTab />}
       </main>
     </div>

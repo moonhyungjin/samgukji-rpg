@@ -18,14 +18,14 @@ describe('데이터 파일과 Lab', () => {
   it('처음 상태는 파일과 같아서 바뀐 파일이 없다', () => {
     const state = createDefaultState();
     const files = filesSnapshot();
-    expect(changedFileNames(files, { data: state.data, balance: state.balance, presets: state.presets, campaign: state.campaign })).toEqual([]);
+    expect(changedFileNames(files, { data: state.data, balance: state.balance, presets: state.presets, campaign: state.campaign, map: state.map })).toEqual([]);
   });
 
   it('브라우저에 저장했다가 다시 읽어도(보정 포함) 파일과 같아 보인다 — 저장하지 않았는데 "저장 안 됨"이 뜨지 않는다', () => {
     const state = createDefaultState();
     const reloaded = normalizeState(JSON.parse(JSON.stringify(state)));
     const files = filesSnapshot();
-    expect(changedFileNames(files, { data: reloaded.data, balance: reloaded.balance, presets: reloaded.presets, campaign: reloaded.campaign })).toEqual([]);
+    expect(changedFileNames(files, { data: reloaded.data, balance: reloaded.balance, presets: reloaded.presets, campaign: reloaded.campaign, map: reloaded.map })).toEqual([]);
   });
 
   it('값을 고친 파일만 "바뀐 파일"로 나온다', () => {
@@ -42,6 +42,7 @@ describe('데이터 파일과 Lab', () => {
     expect(edit((f) => (f.balance.damage.attackScale += 1))).toEqual(['balance']);
     expect(edit((f) => (f.presets[0].label = '새 이름'))).toEqual(['presets']);
     expect(edit((f) => (f.campaign.startGold += 100))).toEqual(['campaign']);
+    expect(edit((f) => (f.map.regions[0].income += 100))).toEqual(['map']);
     expect(edit((f) => {
       f.data.characters.guanYu.stats.attack += 1;
       f.balance.counter.rate = 0.4;

@@ -26,7 +26,7 @@ export function CampaignTab() {
 
   const presetOptions = presets.map((p) => ({ value: p.id, label: p.label }));
   const characterOptions = Object.values(data.characters).map((c) => ({ value: c.id, label: c.name }));
-  const issues = useMemo(() => campaignIssues({ data, balance, presets, campaign: file }), [data, balance, presets, file]);
+  const issues = useMemo(() => campaignIssues({ data, balance, presets, campaign: file, map: state.map }), [data, balance, presets, file, state.map]);
 
   const setFile = (fn: (f: CampaignFile) => CampaignFile) => update((s) => ({ ...s, campaign: fn(s.campaign) }));
   const setBattles = (fn: (b: CampaignFile['battles']) => CampaignFile['battles']) => setFile((f) => ({ ...f, battles: fn(f.battles) }));

@@ -53,7 +53,7 @@ export function CompareTab() {
   );
   const columns = picked.map((key) => allColumns.find((c) => c.key === key)).filter((c): c is Column => !!c);
 
-  const diffFrom = (a: CompareColumn, b: CompareColumn) => changeLines({ ...a, presets: state.presets, campaign: state.campaign }, { ...b, presets: state.presets, campaign: state.campaign });
+  const diffFrom = (a: CompareColumn, b: CompareColumn) => changeLines({ ...a, presets: state.presets, campaign: state.campaign, map: state.map }, { ...b, presets: state.presets, campaign: state.campaign, map: state.map });
 
   const togglePick = (key: string) =>
     setPicked((p) => (p.includes(key) ? p.filter((k) => k !== key) : p.length >= MAX_COLUMNS ? p : [...p, key]));

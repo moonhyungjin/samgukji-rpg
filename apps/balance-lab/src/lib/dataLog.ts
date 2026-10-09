@@ -48,7 +48,7 @@ function byId(list: Json[]): Map<string, Json> {
 /** 파일 하나의 변경을 줄 단위로 설명한다. */
 function describeFile(name: FileName, before: Json, after: Json): string[] {
   const lines: string[] = [];
-  if (name === 'balance' || name === 'campaign') {
+  if (name === 'balance' || name === 'campaign' || name === 'map') {
     const a = new Map<string, Json>();
     const b = new Map<string, Json>();
     flatten(before, name, a);
@@ -130,6 +130,13 @@ export function changeLines(baseline: DataFiles, current: DataFiles): string[] {
       case 'campaign':
         // 전투 목록은 id로 펼쳐서 "campaign.battles.yellow1.reward"처럼 경로가 보이게 한다
         return { ...files.campaign, battles: Object.fromEntries(files.campaign.battles.map((b) => [b.id, b])) } as unknown as Json;
+      case 'map':
+        // 세력/지역/성은 id로 펼쳐서 "map.regions.julu.castles.julu-1.garrison.level"처럼 경로가 보이게 한다
+        return {
+          ...files.map,
+          factions: Object.fromEntries(files.map.factions.map((f) => [f.id, f])),
+          regions: Object.fromEntries(files.map.regions.map((r) => [r.id, { ...r, castles: Object.fromEntries(r.castles.map((c) => [c.id, c])) }])),
+        } as unknown as Json;
     }
   };
 

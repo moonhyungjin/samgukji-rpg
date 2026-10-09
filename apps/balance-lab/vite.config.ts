@@ -14,6 +14,7 @@ const FILES: Record<string, { file: string; kind: 'list' | 'object' }> = {
   presets: { file: 'presets.json', kind: 'list' },
   balance: { file: 'balance.json', kind: 'object' },
   campaign: { file: 'campaign.json', kind: 'object' },
+  map: { file: 'map.json', kind: 'object' },
 };
 
 // 저장할 때마다 변경 내용을 덧붙이는 기록 파일 (내용은 Lab이 만들어 `__log`로 보낸다)

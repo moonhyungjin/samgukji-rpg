@@ -46,6 +46,42 @@ export function campaignIssues(files: DataFiles): Issue[] {
   return out;
 }
 
+/** 지도 검사: 세력, 인접 관계(서로 적혀 있는지), 성 수, 수비 부대 편성, 목표 지역 */
+export function mapIssues(files: DataFiles): Issue[] {
+  const { map, presets } = files;
+  const out: Issue[] = [];
+  const err = (message: string) => out.push({ level: 'error', message: `지도: ${message}` });
+  const factionIds = new Set(map.factions.map((f) => f.id));
+  const regionIds = new Set(map.regions.map((r) => r.id));
+  const presetIds = new Set(presets.map((p) => p.id));
+  const player = map.factions.filter((f) => f.player);
+  if (player.length !== 1) err(`플레이어 세력은 정확히 하나여야 합니다 (지금 ${player.length}개).`);
+  if (factionIds.size !== map.factions.length) err('세력 id가 겹칩니다.');
+  if (regionIds.size !== map.regions.length) err('지역 id가 겹칩니다.');
+  if (!regionIds.has(map.goalRegion)) err(`목표 지역 "${map.goalRegion}"이(가) 없습니다.`);
+  const castleIds = new Set<string>();
+  for (const r of map.regions) {
+    if (!factionIds.has(r.faction)) err(`${r.name}: 세력 "${r.faction}"이(가) 없습니다.`);
+    if (r.castles.length < 1 || r.castles.length > 4) err(`${r.name}: 성은 1~4개여야 합니다 (지금 ${r.castles.length}개).`);
+    for (const n of r.neighbors) {
+      const other = map.regions.find((x) => x.id === n);
+      if (!other) err(`${r.name}: 맞닿은 지역 "${n}"이(가) 없습니다.`);
+      else if (!other.neighbors.includes(r.id)) err(`${r.name} → ${other.name}는 맞닿아 있는데 ${other.name} 쪽에는 ${r.name}가 없습니다.`);
+    }
+    if (r.neighbors.includes(r.id)) err(`${r.name}: 자기 자신과 맞닿을 수 없습니다.`);
+    const isPlayer = map.factions.find((f) => f.id === r.faction)?.player === true;
+    for (const c of r.castles) {
+      if (castleIds.has(c.id)) err(`성 id "${c.id}"가 겹칩니다.`);
+      castleIds.add(c.id);
+      if (!isPlayer && !c.garrison) err(`${r.name} ${c.name}: 플레이어 세력이 아닌 성에는 수비 부대가 있어야 합니다.`);
+      if (c.garrison && !presetIds.has(c.garrison.preset)) err(`${r.name} ${c.name}: 수비 부대 편성 "${c.garrison.preset}"이(가) 기본 편성에 없습니다.`);
+      if (c.garrison && !(c.garrison.level >= 1)) err(`${r.name} ${c.name}: 수비 부대 레벨은 1 이상이어야 합니다.`);
+    }
+  }
+  out.push(...findNonFinite(map).map((p) => ({ level: 'error' as const, message: `지도 ${p}이(가) 숫자가 아닙니다.` })));
+  return out;
+}
+
 /** 저장 전에 모든 데이터를 검사한다. error가 하나라도 있으면 저장하지 않는다. */
 export function dataIssues(files: DataFiles): DataIssues {
   const { data, balance, presets } = files;
@@ -61,7 +97,7 @@ export function dataIssues(files: DataFiles): DataIssues {
       .filter((s) => s.debuff && !balance.debuffs?.[s.debuff.id])
       .map((s) => ({ level: 'error' as const, message: `스킬 ${s.name}의 디버프 "${s.debuff!.id}"가 밸런스의 디버프 목록에 없습니다.` })),
   ];
-  const campaign = campaignIssues(files);
+  const campaign = [...campaignIssues(files), ...mapIssues(files)];
   const all = [...unitTypes, ...characters, ...presetIssues, ...numbers, ...campaign];
   return { unitTypes, characters, presets: presetIssues, numbers, all, errors: all.filter((i) => i.level === 'error') };
 }

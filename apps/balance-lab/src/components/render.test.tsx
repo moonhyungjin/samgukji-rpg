@@ -13,6 +13,7 @@ import { CompareTab } from './CompareTab';
 import { DamageCalculatorPanel } from './DamageCalculatorPanel';
 import { DataTab } from './DataTab';
 import { LineupEditor } from './LineupEditor';
+import { MapTab } from './MapTab';
 import { MatchupTab } from './MatchupTab';
 import { PresetsTab } from './PresetsTab';
 import { SaveBar } from './SaveBar';
@@ -90,6 +91,13 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(html).toContain('병종 보정');
     expect(html).toContain('대상 취약');
     expect(html).toContain('병종 · 스킬 탭 &gt;');
+  });
+
+  it('지도 탭: 미리보기, 세력, 지역 편집이 나온다', () => {
+    const html = render(<MapTab />);
+    expectClean(html);
+    for (const label of ['지도 미리보기', '세력', '목표 지역', '맞닿은 지역', '수비 부대 편성', '성 추가', '지역 추가']) expect(html).toContain(label);
+    for (const r of state.map.regions) expect(html).toContain(r.name);
   });
 
   it('캠페인 탭: 설정, 전투 순서, 돌려 보기가 나온다', () => {

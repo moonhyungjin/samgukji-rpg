@@ -11,6 +11,7 @@ export function createDefaultState(): LabState {
     balance: files.balance,
     presets: files.presets,
     campaign: files.campaign,
+    map: files.map,
     teamA: slotsFromLineup(presets.shu),
     teamB: slotsFromLineup(presets.wei),
     sim: {

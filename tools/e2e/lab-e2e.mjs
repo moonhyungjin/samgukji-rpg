@@ -119,7 +119,7 @@ const setValue = (selector, value) =>
 
 // 데이터 파일(packages/game-data/data/*.json)을 시험 전에 보관하고, 끝나면 (실패해도) 원래 내용으로 되돌린다.
 const DATA_DIR = resolve('packages/game-data/data');
-const DATA_NAMES = ['skills', 'traits', 'unitTypes', 'characters', 'presets', 'balance', 'campaign'];
+const DATA_NAMES = ['skills', 'traits', 'unitTypes', 'characters', 'presets', 'balance', 'campaign', 'map'];
 const originals = Object.fromEntries(DATA_NAMES.map((n) => [n, readFileSync(join(DATA_DIR, `${n}.json`), 'utf-8')]));
 const CHANGELOG = join(DATA_DIR, 'changelog.md');
 const originalChangelog = existsSync(CHANGELOG) ? readFileSync(CHANGELOG, 'utf-8') : null;
@@ -281,6 +281,32 @@ try {
   await setByLabel('시작 자금', goldBefore);
   await sleep(300);
   check('캠페인 탭: 값을 고치면 "저장 안 됨 (캠페인)", 되돌리면 같음', campBadge.includes('캠페인') && (await text('.savebar .badge')).includes('프로젝트 파일과 같음'), campBadge);
+  // 지도 탭: 지역을 누르면 그 지역을 고치고, 맞닿음은 양쪽에 함께 바뀐다
+  await tabs('지도');
+  await sleep(200);
+  const mapData = readData('map');
+  const nodes = await evalJs(`document.querySelectorAll('svg.map-preview g.map-node').length`);
+  const second = mapData.regions[1];
+  await evalJs(`document.querySelector('g.map-node[data-region="${second.id}"]').dispatchEvent(new MouseEvent('click', { bubbles: true }))`);
+  await sleep(200);
+  const editing = await evalJs(`document.querySelector('[data-region-editor]')?.getAttribute('data-region-editor')`);
+  const other = mapData.regions.find((r) => r.id !== second.id && !second.neighbors.includes(r.id));
+  let symmetric = 'skip';
+  if (other) {
+    await evalJs(`document.querySelector('input[aria-label="${second.name}-${other.name} 맞닿음"]').click()`);
+    await sleep(200);
+    await evalJs(`document.querySelector('g.map-node[data-region="${other.id}"]').dispatchEvent(new MouseEvent('click', { bubbles: true }))`);
+    await sleep(200);
+    symmetric = String(await evalJs(`document.querySelector('input[aria-label="${other.name}-${second.name} 맞닿음"]').checked`));
+  }
+  const mapBadge = (await text('.savebar .badge')).trim();
+  await clickButton('파일 값으로 되돌리기');
+  await sleep(300);
+  check('지도 탭: 지역 수만큼 그려지고, 누르면 그 지역을 고치며, 맞닿음은 양쪽에 함께 바뀌고 저장 대상이 된다', nodes === mapData.regions.length && editing === second.id && symmetric !== 'false' && mapBadge.includes('지도') && (await text('.savebar .badge')).includes('프로젝트 파일과 같음'), `${nodes}개, 편집 ${editing}, 양쪽 ${symmetric}, ${mapBadge}`);
+  await shot('lab-map', true);
+  await tabs('캠페인');
+  await sleep(200);
+
   // 시작 장수 레벨: 장수마다 칸이 있고, 넣으면 저장 대상, 비우면 다시 같음
   const levelInputs = await evalJs(`document.querySelectorAll('input[aria-label$=" 시작 레벨"]').length`);
   const startCount = (JSON.parse(originals.presets).find((p) => p.id === readData('campaign').startPreset)?.lineup ?? []).length;
