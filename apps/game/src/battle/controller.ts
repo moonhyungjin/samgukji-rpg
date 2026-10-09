@@ -9,7 +9,7 @@ export interface SceneLike {
   /** 상태를 애니메이션 없이 즉시 맞춘다 */
   setState(state: ViewState): void;
   /** 이벤트 하나를 재생한다. 재생이 끝나면 resolve */
-  playEvent(event: BattleEvent): Promise<void>;
+  playEvent(event: BattleEvent, nextEvent?: BattleEvent): Promise<void>;
   /** 클릭할 수 있는 대상을 표시한다 */
   setTargets(uids: string[], onPick: (uid: string) => void): void;
   clearTargets(): void;
@@ -76,6 +76,7 @@ export class BattleController {
   private selectedSkillId: string | null = null;
   private error: string | null = null;
   private turnOrder: { uid: string; current: boolean }[] = [];
+  private roundOrder: string[] = [];
   private readonly names: Map<string, string>;
 
   constructor(
@@ -166,21 +167,20 @@ export class BattleController {
       const line = formatEvent(event, this.names, this.data);
       if (line !== null) this.log.push(line);
       this.view = applyEvent(this.view, event);
-      if (event.type === 'roundStart') acting = null;
-      if (event.type === 'action') acting = event.actor;
-      const remaining: string[] = [];
-      for (const next of events.slice(index + 1)) {
-        if (next.type === 'roundStart' || next.type === 'battleEnd') break;
-        if (next.type === 'action') remaining.push(next.actor);
+      if (event.type === 'roundStart') {
+        acting = null;
+        this.roundOrder = [...event.order];
       }
-      const waiting = this.session.waitingUnit;
-      if (waiting && this.session.engine.state.round === this.view.round) remaining.push(waiting.uid);
+      if (event.type === 'action') {
+        acting = event.actor;
+        this.roundOrder = this.roundOrder.filter(uid => uid !== event.actor);
+      }
       this.turnOrder = event.type === 'battleEnd' ? [] : [
         ...(acting ? [{ uid: acting, current: true }] : []),
-        ...remaining.filter(uid => uid !== acting && this.view.units.some(u => u.uid === uid && !u.dead && u.ap > 0)).map(uid => ({ uid, current: false })),
+        ...this.roundOrder.filter(uid => this.view.units.some(u => u.uid === uid && !u.dead && u.ap > 0)).map(uid => ({ uid, current: false })),
       ];
       this.emit();
-      await this.scene.playEvent(event);
+      await this.scene.playEvent(event, events[index + 1]);
     }
     if (this.disposed) return;
 
@@ -194,7 +194,7 @@ export class BattleController {
     const waiting = this.session.waitingUnit;
     if (waiting) {
       this.phase = 'awaiting';
-      this.turnOrder = [{ uid: waiting.uid, current: true }];
+      this.turnOrder = [{ uid: waiting.uid, current: true }, ...this.session.engine.remainingTurnOrder().map(uid => ({ uid, current: false }))];
       this.scene.setActing(waiting.uid);
     } else {
       this.phase = 'finished';

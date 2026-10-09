@@ -118,6 +118,7 @@ try {
   await send('Page.enable');
 
   // Target first: hover reveals options, clicking an option submits exactly once.
+  if (!['campaign', 'strategy'].includes(process.env.GAME_E2E_SECTION)) {
   await goto('?control=attacker&autostart=1&speed=0&seed=1');
   await waitFor(`!!document.querySelector('.card-action-trigger')`, 20000);
   check('중앙 패널에는 공격/대기 선택 버튼이 없다', await evalJs(`!document.querySelector('.command [aria-pressed]') && ![...document.querySelectorAll('.command button')].some(b => b.textContent.includes('대기'))`));
@@ -383,6 +384,29 @@ try {
     return noProjectile && scene.sprites.get('left').troops === 875;
   })()`);
   check('원거리 공격 뒤 반격은 투사체 연출을 재사용하지 않는다', counterOk);
+  const destroyedCounterOk = await evalJs(`(async () => {
+    const { scene, view } = window.effectReview;
+    scene.setState(view);
+    scene.setSpeed(0);
+    await scene.playEvent({ type: 'damage', round: 1, kind: 'attack', source: 'left', target: 'right', amount: 1000, troopsAfter: 0 });
+    const counter = { type: 'damage', round: 1, kind: 'counter', source: 'right', target: 'left', amount: 1000, troopsAfter: 0 };
+    await scene.playEvent({ type: 'unitDestroyed', round: 1, unit: 'right' }, counter);
+    const right = scene.sprites.get('right');
+    const held = right.troops === 0 && !right.isDead && right.army.root.alpha === 1;
+    scene.setSpeed(0.5);
+    const playing = scene.playEvent(counter);
+    const visibleDuringCounter = !right.isDead && right.army.root.alpha === 1;
+    scene.setSpeed(0);
+    await playing;
+    await scene.playEvent({ type: 'unitDestroyed', round: 1, unit: 'left' });
+    const finished = right.isDead && right.army.root.alpha < 1 && scene.sprites.get('left').isDead;
+    scene.setState(view);
+    await scene.playEvent({ type: 'unitDestroyed', round: 1, unit: 'right' });
+    const noCounter = scene.sprites.get('right').isDead;
+    scene.setState(view);
+    return held && visibleDuringCounter && finished && noCounter && !scene.sprites.get('right').isDead;
+  })()`);
+  check('전멸 반격: 반격 중 외형 유지·쌍방 전멸·반격 없는 전멸·초기화', destroyedCounterOk);
   await evalJs(`(async () => {
     const review = window.effectReview, scene = review.scene;
     scene.setState(review.view);
@@ -433,6 +457,91 @@ try {
   await goto('?a=shuStart&d=yellowNormal&control=attacker&speed=0&autostart=1');
   await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('의 차례')`, 20000, '유관장 대 황건적');
   await shot('shu-start-shield-labels');
+  }
+  if (!['battle', 'strategy'].includes(process.env.GAME_E2E_SECTION)) {
+    await goto('?campaign=1');
+    await waitFor(`!!document.querySelector('.campaign')`);
+    await evalJs(`localStorage.removeItem('samgukji-campaign-v1')`);
+    await goto('?campaign=1');
+    await clickButton('새 캠페인 시작');
+    await waitFor(`document.querySelectorAll('[data-roster]').length > 0`);
+    const saved = () => evalJs(`JSON.parse(localStorage.getItem('samgukji-campaign-v1'))`);
+    const initialCampaign = await saved();
+    check('캠페인은 시작 자금·군단과 고정 6칸 편성을 표시한다', await evalJs(`document.querySelectorAll('.campaign-slots select').length === 6 && document.querySelectorAll('[data-roster]').length === ${initialCampaign.state.roster.length}`));
+    const firstId = initialCampaign.state.roster[0].characterId;
+    const setField = (selector, value) => evalJs(`(() => {
+      const el = document.querySelector(${JSON.stringify(selector)});
+      Object.getOwnPropertyDescriptor(el.tagName === 'SELECT' ? HTMLSelectElement.prototype : HTMLInputElement.prototype, 'value').set.call(el, ${JSON.stringify(String(value))});
+      el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', {bubbles:true}));
+    })()`);
+    const rosterButton = (label) => evalJs(`[...document.querySelector('[data-roster="${firstId}"]').querySelectorAll('button')].find(b => b.textContent === '${label}').click()`);
+    await setField(`[data-roster="${firstId}"] input`, 999999);
+    await rosterButton('보충');
+    check('불가능한 정비는 이유를 표시하고 돈·병력을 바꾸지 않는다', await evalJs(`!!document.querySelector('.campaign [role="alert"]')`) && JSON.stringify((await saved()).state) === JSON.stringify(initialCampaign.state));
+    await setField(`[data-roster="${firstId}"] input`, 1);
+    await rosterButton('해고');
+    check('해고 버튼이 캠페인 상태에 반영된다', (await saved()).state.roster[0].capacity === initialCampaign.state.roster[0].capacity - 1);
+    await rosterButton('증원');
+    check('증원 버튼이 돈을 쓰고 정원을 복원한다', (await saved()).state.roster[0].capacity === initialCampaign.state.roster[0].capacity && (await saved()).state.gold < initialCampaign.state.gold);
+    await setField('select[aria-label="출전 6번"]', firstId);
+    await clickButton('편성 적용');
+    await goto('?campaign=1');
+    await clickButton('이어하기');
+    await waitFor(`!!document.querySelector('.campaign-slots')`);
+    check('자동 저장·이어하기가 6번 슬롯과 빈칸을 보존한다', await evalJs(`document.querySelector('select[aria-label="출전 6번"]').value === '${firstId}'`));
+    const originalSlot = initialCampaign.state.lineup.find(s => s.characterId === firstId);
+    await setField(`select[aria-label="출전 ${originalSlot.slot + (originalSlot.row === 'front' ? 1 : 4)}번"]`, firstId);
+    await clickButton('편성 적용');
+    await shot('campaign-preparation');
+    await send('Emulation.setDeviceMetricsOverride', { width:390, height:844, deviceScaleFactor:1, mobile:false });
+    await sleep(200);
+    check('캠페인 정비는 모바일에서 가로로 넘치지 않는다', await evalJs(`document.documentElement.scrollWidth <= innerWidth`));
+    await shot('campaign-mobile');
+    await send('Emulation.clearDeviceMetricsOverride');
+    const fightCampaign = async () => {
+      await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('의 차례') || !!document.querySelector('.command h3')?.textContent.includes('전투 종료')`, 20000);
+      await clickButton('즉시');
+      await clickButton('남은 전투를 AI에게 맡기기');
+      await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('전투 종료')`, 20000);
+      await clickButton('전투 결과 확인');
+      await waitFor(`!!document.querySelector('.campaign-result')`);
+    };
+    await clickButton('출전');
+    await waitFor(`!!document.querySelector('.stage canvas')`, 20000);
+    check('출전하면 캠페인 병력으로 전투를 열고 중간 초기화 버튼을 숨긴다', (await saved()).phase === 'battle' && !await evalJs(`[...document.querySelectorAll('.toolbar button')].some(b => b.textContent.includes('처음부터 다시'))`));
+    await goto('?campaign=1'); await clickButton('이어하기');
+    await fightCampaign();
+    let outcome = await saved();
+    check('승리 결과에 보상·경험치·합류를 표시하고 다음 전투로 진행한다', outcome.summary.won && outcome.state.battleIndex === 1 && outcome.summary.units.length > 0 && outcome.state.roster.length > initialCampaign.state.roster.length);
+    await shot('campaign-result');
+    await goto('?campaign=1'); await clickButton('이어하기');
+    check('결과 화면을 다시 불러와도 보상을 중복 지급하지 않는다', JSON.stringify((await saved()).state) === JSON.stringify(outcome.state));
+    await clickButton('다음 전투 정비');
+    for (let battle = 1; battle < 3; battle++) {
+      // Each upkeep click must render before the next reads the current state.
+      const ids = (await saved()).state.roster.map(u => u.characterId);
+      for (const id of ids) {
+        await evalJs(`[...document.querySelector('[data-roster="${id}"]').querySelectorAll('button')].find(b => b.textContent.startsWith('정원까지 보충') && !b.disabled)?.click()`);
+      }
+      await clickButton('출전'); await fightCampaign(); outcome = await saved();
+      check(`캠페인 ${battle + 1}전 결과가 이어진다`, outcome.summary.won && outcome.state.battleIndex === battle + 1);
+      await clickButton(outcome.summary.finished ? '군단 확인' : '다음 전투 정비');
+    }
+    check('최종 승리 후 출전 대신 토벌 완료를 표시한다', (await saved()).state.finished && await evalJs(`document.querySelector('.campaign').textContent.includes('모든 전투를 완료') && !document.querySelector('.campaign-depart')`));
+    // UI fixtures live only in this test browser's storage, never game data files.
+    const weak = structuredClone(initialCampaign); weak.state.battleIndex = 2; weak.state.roster.forEach(u => { u.troops = 1; });
+    await evalJs(`localStorage.setItem('samgukji-campaign-v1', ${JSON.stringify(JSON.stringify(weak))})`);
+    await goto('?campaign=1'); await clickButton('이어하기'); await clickButton('출전'); await fightCampaign();
+    const lost = await saved();
+    check('패배는 같은 전투·다음 도전 횟수·손실을 보존하고 보상을 주지 않는다', !lost.summary.won && lost.state.battleIndex === 2 && lost.state.attempt === 2 && lost.summary.goldGained === 0);
+    await clickButton('재도전 정비');
+    check('전멸한 군단은 보충 전 출전할 수 없다', await evalJs(`document.querySelector('.campaign-depart button').disabled`));
+    const promoted = structuredClone(initialCampaign); promoted.state.roster[0].level = 10;
+    await evalJs(`localStorage.setItem('samgukji-campaign-v1', ${JSON.stringify(JSON.stringify(promoted))})`);
+    await goto('?campaign=1'); await clickButton('이어하기');
+    await evalJs(`document.querySelector('[data-roster="${firstId}"] .campaign-promote button').click()`);
+    check('승급 선택을 엔진에 요청하고 새 병종을 저장한다', (await saved()).state.roster[0].unitType !== initialCampaign.state.roster[0].unitType);
+  }
   // Optional local art-review page; no changes to runtime data or assets.
   if (process.env.ART_REVIEW_PATH) {
     await send('Page.navigate', { url: pathToFileURL(resolve(process.env.ART_REVIEW_PATH)).href });
@@ -451,6 +560,32 @@ try {
     await sleep(300);
     check('기마 검토 페이지가 좁은 화면에서 가로로 넘치지 않는다', await evalJs(`document.documentElement.scrollWidth <= innerWidth`));
     await shot('cavalry-review-mobile');
+    await send('Emulation.clearDeviceMetricsOverride');
+  }
+  if (!process.env.GAME_E2E_SECTION || process.env.GAME_E2E_SECTION === 'strategy') {
+    await goto('?strategy=1');
+    await waitFor(`!!document.querySelector('.strategy-region')`);
+    const mapRegionCount = JSON.parse(readFileSync('packages/game-data/data/map.json', 'utf8')).regions.length;
+    check('전략 지도는 저장된 지역 데이터를 표시한다', await evalJs(`document.querySelectorAll('.strategy-region').length === ${mapRegionCount}`));
+    await evalJs(`document.querySelectorAll('.strategy-region')[document.querySelectorAll('.strategy-region').length-1].click()`);
+    await sleep(100);
+    check('지역 선택이 정보 패널과 선택 표시를 갱신한다', await evalJs(`document.querySelector('.strategy-region[aria-pressed=true] strong').textContent.includes(document.querySelector('.strategy-detail h3').textContent) && document.querySelectorAll('.strategy-detail li').length > 0`));
+    check('전략 실행 버튼은 미연결 상태로 비활성화한다', await evalJs(`[...document.querySelectorAll('.strategy-actions button,.strategy-resources button')].every(b => b.disabled)`));
+    await shot('strategy-desktop');
+    await send('Emulation.setDeviceMetricsOverride', { width:390, height:844, deviceScaleFactor:1, mobile:false });
+    await sleep(150);
+    check('전략 지도는 모바일에서 가로로 넘치지 않는다', await evalJs(`document.documentElement.scrollWidth <= innerWidth`));
+    check('모바일 지역 버튼이 서로 겹치지 않는다', await evalJs(`(() => { const boxes = [...document.querySelectorAll('.strategy-region')].map(b => b.getBoundingClientRect()); return boxes.every((a,i) => boxes.every((b,j) => i===j || a.right<=b.left || b.right<=a.left || a.bottom<=b.top || b.bottom<=a.top)); })()`));
+    await shot('strategy-mobile');
+    await send('Emulation.setFocusEmulationEnabled', { enabled:true });
+    await evalJs(`document.querySelector('.strategy-region').focus()`);
+    await send('Input.dispatchKeyEvent', { type:'keyDown', key:'Enter', code:'Enter', windowsVirtualKeyCode:13, text:'\r' });
+    await send('Input.dispatchKeyEvent', { type:'keyUp', key:'Enter', code:'Enter', windowsVirtualKeyCode:13 });
+    await sleep(100);
+    check('키보드 Enter로 지역을 선택한다', await evalJs(`document.querySelector('.strategy-region').getAttribute('aria-pressed') === 'true'`));
+    await evalJs(`document.querySelector('.strategy-heading button').click()`);
+    await sleep(100);
+    check('전략 시안에서 설정으로 돌아간다', await evalJs(`!document.querySelector('.strategy-preview') && !!document.querySelector('.campaign-entry')`));
     await send('Emulation.clearDeviceMetricsOverride');
   }
 } catch (e) {

@@ -54,6 +54,7 @@ export class BattleScene implements SceneLike {
   private destroyed = false;
   private morale = 50;
   private lastAction: Extract<BattleEvent, { type: 'action' }> | null = null;
+  private readonly pendingDefeat = new Set<string>();
 
   private readonly clock: Clock = { scale: () => (this.instant || this.speed <= 0 ? Infinity : this.speed) };
 
@@ -120,6 +121,7 @@ export class BattleScene implements SceneLike {
 
   setState(state: ViewState): void {
     this.lastAction = null;
+    this.pendingDefeat.clear();
     for (const sprite of this.sprites.values()) sprite.destroy();
     this.sprites.clear();
     this.clearLayer(this.effectsLayer);
@@ -141,7 +143,7 @@ export class BattleScene implements SceneLike {
     if (state.outcome) this.showOutcome(state.outcome, true);
   }
 
-  async playEvent(event: BattleEvent): Promise<void> {
+  async playEvent(event: BattleEvent, nextEvent?: BattleEvent): Promise<void> {
     if (this.destroyed) return;
     switch (event.type) {
       case 'roundStart': {
@@ -199,6 +201,10 @@ export class BattleScene implements SceneLike {
           impact = Promise.all([target.flash(), target.animateTroops(event.troopsAfter)]);
         });
         await impact;
+        if (counter && this.pendingDefeat.delete(event.source)) {
+          await source.fadeOut();
+          this.refreshOccupiedSlots();
+        }
         return;
       }
       case 'debuffApply': {
@@ -244,6 +250,11 @@ export class BattleScene implements SceneLike {
         return;
       }
       case 'unitDestroyed': {
+        // 엔진 상태는 이미 전멸이다. 이어지는 확정 반격이 끝날 때까지 외형만 유지한다.
+        if (nextEvent?.type === 'damage' && nextEvent.kind === 'counter' && nextEvent.source === event.unit) {
+          this.pendingDefeat.add(event.unit);
+          return;
+        }
         const sprite = this.sprites.get(event.unit);
         if (sprite) await sprite.fadeOut();
         this.refreshOccupiedSlots();

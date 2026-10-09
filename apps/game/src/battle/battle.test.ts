@@ -240,8 +240,8 @@ describe('BattleController', () => {
     await controller.start();
     const queued = snapshots.find(s => s.view.round === 1 && (s.turnOrder?.length ?? 0) > 1 && s.turnOrder?.every(t => !t.current))!;
     expect(queued).toBeDefined();
-    const actual = session.engine.events.filter(e => e.type === 'action' && e.round === 1).map(e => e.type === 'action' ? e.actor : '');
-    expect(queued.turnOrder?.map(t => t.uid)).toEqual(actual);
+    const actual = session.engine.events.find(e => e.type === 'roundStart' && e.round === 1);
+    expect(queued.turnOrder?.map(t => t.uid)).toEqual(actual?.type === 'roundStart' ? actual.order : []);
     expect(last().turnOrder).toEqual([]);
   });
   it('관전: 끝까지 재생하고 화면 상태가 엔진의 최종 상태와 같다', async () => {
@@ -268,14 +268,13 @@ describe('BattleController', () => {
   });
 
   it('수동: 내 차례마다 멈추고 선택지와 미리보기를 만든다', async () => {
-    const { controller, scene, last } = setup('attacker');
+    const { controller, scene, last, session } = setup('attacker');
     await controller.start();
     const snap = last();
     expect(snap.phase).toBe('awaiting');
     expect(snap.waiting).not.toBeNull();
     expect(scene.acting).toBe(snap.waiting!.uid);
-    // 엔진이 공개하지 않은 수동 대기 이후의 순서를 지어내지 않는다.
-    expect(snap.turnOrder).toEqual([{ uid: snap.waiting!.uid, current: true }]);
+    expect(snap.turnOrder).toEqual([{ uid: snap.waiting!.uid, current: true }, ...session.engine.remainingTurnOrder().map(uid => ({ uid, current: false }))]);
     const command = snap.waiting!.commands[0];
     expect(command.skillName).toBeTruthy();
     expect(command.targets.length).toBeGreaterThan(0);

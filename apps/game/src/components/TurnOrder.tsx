@@ -1,6 +1,6 @@
 import type { ControllerSnapshot } from '../battle/controller';
 
-/** 엔진에서 확인된 순서만 표시한다. 수동 대기 이후의 순서는 개발 담당의 공개 API 연결 대기. */
+/** 엔진에서 확정한 순서를 그대로 표시한다. */
 export function TurnOrder({ snapshot }: { snapshot: ControllerSnapshot }) {
   const turns = snapshot.turnOrder ?? (snapshot.waiting ? [{ uid: snapshot.waiting.uid, current: true }] : []);
   return <div className="turn-order-layer"><div className="turn-order" aria-label="행동 순서">

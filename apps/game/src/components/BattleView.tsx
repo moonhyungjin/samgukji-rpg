@@ -9,11 +9,14 @@ import { CommandPanel } from './CommandPanel';
 import { LogPanel } from './LogPanel';
 import { CardActions } from './CardActions';
 import { TurnOrder } from './TurnOrder';
+import type { BattleInput, BattleResult } from '@samgukji/battle-engine';
 
 interface Props {
   config: BattleConfig;
   artTrial?: boolean;
   onExit: () => void;
+  battleInput?: BattleInput;
+  onComplete?: (result: BattleResult) => void;
 }
 
 const SPEEDS = [
@@ -25,7 +28,7 @@ const SPEEDS = [
 ];
 
 /** PixiJS 전투 화면과 커맨드/로그 패널. 설정이 바뀌거나 다시 하기를 누르면 전투를 처음부터 새로 만든다. */
-export function BattleView({ config, onExit, artTrial = false }: Props) {
+export function BattleView({ config, onExit, artTrial = false, battleInput, onComplete }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<BattleController | null>(null);
   const [snapshot, setSnapshot] = useState<ControllerSnapshot | null>(null);
@@ -56,6 +59,7 @@ export function BattleView({ config, onExit, artTrial = false }: Props) {
           defender: artTrial
             ? [{ characterId: 'ytInfantryA', row: 'front' }] : presets[config.defenderPreset],
           seed: config.seed,
+          ...battleInput,
           playerSide: config.control === 'watch' ? null : config.control,
         });
         scene = await BattleScene.create(host, {
@@ -81,7 +85,7 @@ export function BattleView({ config, onExit, artTrial = false }: Props) {
       controllerRef.current = null;
       scene?.destroy();
     };
-  }, [config, runId, artTrial]);
+  }, [config, runId, artTrial, battleInput]);
 
   useEffect(() => {
     controllerRef.current?.setSpeed(speed);
@@ -100,12 +104,12 @@ export function BattleView({ config, onExit, artTrial = false }: Props) {
           </button>
         ))}
         <span className="spacer" />
-        <button type="button" onClick={() => setRunId((n) => n + 1)}>
+        {!onComplete && <><button type="button" onClick={() => setRunId((n) => n + 1)}>
           처음부터 다시
         </button>
         <button type="button" onClick={onExit}>
           설정으로
-        </button>
+        </button></>}
       </div>
 
       <div className="battle-board">
@@ -115,13 +119,16 @@ export function BattleView({ config, onExit, artTrial = false }: Props) {
           onSubmit={command => void controller()?.submit(command)} />}
         {snapshot && (
           <div className="command-dock">
-            <CommandPanel
+            {onComplete && snapshot.result ? <section className="panel command">
+              <h3>전투 종료</h3><p>{snapshot.result.winner === 'attacker' ? '승리' : '패배'}</p>
+              <button type="button" className="primary" onClick={() => onComplete(snapshot.result!)}>전투 결과 확인</button>
+            </section> : <CommandPanel
               snapshot={snapshot}
               onAutoplay={() => void controller()?.autoplayRest()}
               onSkip={() => controller()?.skip()}
               onRestart={() => setRunId((n) => n + 1)}
               onExit={onExit}
-            />
+            />}
           </div>
         )}
       </div>
