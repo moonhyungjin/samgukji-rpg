@@ -49,6 +49,7 @@ npm run typecheck         # 모든 패키지 tsc
 npm run lab               # Balance Lab http://localhost:5173 (데이터 편집, "파일에 저장"은 이 개발 서버에서만)
 npm run game              # 게임 화면 http://localhost:5174
 npm run sim -- --iterations 10000 --lineups random     # CLI 시뮬레이션 (옵션은 README)
+npm run sim:campaign                                   # 캠페인을 자동 정비로 여러 번 끝까지 (설계 문서 03)
 npm run e2e               # 게임 화면 브라우저 확인 (먼저 npm run game)
 npm run e2e:lab           # Lab 브라우저 확인 (먼저 npm run lab)
 npm run lab:build / game:build

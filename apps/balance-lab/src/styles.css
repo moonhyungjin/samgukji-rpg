@@ -1760,3 +1760,44 @@ details.formula-panel > summary h3 {
   font-family: -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif;
   white-space: normal;
 }
+
+/* 캠페인 탭 */
+.campaign-table {
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+.campaign-table th,
+.campaign-table td {
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.campaign-table input[type='text'] {
+  width: 150px;
+}
+
+.join-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.join-chip {
+  padding: 1px 8px;
+  font-size: 12px;
+}
+
+.campaign-log {
+  margin: 6px 0;
+  padding-left: 20px;
+  font-size: 13px;
+}
+
+.campaign-log li {
+  margin: 4px 0;
+}

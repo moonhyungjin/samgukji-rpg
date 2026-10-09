@@ -117,7 +117,9 @@ export function buildUnits(side: Side, lineup: LineupEntry[], data: GameData, ba
     const slot = slots[index];
 
     const level = entry.level ?? character.level;
-    const max = maxTroops(balance, level, unitType.troopScale ?? 1);
+    // 캠페인은 정원(maxTroops)과 지금 병력(troops)을 넘긴다. 생략하면 레벨 상한으로 가득 찬 상태다
+    const max = entry.maxTroops !== undefined ? Math.max(1, Math.round(entry.maxTroops)) : maxTroops(balance, level, unitType.troopScale ?? 1);
+    const troops = entry.troops !== undefined ? Math.min(max, Math.max(1, Math.round(entry.troops))) : max;
     // 스탯 = 캐릭터 스탯(초기) + 승급 길의 스탯 보정 누적 (뿌리 병종 + 1차 + ... + 지금 병종)
     const stats = applyStatMods(character.stats, statModsTotal(data.unitTypes, unitType.id));
     const maxAp = totalAp(balance, unitType.baseAp, stats.action);
@@ -134,7 +136,7 @@ export function buildUnits(side: Side, lineup: LineupEntry[], data: GameData, ba
       stats,
       level,
       maxTroops: max,
-      troops: max,
+      troops,
       ap: maxAp,
       maxAp,
       guardRate: unitType.guard?.start ?? 0,

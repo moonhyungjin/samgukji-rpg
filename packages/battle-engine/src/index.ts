@@ -9,3 +9,4 @@ export * from './lineup';
 export * from './judgement';
 export * from './engine';
 export * from './simulator';
+export * from './campaign';

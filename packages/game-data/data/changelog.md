@@ -612,3 +612,178 @@ Balance Lab의 "파일에 저장"을 누를 때마다 자동으로 덧붙는다 
 - + skills.(stratagem, adviser-stratagem, jade-strategist-stratagem).debuff: {id "burn", chance 50}
 - + skills.(poison-smoke, alchemist-poison-smoke, sage-poison-smoke).debuff: {id "plague", chance 100}
 - + unitTypes.(maiden, immortal).cleanseOnHeal: true
+
+## 2026-10-09 — 캠페인 (에이전트 수동 기록)
+메모: 사용자 결정. 초반 1~3전은 유관장만 싸운다 (합류 없음)
+- campaign.battles.yellow1.joins: [{"characterId":"zhaoYun","unitType":"cavalry"}] → []
+- campaign.battles.yellow2.joins: [{"characterId":"huangZhong","unitType":"archer"}] → []
+
+## 2026-10-09 02:13 — 캠페인
+- campaign.battles.yellow1.enemyLevel: 1 → 3
+- campaign.battles.yellow2.enemyLevel: 3 → 4
+
+## 2026-10-09 02:17 — 기본 편성
+- presets.yellowEasy.lineup: [ytShieldA(전), ytInfantryA(전), ytInfantryB(전)] → [ytShieldA(전), ytInfantryA(전), ytInfantryB(전), ytArcherA(후)]
+- presets.yellowNormal.lineup: [ytShieldA(전), ytInfantryA(전), ytArcherA(후)] → [ytShieldA(전), ytInfantryA(전), ytShieldB(전), ytArcherA(후)]
+- presets.yellowHard.lineup: [ytShieldA(전), ytInfantryA(전), ytInfantryB(전), ytArcherA(후)] → [ytShieldA(전), ytInfantryA(전), ytInfantryB(전), ytArcherA(후), ytArcherB(후)]
+
+## 2026-10-09 02:20 — 캠페인
+- campaign.battles.yellow2.enemyLevel: 4 → 3
+
+## 2026-10-09 02:20 — 캠페인
+- campaign.battles.yellow3.enemyLevel: 5 → 4
+
+## 2026-10-09 02:21 — 캠페인
+- campaign.battles.yellow3.enemyLevel: 4 → 3
+
+## 2026-10-09 02:21 — 캠페인
+- campaign.battles.yellow1.enemyLevel: 3 → 2
+- campaign.battles.yellow2.enemyLevel: 3 → 2
+- campaign.battles.yellow3.enemyLevel: 3 → 2
+
+## 2026-10-09 02:24 — 기본 편성
+- presets.yellowEasy.lineup: [ytShieldA(전), ytInfantryA(전), ytInfantryB(전), ytArcherA(후)] → [ytInfantryB(전), ytInfantryA(전), ytInfantryB(전), ytArcherA(후)]
+- presets.yellowNormal.lineup: [ytShieldA(전), ytInfantryA(전), ytShieldB(전), ytArcherA(후)] → [ytShieldA(전), ytInfantryA(전), ytInfantryB(전), ytArcherA(후)]
+- presets.yellowHard.lineup: [ytShieldA(전), ytInfantryA(전), ytInfantryB(전), ytArcherA(후), ytArcherB(후)] → [ytShieldA(전), ytInfantryA(전), ytInfantryB(전), ytArcherA(후)]
+
+## 2026-10-09 02:32 — 장수
+- characters.zhangFei.unitType: "heavy-shield" → "shield"
+- characters.guanYu.unitType: "cavalry" → "infantry"
+
+## 2026-10-09 02:33 — 장수
+- + characters.char1 (새로 생김: 손건)
+
+## 2026-10-09 02:33 — 캠페인
+- campaign.battles.yellow2.joins: [] → [{"characterId":"char1","unitType":"geomancer"}]
+
+## 2026-10-09 02:59 — 장수
+- characters.zhangFei.stats.attack: 7 → 6
+- characters.zhangFei.stats.defense: 8 → 7
+- characters.guanYu.stats.attack: 8 → 7
+- characters.zhaoYun.stats.attack: 7 → 6
+- characters.zhaoYun.stats.defense: 6 → 5
+- characters.zhaoYun.stats.speed: 7 → 6
+- characters.huangZhong.stats.intellect: 5 → 4
+- characters.zhugeLiang.stats.attack: 3 → 2
+- characters.zhugeLiang.stats.intellect: 9 → 8
+- characters.zhugeLiang.stats.speed: 6 → 5
+- characters.zhugeLiang.stats.action: 1 → 2
+- characters.pangTong.stats.attack: 2 → 1
+- characters.pangTong.stats.intellect: 8 → 7
+- characters.pangTong.stats.speed: 6 → 5
+- characters.weiYan.stats.attack: 6 → 5
+- characters.weiYan.stats.defense: 7 → 5
+- characters.weiYan.stats.intellect: 5 → 3
+- characters.weiYan.stats.speed: 6 → 5
+- characters.liuBei.stats.attack: 5 → 4
+- characters.liuBei.stats.defense: 6 → 5
+- characters.liuBei.stats.intellect: 6 → 5
+- characters.liuBei.stats.speed: 4 → 5
+- characters.xuChu.stats.attack: 7 → 6
+- characters.xuChu.stats.defense: 8 → 7
+- characters.xiahouDun.stats.attack: 6 → 5
+- characters.xiahouDun.stats.defense: 7 → 6
+- characters.xiahouDun.stats.speed: 6 → 5
+- characters.zhangLiao.stats.attack: 7 → 6
+- characters.zhangLiao.stats.defense: 6 → 5
+- characters.zhangLiao.stats.action: 4 → 3
+- characters.xiahouYuan.stats.attack: 7 → 6
+- characters.xiahouYuan.stats.defense: 5 → 4
+- characters.xiahouYuan.stats.intellect: 6 → 5
+- characters.xiahouYuan.stats.speed: 7 → 5
+- characters.xunYu.stats.attack: 2 → 1
+- characters.xunYu.stats.intellect: 8 → 7
+- characters.dianWei.stats.attack: 7 → 6
+- characters.dianWei.stats.defense: 8 → 6
+- characters.dianWei.stats.intellect: 2 → 1
+- characters.dianWei.stats.speed: 5 → 6
+- characters.guoJia.stats.intellect: 9 → 8
+- characters.ytShieldA.stats.action: 3 → 1
+- characters.ytShieldB.stats.action: 3 → 1
+- characters.ytInfantryA.stats.attack: 5 → 4
+- characters.ytInfantryA.stats.defense: 4 → 3
+- characters.ytInfantryA.stats.speed: 4 → 3
+- characters.ytInfantryA.stats.action: 3 → 1
+- characters.ytInfantryB.stats.attack: 6 → 3
+- characters.ytInfantryB.stats.speed: 4 → 3
+- characters.ytInfantryB.stats.action: 3 → 1
+- characters.ytCavalryA.stats.attack: 5 → 4
+- characters.ytCavalryA.stats.speed: 5 → 4
+- characters.ytCavalryA.stats.action: 3 → 1
+- characters.ytCavalryB.stats.attack: 6 → 5
+- characters.ytCavalryB.stats.speed: 6 → 5
+- characters.ytCavalryB.stats.action: 3 → 1
+- characters.ytArcherA.stats.intellect: 3 → 2
+- characters.ytArcherA.stats.speed: 4 → 2
+- characters.ytArcherA.stats.action: 3 → 1
+- characters.ytArcherB.stats.intellect: 3 → 2
+- characters.ytArcherB.stats.speed: 4 → 2
+- characters.ytArcherB.stats.action: 3 → 1
+- characters.ytStrategistA.stats.attack: 2 → 1
+- characters.ytStrategistA.stats.defense: 3 → 2
+- characters.ytStrategistA.stats.intellect: 6 → 4
+- characters.ytStrategistA.stats.speed: 4 → 2
+- characters.ytStrategistB.stats.attack: 2 → 1
+- characters.ytStrategistB.stats.intellect: 5 → 3
+- characters.ytStrategistB.stats.speed: 4 → 2
+- characters.ytTaoistA.stats.intellect: 6 → 3
+- characters.ytTaoistA.stats.speed: 4 → 3
+- characters.ytTaoistB.stats.attack: 2 → 1
+- characters.ytTaoistB.stats.defense: 3 → 2
+- characters.ytTaoistB.stats.intellect: 5 → 4
+- characters.ytTaoistB.stats.speed: 4 → 3
+
+## 2026-10-09 — 병종 · 캠페인 (에이전트 수동 기록)
+메모: 사용자 결정. 캠페인 시작 병력을 병종별로(상한은 레벨 공식), 이기면 포획(군단이 줄인 적 병력 × 비율만큼 정원과 병력 증가). 값은 [임시]
+- + unitTypes.(infantry 100, shield 120, cavalry 60, archer 80, strategist 60, taoist 60, geomancer 50).startTroops (승급 병종은 뿌리 값)
+- + campaign.captureRate: 0.05
+
+## 2026-10-09 — 병종 (에이전트 수동 기록)
+메모: 사용자 결정. 캠페인 시작 병력을 뺐다 (시작·합류·적은 레벨 상한 가득)
+- - unitTypes.(infantry, shield, cavalry, archer, strategist, taoist, geomancer).startTroops (없어짐)
+
+## 2026-10-09 03:29 — 캠페인
+- campaign.startGold: 500 → 1000
+- campaign.startLevel: 1 → 3
+- campaign.battles.yellow1.enemyLevel: 2 → 3
+- campaign.battles.yellow2.enemyLevel: 2 → 3
+- campaign.battles.yellow3.enemyLevel: 2 → 3
+
+## 2026-10-09 — 밸런스 수치 (에이전트 수동 기록)
+메모: 사용자 결정. 피해가 공격자의 현재 병력을 넘지 않는다 (원작 규칙, 비율 구간식에도 적용). 병력 75 유비가 병력 110 위연을 한 방에 지우던 문제
+- + balance.troopFactor.ratio.capAtTroops: true
+
+## 2026-10-09 — 밸런스 수치 (에이전트 수동 기록)
+메모: 사용자 의견. 맞아서 전멸해도 반격한다 (주고받기를 동시에, 막타에도 반격). Lab 밸런스 탭에서 끌 수 있다
+- + balance.counter.onDestroy: true
+
+## 2026-10-09 — 밸런스 수치 (에이전트 수동 기록)
+메모: 바로잡음. 피해 상한은 사용자가 고른 것이 아니었다 (에이전트가 잘못 읽음). 끄고, 맞아서 전멸해도 반격(동시에 주고받기)만 남긴다. 상한은 Lab에서 켜서 비교할 수 있다
+- balance.troopFactor.ratio.capAtTroops: true → false
+
+## 2026-10-09 03:53 — 기본 편성
+- presets.yellowEasy.lineup: [ytInfantryB(전), ytInfantryA(전), ytInfantryB(전), ytArcherA(후)] → [ytInfantryB(전), ytInfantryA(전), ytArcherA(후)]
+
+## 2026-10-09 03:59 — 스킬 · 밸런스 수치
+- skills.stratagem.power: 1 → 0.9
+- skills.poison-smoke.power: 1 → 0.9
+- balance.debuffs.plague.ratio: 0.15 → 0.1
+
+## 2026-10-09 04:00 — 밸런스 수치
+- balance.debuffs.burn.flat: 50 → 30
+- balance.debuffs.plague.flat: 30 → 15
+
+## 2026-10-09 04:05 — 밸런스 수치
+- balance.damage.additive.resistMul: 6 → 8
+
+## 2026-10-09 04:12 — 장수
+- characters.guanYu.unitType: "infantry" → "cavalry"
+
+## 2026-10-09 04:17 — 스킬
+- skills.stratagem.power: 0.9 → 0.7
+- skills.poison-smoke.power: 0.9 → 0.7
+- skills.poison-smoke.debuff.chance: 100 → 50
+- skills.adviser-stratagem.power: 1.3 → 1
+- skills.alchemist-poison-smoke.power: 1.3 → 1.1
+- skills.alchemist-poison-smoke.debuff.chance: 100 → 75
+- skills.sage-poison-smoke.power: 2 → 1.5

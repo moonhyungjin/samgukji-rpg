@@ -191,7 +191,7 @@ export function explainDamage(data: GameData, balance: BalanceConfig, input: Exp
   if (!skill.counterable) add('반격', '반격', '이 스킬은 반격을 받지 않습니다 (스킬 표의 "반격 유발")', '0');
   else if (!dType.canCounter) add('반격', '반격', `${dType.name}은(는) 반격하지 않습니다 (병종 "반격함")`, '0');
   else if (!counterSkill || counterSkill.kind !== 'attack') add('반격', '반격', '반격할 일반공격이 없습니다', '0');
-  else if (defender.troops - applied <= 0) add('반격', '반격', '방어자가 전멸해서 반격하지 못합니다', '0');
+  else if (defender.troops - applied <= 0 && balance.counter.onDestroy !== true) add('반격', '반격', '방어자가 전멸해서 반격하지 못합니다 (밸런스의 "맞아서 전멸해도 반격"이 꺼져 있음)', '0');
   else {
     const rate = calc.counterRate(skill);
     const power = dType.counterPower ?? 1;

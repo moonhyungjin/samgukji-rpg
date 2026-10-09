@@ -115,7 +115,7 @@
     "label": "황건적 쉬움(보보방)",
     "lineup": [
       {
-        "characterId": "ytShieldA",
+        "characterId": "ytInfantryB",
         "row": "front"
       },
       {
@@ -123,8 +123,8 @@
         "row": "front"
       },
       {
-        "characterId": "ytInfantryB",
-        "row": "front"
+        "characterId": "ytArcherA",
+        "row": "back"
       }
     ]
   },
@@ -138,6 +138,10 @@
       },
       {
         "characterId": "ytInfantryA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytInfantryB",
         "row": "front"
       },
       {

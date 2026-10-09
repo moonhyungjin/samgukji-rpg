@@ -73,7 +73,7 @@ export function FormulaPanel() {
           내 병력 ÷ 내 최대 병력(가득 차면 1)을 구간별 효율로: 100% → <N>{pctOf(ratio.knee)}</N> 효율 1, → <N>{pctOf(ratio.knee2)}</N> 효율 <N>{ratio.rate2}</N>, → <N>{pctOf(ratio.knee3)}</N> 효율 <N>{ratio.rate3}</N>, 그 아래는 하한
         </Line>
         <Line>
-          병력이 <N>{ratio.floorTroops}</N>명보다 적으면 비율과 상관없이 하한입니다.
+          병력이 <N>{ratio.floorTroops}</N>명보다 적으면 비율과 상관없이 하한입니다.{ratio.capAtTroops ? ' 피해는 공격자의 현재 병력을 넘지 않습니다.' : null}
         </Line>
       </>
     ) : mode === 'tiered' ? (

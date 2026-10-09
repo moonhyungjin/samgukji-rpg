@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { SimulationReport } from '@samgukji/battle-engine';
 import { BalanceTab } from './components/BalanceTab';
 import { BattleTab } from './components/BattleTab';
+import { CampaignTab } from './components/CampaignTab';
 import { CharactersTab } from './components/CharactersTab';
 import { CompareTab } from './components/CompareTab';
 import { DamageCalculatorPanel } from './components/DamageCalculatorPanel';
@@ -34,6 +35,7 @@ const TABS = [
   { id: 'data', label: '병종 · 스킬' },
   { id: 'characters', label: '장수' },
   { id: 'presets', label: '기본 편성' },
+  { id: 'campaign', label: '캠페인' },
   { id: 'settings', label: '경고 기준 · 가져오기' },
 ] as const;
 
@@ -129,6 +131,7 @@ function Shell() {
         {tab === 'data' && <DataTab />}
         {tab === 'characters' && <CharactersTab />}
         {tab === 'presets' && <PresetsTab />}
+        {tab === 'campaign' && <CampaignTab />}
         {tab === 'settings' && <SettingsTab />}
       </main>
     </div>

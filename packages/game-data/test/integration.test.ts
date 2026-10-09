@@ -121,13 +121,16 @@ describe('게임 데이터 무결성', () => {
     }
   });
 
-  it('초반 시나리오: 촉은 유관장(보병/방패병/기병)으로, 황건적은 보보방 / 보방궁 / 보보방+궁으로 싸운다', () => {
-    // 편성에서 지금 맡은 병종(승급 단계)을 기준으로 센다. 촉 초반은 세 명 모두 승급 전(0차) 병종이다 (관우도 보병)
-    const families = (name: string) => presets[name].map((e) => gameData.unitTypes[e.unitType ?? gameData.characters[e.characterId].unitType].family).sort();
-    expect(families('shuStart')).toEqual(['infantry', 'infantry', 'shield']);
-    expect(families('yellowEasy')).toEqual(['infantry', 'infantry', 'shield']);
-    expect(families('yellowNormal')).toEqual(['archer', 'infantry', 'shield']);
-    expect(families('yellowHard')).toEqual(['archer', 'infantry', 'infantry', 'shield']);
+  it('초반 시나리오: 촉은 유관장으로 시작하고, 황건적 편성(쉬움/보통/어려움)이 있으며 모두 설 수 있는 열에 있다', () => {
+    // 편성의 구성은 사용자가 Lab에서 바꾸므로 고정하지 않는다
+    expect(presets.shuStart.map((e) => e.characterId).sort()).toEqual(['guanYu', 'liuBei', 'zhangFei']);
+    for (const name of ['shuStart', 'yellowEasy', 'yellowNormal', 'yellowHard']) {
+      expect(presets[name]?.length, name).toBeGreaterThan(0);
+      for (const e of presets[name]) {
+        const type = gameData.unitTypes[e.unitType ?? gameData.characters[e.characterId].unitType];
+        expect(type.allowedRows, `${name} ${e.characterId}`).toContain(e.row);
+      }
+    }
     // 유비는 보병계 승급 트리의 장수다 (뿌리가 보병)
     expect(promotionChain(gameData.unitTypes, gameData.characters.liuBei.unitType)[0].id).toBe('infantry');
   });

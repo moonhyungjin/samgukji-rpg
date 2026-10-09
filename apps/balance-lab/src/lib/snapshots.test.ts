@@ -41,7 +41,7 @@ describe('설정 비교', () => {
 
   it('기준과 다른 값을 경로로 알려 준다', () => {
     const changed: BalanceConfig = { ...state.balance, maxTurns: state.balance.maxTurns + 5 };
-    const lines = changeLines({ data: state.data, balance: state.balance, presets: state.presets }, { data: state.data, balance: changed, presets: state.presets });
+    const lines = changeLines({ data: state.data, balance: state.balance, presets: state.presets, campaign: state.campaign }, { data: state.data, balance: changed, presets: state.presets, campaign: state.campaign });
     expect(lines).toEqual([`balance.maxTurns: ${state.balance.maxTurns} → ${state.balance.maxTurns + 5}`]);
   });
 });

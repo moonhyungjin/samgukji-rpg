@@ -257,7 +257,7 @@ export class BattleEngine {
     const remaining = target.troops - damage;
     let counter = 0;
     const targetType = data.unitTypes[target.unitType];
-    if (skill.counterable && remaining > 0 && targetType.canCounter && this.calc.counterRate(skill) > 0) {
+    if (skill.counterable && (remaining > 0 || balance.counter.onDestroy === true) && targetType.canCounter && this.calc.counterRate(skill) > 0) {
       const counterSkill = data.skills[targetType.basicSkillId];
       if (counterSkill.kind === 'attack') {
         // 실제 처리에서는 피격으로 사기가 먼저 움직인 뒤 반격하므로, 같은 값으로 계산한다. 병력은 맞기 전 병력이다.
@@ -383,7 +383,9 @@ export class BattleEngine {
     // 상호 피해: 근접 공격을 받은 대상이 살아 있으면 반격한다. 반격의 세기는 맞기 전 병력으로 계산한다 (원작 규칙).
     const { data } = this.input;
     const targetType = data.unitTypes[target.unitType];
-    if (skill.counterable && !target.isDead && !actor.isDead && targetType.canCounter) {
+    // 맞은 쪽이 전멸했으면 반격하지 않는다. 단 counter.onDestroy면 동시에 주고받는 것으로 보고 반격한다 (맞기 전 병력으로 계산)
+    const canStrikeBack = !target.isDead || this.input.balance.counter.onDestroy === true;
+    if (skill.counterable && canStrikeBack && !actor.isDead && targetType.canCounter) {
       const counterSkill = data.skills[targetType.basicSkillId];
       if (counterSkill.kind === 'attack' && this.calc.counterRate(skill) > 0) {
         const counterer = { ...target, troops: troopsBeforeHit };

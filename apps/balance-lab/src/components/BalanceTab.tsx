@@ -152,6 +152,7 @@ export function BalanceTab() {
               <NumberField label="구간 3 효율 (둘째 → 셋째)" path="balance.troopFactor.ratio.rate3" step={0.05} min={0} hint="이 구간에서 병력 1%가 줄 때 보정이 몇 % 주는가" />
               <NumberField label="하한 병력 (명)" path="balance.troopFactor.ratio.floorTroops" step={10} min={0} hint="병력이 이보다 적으면 하한 보정. 0이면 쓰지 않는다" />
             </div>
+            <CheckField label="피해가 공격자의 현재 병력을 넘지 않는다 (원작 규칙)" path="balance.troopFactor.ratio.capAtTroops" />
           </>
         )}
         {mode === 'tiered' && (
@@ -206,6 +207,7 @@ export function BalanceTab() {
           <NumberField label="총 전투 턴 한도" path="balance.maxTurns" min={1} hint="이 라운드 수가 지나면 남은 상태로 판정한다 (교착 방지 안전장치)" />
           <NumberField label="회복 계수 (heal.scale)" path="balance.heal.scale" step={1} min={0} hint="치유량 = 지력 × 이 값 × 스킬 계수" />
         </div>
+        <CheckField label="맞아서 전멸해도 반격한다 (주고받기를 동시에, 반격은 맞기 전 병력으로)" path="balance.counter.onDestroy" />
         <CheckField label="치유량에도 시전자의 병력 보정 적용" path="balance.heal.useTroopFactor" />
       </section>
 

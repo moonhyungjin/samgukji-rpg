@@ -28,7 +28,7 @@
       "attackMul": 10,
       "defenseMul": 6,
       "intellectMul": 10,
-      "resistMul": 6,
+      "resistMul": 8,
       "min": 10,
       "scale": 10
     },
@@ -77,11 +77,13 @@
       "knee3": 0.3,
       "rate2": 0.3,
       "rate3": 0.5,
-      "floorTroops": 250
+      "floorTroops": 250,
+      "capAtTroops": false
     }
   },
   "counter": {
-    "rate": 0.5
+    "rate": 0.5,
+    "onDestroy": true
   },
   "critical": {
     "chance": 10,
@@ -97,14 +99,14 @@
   "debuffs": {
     "burn": {
       "name": "화상",
-      "flat": 50,
+      "flat": 30,
       "ratio": 0.2,
       "rounds": 2
     },
     "plague": {
       "name": "역병",
-      "flat": 30,
-      "ratio": 0.15,
+      "flat": 15,
+      "ratio": 0.1,
       "rounds": 3
     }
   }

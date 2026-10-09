@@ -261,6 +261,11 @@ export function FormulaExplorer({ input, setInput, pick, stat, setStat, level, s
               <Op>=</Op>
               <Out label="최종 피해" value={num(result.damage)} big />
             </div>
+            {result.damage < Math.round(result.base * result.mitigation * result.troop * result.row * result.taken * result.guard * result.other) && (
+              <p className="note">
+                곱한 값은 {num(Math.round(result.base * result.mitigation * result.troop * result.row * result.taken * result.guard * result.other))}이지만, 피해는 공격 쪽의 지금 병력({num(input.attackerTroops)})을 넘지 않습니다 (병력 패널의 "피해가 공격자의 현재 병력을 넘지 않는다").
+              </p>
+            )}
             <p className="note">열, 받는 피해, 가드 배수는 병종 카드의 값입니다 (병종 · 스킬 탭에서 고칩니다). 크리티컬이 나면 × {balance.critical?.multiplier ?? 1}.</p>
           </div>
 

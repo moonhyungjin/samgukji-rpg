@@ -139,10 +139,12 @@ export class DamageCalculator {
     return this.capAtTroops() ? Math.min(amount, Math.max(attacker.troops, b.damage.minDamage)) : amount;
   }
 
-  /** tiered 방식이고 capAtTroops이면 공격 피해가 공격자의 현재 병력을 넘지 않는다 (원작 규칙) */
+  /** 구간식(tiered)이나 비율 구간식(ratio)에서 capAtTroops이면 공격 피해가 공격자의 현재 병력을 넘지 않는다 (원작 규칙) */
   private capAtTroops(): boolean {
     const t = this.balance.troopFactor;
-    return t.mode === 'tiered' && (t.tiered?.capAtTroops ?? true);
+    if (t.mode === 'tiered') return t.tiered?.capAtTroops ?? true;
+    if (t.mode === 'ratio') return t.ratio?.capAtTroops === true;
+    return false;
   }
 
   /** 반격 비율. 공격한 쪽 기술의 counterRate (원작처럼 기술마다 다르다). 없으면 balance.counter.rate */

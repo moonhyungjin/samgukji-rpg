@@ -109,12 +109,15 @@ describe('병종 편집 화면', () => {
 
   it('장수가 쓰는 병종은 삭제 버튼이 막혀 있고, 쓰는 장수가 없으면 삭제할 수 있다', () => {
     const out = editor();
-    const card = (id: string, next: string) => out.slice(out.indexOf(`data-unittype="${id}"`), out.indexOf(`data-unittype="${next}"`));
-    expect(card('infantry', 'shield')).toMatch(/class="danger" disabled=""/);
-    // 카드는 승급 차수별로 묶여 있으므로 풍수사 카드만 잘라서 본다
-    const start = out.indexOf('data-unittype="geomancer"');
-    const geomancer = out.slice(start, out.indexOf('</section>', start));
-    expect(geomancer).not.toMatch(/class="danger" disabled=""/);
+    // 쓰는 장수가 있는 병종과 없는 병종은 지금 데이터에서 고른다 (장수 구성은 Lab에서 바뀐다)
+    const chars = Object.values(gameData.characters);
+    const cardOf = (id: string) => {
+      const start = out.indexOf(`data-unittype="${id}"`);
+      return out.slice(start, out.indexOf('</section>', start));
+    };
+    expect(cardOf(chars[0].unitType)).toMatch(/class="danger" disabled=""/);
+    const unused = unitTypes.find((u) => !chars.some((c) => c.unitType === u.id));
+    if (unused) expect(cardOf(unused.id)).not.toMatch(/class="danger" disabled=""/);
   });
 
   it('수정/새 병종/오류 카드를 구분해 칠하고, 병력과 열 요약을 보여 준다', () => {

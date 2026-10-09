@@ -119,7 +119,7 @@ const setValue = (selector, value) =>
 
 // 데이터 파일(packages/game-data/data/*.json)을 시험 전에 보관하고, 끝나면 (실패해도) 원래 내용으로 되돌린다.
 const DATA_DIR = resolve('packages/game-data/data');
-const DATA_NAMES = ['skills', 'traits', 'unitTypes', 'characters', 'presets', 'balance'];
+const DATA_NAMES = ['skills', 'traits', 'unitTypes', 'characters', 'presets', 'balance', 'campaign'];
 const originals = Object.fromEntries(DATA_NAMES.map((n) => [n, readFileSync(join(DATA_DIR, `${n}.json`), 'utf-8')]));
 const CHANGELOG = join(DATA_DIR, 'changelog.md');
 const originalChangelog = existsSync(CHANGELOG) ? readFileSync(CHANGELOG, 'utf-8') : null;
@@ -263,6 +263,33 @@ try {
   const hitText = await text('.log .hit-explain');
   check('전투 1회: 피해 줄의 "계산"을 누르면 실제 피해와 다시 계산한 과정이 나온다', hitText.includes('실제 피해') && hitText.includes('다시 계산') && hitText.includes('최종 피해'), hitText.slice(0, 80));
   await shot('lab-battle-hit', true);
+
+  // 캠페인 탭: 돌려 보면 전투별 결과와 한 번 따라가 보기가 나오고, 값을 고치면 저장 대상이 된다
+  await tabs('캠페인');
+  await sleep(200);
+  await clickButton('캠페인 돌려 보기');
+  await waitFor(`!!document.querySelector('table[aria-label="캠페인 전투별 결과"]')`, 30000, '캠페인 돌려 보기');
+  const campaignBattles = readData('campaign').battles.length;
+  const campRows = await evalJs(`document.querySelectorAll('table[aria-label="캠페인 전투별 결과"] tbody tr').length`);
+  const campLog = await evalJs(`document.querySelectorAll('.campaign-log li').length`);
+  check('캠페인 탭: 돌려 보면 전투별 결과와 한 번 따라가 보기가 나온다', campRows === campaignBattles && campLog >= 1, `전투 ${campRows}/${campaignBattles}, 기록 ${campLog}줄`);
+  await shot('lab-campaign', true);
+  const goldBefore = await valueByLabel('시작 자금');
+  await setByLabel('시작 자금', Number(goldBefore) + 100);
+  await sleep(300);
+  const campBadge = (await text('.savebar .badge')).trim();
+  await setByLabel('시작 자금', goldBefore);
+  await sleep(300);
+  check('캠페인 탭: 값을 고치면 "저장 안 됨 (캠페인)", 되돌리면 같음', campBadge.includes('캠페인') && (await text('.savebar .badge')).includes('프로젝트 파일과 같음'), campBadge);
+  // 시작 장수 레벨: 장수마다 칸이 있고, 넣으면 저장 대상, 비우면 다시 같음
+  const levelInputs = await evalJs(`document.querySelectorAll('input[aria-label$=" 시작 레벨"]').length`);
+  const startCount = (JSON.parse(originals.presets).find((p) => p.id === readData('campaign').startPreset)?.lineup ?? []).length;
+  await setValue('input[aria-label$=" 시작 레벨"]', 5);
+  await sleep(300);
+  const levelBadge = (await text('.savebar .badge')).trim();
+  await setValue('input[aria-label$=" 시작 레벨"]', '');
+  await sleep(300);
+  check('캠페인 탭: 시작 편성의 장수마다 시작 레벨 칸이 있고, 넣으면 저장 대상, 비우면 같음', levelInputs === startCount && levelBadge.includes('캠페인') && (await text('.savebar .badge')).includes('프로젝트 파일과 같음'), `${levelInputs}/${startCount}칸, ${levelBadge}`);
 
   await tabs('피해 계산기');
   await sleep(300);

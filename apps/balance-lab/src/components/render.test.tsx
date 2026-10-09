@@ -8,6 +8,7 @@ import type { SimulationHook } from '../lab/useSimulation';
 import { BalanceTab } from './BalanceTab';
 import { BattleTab } from './BattleTab';
 import { CharactersTab } from './CharactersTab';
+import { CampaignTab } from './CampaignTab';
 import { CompareTab } from './CompareTab';
 import { DamageCalculatorPanel } from './DamageCalculatorPanel';
 import { DataTab } from './DataTab';
@@ -89,6 +90,13 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(html).toContain('병종 보정');
     expect(html).toContain('대상 취약');
     expect(html).toContain('병종 · 스킬 탭 &gt;');
+  });
+
+  it('캠페인 탭: 설정, 전투 순서, 돌려 보기가 나온다', () => {
+    const html = render(<CampaignTab />);
+    expectClean(html);
+    for (const label of ['시작 자금', '1차 승급 레벨', '레벨당 필요 경험치', '전투 순서', '적 편성', '이기면 합류', '캠페인 돌려 보기']) expect(html).toContain(label);
+    for (const b of state.campaign.battles) expect(html).toContain(b.name);
   });
 
   it('설정 비교: 저장된 파일 값과 지금 작업 값을 고를 수 있다', () => {

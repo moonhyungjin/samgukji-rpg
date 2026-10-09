@@ -1,0 +1,49 @@
+{
+  "id": "yellow-turbans",
+  "name": "황건적 토벌",
+  "startGold": 1000,
+  "startLevel": 3,
+  "startPreset": "shuStart",
+  "battles": [
+    {
+      "id": "yellow1",
+      "name": "황건적 (쉬움)",
+      "enemyPreset": "yellowEasy",
+      "enemyLevel": 3,
+      "reward": 1000,
+      "joins": []
+    },
+    {
+      "id": "yellow2",
+      "name": "황건적 (보통)",
+      "enemyPreset": "yellowNormal",
+      "enemyLevel": 3,
+      "reward": 1300,
+      "joins": [
+        {
+          "characterId": "char1",
+          "unitType": "geomancer"
+        }
+      ]
+    },
+    {
+      "id": "yellow3",
+      "name": "황건적 (어려움)",
+      "enemyPreset": "yellowHard",
+      "enemyLevel": 3,
+      "reward": 1600,
+      "joins": []
+    }
+  ],
+  "exp": {
+    "win": 120,
+    "lose": 40,
+    "perKill": 20,
+    "perLevel": 100
+  },
+  "promotionLevels": [
+    5,
+    10
+  ],
+  "captureRate": 0.05
+}

@@ -288,6 +288,8 @@ export interface RatioTroopFactor {
   rate3: number;
   /** 이 병력보다 적으면 하한 보정 (정수, 0이면 쓰지 않음) */
   floorTroops: number;
+  /** true이면 공격 피해가 공격자의 현재 병력을 넘지 않는다 (원작 규칙, 구간식의 capAtTroops와 같다). 생략하면 false */
+  capAtTroops?: boolean;
 }
 
 export interface BalanceConfig {
@@ -345,7 +347,11 @@ export interface BalanceConfig {
     ratio?: RatioTroopFactor;
   };
   /** 기술에 counterRate가 없을 때의 반격 비율 */
-  counter: { rate: number };
+  /**
+   * rate: 기술에 counterRate가 없을 때의 반격 비율.
+   * onDestroy: true이면 맞아서 전멸해도 반격한다 (주고받기를 동시에: 반격은 맞기 전 병력으로 계산하므로 막타에도 반격이 들어온다). 생략하면 false
+   */
+  counter: { rate: number; onDestroy?: boolean };
   /** 크리티컬(치명타): 일반공격/책략 공격이 chance(%)의 확률로 피해 × multiplier. 반격과 치유는 제외. 생략하거나 chance가 0이면 꺼진다 */
   critical?: { chance: number; multiplier: number };
   /** 디버프 종류별 값 (키가 skill.debuff.id). 생략하면 디버프가 없다 */
@@ -376,6 +382,10 @@ export interface LineupEntry {
    * 승급 단계를 나타낸다: 승급 트리에서 어느 병종인지에 따라 누적 승급 보너스가 달라진다.
    */
   unitType?: string;
+  /** 캠페인: 이 군단의 정원 (전투에서의 최대 병력). 생략하면 레벨로 정해지는 상한 */
+  maxTroops?: number;
+  /** 캠페인: 전투를 시작할 때의 병력 (1 ~ 최대 병력). 생략하면 가득 찬 상태 */
+  troops?: number;
 }
 
 export interface CharacterState {

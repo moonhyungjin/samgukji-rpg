@@ -1,6 +1,6 @@
 import type { BalanceConfig, CharacterData, GameData } from '@samgukji/battle-engine';
-import { defaultBalance, gameData, presetList } from '@samgukji/game-data';
-import type { PresetDef } from '@samgukji/game-data';
+import { campaignFile, defaultBalance, gameData, presetList } from '@samgukji/game-data';
+import type { CampaignFile, PresetDef } from '@samgukji/game-data';
 import { serialize as serializeCharacters } from '../editor/lib/editor';
 import { serializePresets } from '../editor/lib/presets';
 import { serializeUnitTypes } from '../editor/lib/unitTypes';
@@ -11,10 +11,12 @@ export interface DataFiles {
   data: GameData;
   balance: BalanceConfig;
   presets: PresetDef[];
+  /** 캠페인 (data/campaign.json, 편성은 이름으로) */
+  campaign: CampaignFile;
 }
 
 /** 파일 이름. 저장 API(/api/data)와 같은 이름을 쓴다. */
-export const FILE_NAMES = ['skills', 'traits', 'unitTypes', 'characters', 'presets', 'balance'] as const;
+export const FILE_NAMES = ['skills', 'traits', 'unitTypes', 'characters', 'presets', 'balance', 'campaign'] as const;
 export type FileName = (typeof FILE_NAMES)[number];
 
 export const FILE_LABEL: Record<FileName, string> = {
@@ -24,13 +26,14 @@ export const FILE_LABEL: Record<FileName, string> = {
   characters: '장수',
   presets: '기본 편성',
   balance: '밸런스 수치',
+  campaign: '캠페인',
 };
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 /** 지금 프로젝트 파일에 들어 있는 값 (게임 데이터 패키지가 읽은 것의 복사본) */
 export function filesSnapshot(): DataFiles {
-  return { data: clone(gameData), balance: clone(defaultBalance), presets: clone(presetList as PresetDef[]) };
+  return { data: clone(gameData), balance: clone(defaultBalance), presets: clone(presetList as PresetDef[]), campaign: clone(campaignFile) };
 }
 
 /** 데이터 파일 하나를 파일에 쓰는 문자열로 만든다 (파일 비교와 저장에 같은 문자열을 쓴다). */
@@ -48,6 +51,8 @@ export function serializeFile(name: FileName, files: DataFiles): string {
       return serializePresets(files.presets);
     case 'balance':
       return JSON.stringify(files.balance, null, 2) + '\n';
+    case 'campaign':
+      return JSON.stringify(files.campaign, null, 2) + '\n';
   }
 }
 
@@ -90,12 +95,14 @@ export function syncWithFiles(state: LabState, files: DataFiles): LabState {
   const data = fresh ? clone(files.data) : state.data;
   const balance = fresh ? clone(files.balance) : state.balance;
   const presets = fresh ? clone(files.presets) : state.presets;
+  const campaign = fresh || !state.campaign ? clone(files.campaign) : state.campaign;
   return {
     ...state,
     filesSignature: signature,
     data,
     balance,
     presets,
+    campaign,
     teamA: pruneSlots(state.teamA, data.characters),
     teamB: pruneSlots(state.teamB, data.characters),
   };

@@ -73,6 +73,7 @@ export function normalizeState(saved: LabState): LabState {
       },
     },
     sim: { ...defaults.sim, ...saved.sim },
+    campaign: saved.campaign ?? defaults.campaign,
     // 예전의 "목표 지표"(targets)는 버리고 경고 기준(warnings)을 쓴다 (2026-10-09)
     targets: undefined,
     warnings: { ...defaults.warnings, ...saved.warnings },

@@ -50,7 +50,7 @@
     "name": "책략",
     "kind": "attack",
     "scalesWith": "intellect",
-    "power": 1,
+    "power": 0.7,
     "apCost": 1,
     "counterable": false,
     "debuff": {
@@ -63,12 +63,12 @@
     "name": "도술",
     "kind": "attack",
     "scalesWith": "intellect",
-    "power": 1,
+    "power": 0.7,
     "apCost": 1,
     "counterable": false,
     "debuff": {
       "id": "plague",
-      "chance": 100
+      "chance": 50
     }
   },
   {
@@ -223,7 +223,7 @@
     "name": "책략2",
     "kind": "attack",
     "scalesWith": "intellect",
-    "power": 1.3,
+    "power": 1,
     "apCost": 1,
     "counterable": false,
     "debuff": {
@@ -258,12 +258,12 @@
     "name": "도술2",
     "kind": "attack",
     "scalesWith": "intellect",
-    "power": 1.3,
+    "power": 1.1,
     "apCost": 1,
     "counterable": false,
     "debuff": {
       "id": "plague",
-      "chance": 100
+      "chance": 75
     }
   },
   {
@@ -359,7 +359,7 @@
     "name": "도술3",
     "kind": "attack",
     "scalesWith": "intellect",
-    "power": 2,
+    "power": 1.5,
     "apCost": 1,
     "counterable": false,
     "debuff": {

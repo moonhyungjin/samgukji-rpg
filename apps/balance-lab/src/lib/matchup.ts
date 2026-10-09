@@ -82,7 +82,7 @@ export function matchupTable(data: GameData, balance: BalanceConfig, attackerIds
 
       let counter = 0;
       const counterSkill = ref.skills[dType.basicSkillId];
-      if (skill.counterable && dType.canCounter && counterSkill?.kind === 'attack' && damage < defender.troops) {
+      if (skill.counterable && dType.canCounter && counterSkill?.kind === 'attack' && (damage < defender.troops || balance.counter.onDestroy === true)) {
         counter = calc.counterDamage(defender, attacker, counterSkill, skill, share);
       }
 

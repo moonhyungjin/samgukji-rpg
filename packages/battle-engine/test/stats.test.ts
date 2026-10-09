@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { applyStatMods, apFromAction, createRng, DEFAULT_TIERED, relativeTroopFactor, selfTroopFactor, tieredTroopFactor, tieredTroops, totalAp, deriveSeed, effectiveStat, maxTroops, moraleMultiplier, ratioTroopFactor, troopFactor } from '../src';
-import { testBalance } from './fixtures';
+import { DamageCalculator, buildUnits, applyStatMods, apFromAction, createRng, DEFAULT_TIERED, relativeTroopFactor, selfTroopFactor, tieredTroopFactor, tieredTroops, totalAp, deriveSeed, effectiveStat, maxTroops, moraleMultiplier, ratioTroopFactor, troopFactor } from '../src';
+import { testBalance, testData } from './fixtures';
 
 describe('rng', () => {
   it('같은 시드는 같은 수열을 만든다', () => {
@@ -198,5 +198,23 @@ describe('병력 보정: 지력 기반 (selfTroopFactor)', () => {
   it('하한 0.3, 상한 1', () => {
     expect(self(10, 800)).toBe(0.3);
     expect(self(2000, 800)).toBe(1);
+  });
+});
+
+describe('피해 상한: 비율 구간식에서도 피해가 공격자의 현재 병력을 넘지 않는다 (capAtTroops)', () => {
+  const ratio = { knee: 0.8, knee2: 0.5, knee3: 0.3, rate2: 0.3, rate3: 0.5, floorTroops: 250 };
+  // 공격 계수를 크게 해서 상한이 없으면 75를 넘게 한다
+  const balanceWith = (capAtTroops: boolean) => ({ ...testBalance, damage: { ...testBalance.damage, attackScale: 1000 }, troopFactor: { ...testBalance.troopFactor, mode: 'ratio' as const, ratio: { ...ratio, capAtTroops } } });
+  const hit = (capAtTroops: boolean) => {
+    const balance = balanceWith(capAtTroops);
+    // 병력 75/950인 군단이 병력 110/950인 군단을 친다
+    const [a] = buildUnits('attacker', [{ characterId: 'inf', row: 'front', maxTroops: 950, troops: 75 }], testData, balance);
+    const [d] = buildUnits('defender', [{ characterId: 'inf', row: 'front', maxTroops: 950, troops: 110 }], testData, balance);
+    return new DamageCalculator(balance, testData).damage(a, d, testData.skills.hit, 50);
+  };
+
+  it('켜면 75명은 75를 넘게 깎지 못하고, 끄면 스탯으로 정해진 피해 그대로다', () => {
+    expect(hit(true)).toBe(Math.min(75, hit(false)));
+    expect(hit(false)).toBeGreaterThan(75);
   });
 });

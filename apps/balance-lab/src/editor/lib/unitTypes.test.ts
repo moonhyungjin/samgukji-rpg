@@ -100,7 +100,10 @@ describe('병종 검사', () => {
     // 장비는 승급 트리의 최종 병종(철벽대), 허저는 방패병(0차)이다
     expect(charactersUsing(gameData.characters.zhangFei.unitType, Object.values(gameData.characters))).toContain('장비');
     expect(charactersUsing('shield', Object.values(gameData.characters))).toContain('허저');
-    expect(charactersUsing('geomancer', Object.values(gameData.characters))).toEqual([]);
+    // 아무도 쓰지 않는 병종이 있으면 빈 목록 (장수 구성은 Lab에서 바뀌므로 지금 데이터에서 찾는다)
+    const chars = Object.values(gameData.characters);
+    const unused = Object.keys(gameData.unitTypes).find((id) => !chars.some((c) => c.unitType === id));
+    if (unused) expect(charactersUsing(unused, chars)).toEqual([]);
   });
 });
 

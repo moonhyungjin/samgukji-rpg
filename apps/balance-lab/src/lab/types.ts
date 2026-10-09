@@ -1,4 +1,4 @@
-import type { PresetDef } from '@samgukji/game-data';
+import type { CampaignFile, PresetDef } from '@samgukji/game-data';
 import type { BalanceConfig, BuffMode, CharacterPool, Family, GameData, GuardMode, LineupMode, RoleMode, TargetPolicy } from '@samgukji/battle-engine';
 
 export interface SlotEntry {
@@ -54,6 +54,8 @@ export interface LabState {
   warnings: WarningSettings;
   /** 기본 편성 (작업 중인 초안). 저장하면 data/presets.json이 된다 */
   presets: PresetDef[];
+  /** 캠페인 (작업 중인 초안). 저장하면 data/campaign.json이 된다 */
+  campaign: CampaignFile;
   /** 이 초안이 어느 데이터 파일 내용에서 시작했는지 나타내는 지문. 파일이 바뀌면 초안을 버리고 파일 값으로 시작한다 */
   filesSignature?: string;
 }

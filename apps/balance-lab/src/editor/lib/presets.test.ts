@@ -49,9 +49,15 @@ describe('기본 편성 데이터 (presets.json)', () => {
 
 describe('편성 칸 편집', () => {
   it('편성 ↔ 칸 변환은 열마다 앞에서부터 채운다', () => {
-    const slots = slotsFromLineup(presets.yellowNormal); // 전열 방패병, 보병 / 후열 궁병
-    expect(slots.map((s) => s?.characterId ?? null)).toEqual(['ytShieldA', 'ytInfantryA', null, 'ytArcherA', null, null]);
-    expect(lineupFromSlots(slots)).toEqual(presets.yellowNormal);
+    // 자리(slot)를 적지 않은 편성: 전열 둘, 후열 하나 (실제 편성은 Lab에서 바뀌므로 직접 만든다)
+    const lineup = [
+      { characterId: 'zhangFei', row: 'front' as const },
+      { characterId: 'liuBei', row: 'front' as const },
+      { characterId: 'huangZhong', row: 'back' as const },
+    ];
+    const slots = slotsFromLineup(lineup);
+    expect(slots.map((s) => s?.characterId ?? null)).toEqual(['zhangFei', 'liuBei', null, 'huangZhong', null, null]);
+    expect(lineupFromSlots(slots).map((e) => [e.characterId, e.row])).toEqual(lineup.map((e) => [e.characterId, e.row]));
   });
 
   it('칸을 고르면 그 열에 들어가고, 비우면 빠진다', () => {

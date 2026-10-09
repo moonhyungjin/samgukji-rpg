@@ -11,6 +11,7 @@
     "test": "vitest run",
     "typecheck": "tsc -p packages/battle-engine && tsc -p packages/game-data && tsc -p tools/sim && tsc -p apps/balance-lab && tsc -p apps/game",
     "sim": "npm run start -w @samgukji/sim --",
+    "sim:campaign": "npm run campaign -w @samgukji/sim --",
     "lab": "npm run dev -w @samgukji/balance-lab --",
     "lab:build": "npm run build -w @samgukji/balance-lab",
     "game": "npm run dev -w @samgukji/game --",
