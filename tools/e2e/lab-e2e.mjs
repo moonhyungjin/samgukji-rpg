@@ -330,7 +330,8 @@ try {
   check('병종 탭: 병종 카드, 스킬 표(계수, 방어 무시, 버프)', ['기본 AP', '사거리', '받는 물리', '반격 유발', '가드로 막힘', '방어 무시', '피해 무시 횟수', '가짓수 최소'].every((k) => data.includes(k)));
   check('병종 탭: 비어 있거나 NaN인 입력란이 없다', !(await evalJs(`[...document.querySelectorAll('main input[type=number]')].some(i => i.value === 'NaN' || i.value === '')`)));
   const treeInfo = await evalJs(`JSON.stringify({ tabs: document.querySelectorAll('button.family-tab').length, nodes: [...document.querySelectorAll('button.tree-node')].map(n => n.dataset.node) })`);
-  check('병종 탭: 계열 탭(7)과 승급 트리(보병 계열 5종)가 나온다', JSON.parse(treeInfo).tabs === 7 && JSON.parse(treeInfo).nodes.length === 5, treeInfo);
+  // 바로 앞의 "수정하러 가기"가 고른 병종의 계열이 열려 있다 (승급 갈래가 아직 없는 군주 계열이면 1종)
+  check('병종 탭: 계열 탭(7 + 군주)과 승급 트리가 나온다', JSON.parse(treeInfo).tabs === 8 && JSON.parse(treeInfo).nodes.length >= 1, treeInfo);
   await selectUnit('cavalry', 'heavy-cavalry');
   check('트리에서 중기병을 누르면 그 병종 카드가 나온다 (스킬도 카드 안에 있다)', (await evalJs(`!!document.querySelector('section[data-unittype="heavy-cavalry"] [data-skills-of="heavy-cavalry"] table.skill-table')`)) === true && !(await evalJs(`!!document.querySelector('section[data-unittype="cavalry"]')`)));
   // 스킬 표 머리글을 누르면 정렬된다: 계수 오름차순 → 내림차순 → 원래 순서

@@ -7,6 +7,8 @@
 | `docs/design/01-character-and-unit.md` | 장수, 병종, 스탯, 스킬, 병력/AP, 변경 이력 |
 | `docs/design/02-battle-rules.md` | 전투 진행(라운드, AP, 타겟팅, 가드, 사기, 판정) |
 | `docs/design/03-campaign.md` | 캠페인과 정비 (연속 전투, 돈, 보충/증원/해고, 레벨, 승급) |
+| `docs/design/04-strategy.md` | 전략 (지도, 턴, 지역 행동, 국력·코스트, 민심, 포로, 전쟁) |
+| `docs/design/05-scenario.md` | 시나리오 (주인공 조조, 장 구성, 마검 설정) |
 | `docs/spec/samgukji_strategy_rpg_agent_spec.md` | 처음 받은 원본 기획서(v0.1). 충돌하면 위 설계 문서가 우선 |
 | `docs/HANDOFF.md` | 구현 현황, 구조, 시뮬레이션에서 알게 된 함정 |
 | `TODO.md` | 지금 열려 있는 결정과 할 일 |

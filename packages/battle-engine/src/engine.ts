@@ -189,6 +189,7 @@ export class BattleEngine {
       this.queueIndex = 0;
       this.roundActed = false;
       this.emit({ type: 'roundStart', round: next, order: this.queue.map((u) => u.uid) });
+      if (next === 1) this.applyAutoBuffs();
     }
     return null;
   }
@@ -438,6 +439,17 @@ export class BattleEngine {
     this.report(actor).healing += troops;
     this.skillStat(skill.id).healing += troops;
     this.emit({ type: 'revive', round: this.state.round, source: actor.uid, target: target.uid, troopsAfter: troops, row, slot });
+  }
+
+  /** 자동 개인 버프 (병종의 autoBuffSkillId): 1라운드 시작에 자기 자신에게 AP 없이 건다. 행동이 아니라 교착 판정에 세지 않는다 */
+  private applyAutoBuffs(): void {
+    const { unitTypes, skills } = this.input.data;
+    for (const unit of this.state.units) {
+      const id = unitTypes[unit.unitType]?.autoBuffSkillId;
+      const skill = id ? skills[id] : undefined;
+      if (!skill || skill.kind !== 'buff' || !canBuff(unit, skill)) continue;
+      this.applyBuff(unit, unit, skill);
+    }
   }
 
   private performBuff(actor: CharacterState, target: CharacterState, skill: SkillData): void {

@@ -190,11 +190,12 @@ describe('승급 트리 목록 (unitTypeTrees)', () => {
     expect([...ids].sort()).toEqual(['x', 'y']);
   });
 
-  it('지금 데이터: 일곱 계열 모두 승급 트리(뿌리 1 + 1차 2 + 2차 2)다', () => {
+  it('지금 데이터: 일곱 계열은 승급 트리(뿌리 1 + 1차 2 + 2차 2)이고, 군주 계열이 따로 있다', () => {
     const trees = unitTypeTrees(Object.values(gameData.unitTypes));
     const size = (n: (typeof trees)[number]): number => 1 + n.children.reduce((s, c) => s + size(c), 0);
-    expect(trees.map((t) => t.unit.id).sort()).toEqual(['archer', 'cavalry', 'geomancer', 'infantry', 'shield', 'strategist', 'taoist']);
-    for (const t of trees) expect(size(t), t.unit.id).toBe(5);
+    expect(trees.map((t) => t.unit.id).sort()).toEqual(['archer', 'cavalry', 'geomancer', 'infantry', 'lord', 'shield', 'strategist', 'taoist']);
+    // 군주 계열의 승급 갈래는 아직 정하지 않았다 (설계 문서 01)
+    for (const t of trees) if (t.unit.id !== 'lord') expect(size(t), t.unit.id).toBe(5);
   });
 });
 

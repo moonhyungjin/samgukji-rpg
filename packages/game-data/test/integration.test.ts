@@ -131,8 +131,8 @@ describe('게임 데이터 무결성', () => {
         expect(type.allowedRows, `${name} ${e.characterId}`).toContain(e.row);
       }
     }
-    // 유비는 보병계 승급 트리의 장수다 (뿌리가 보병)
-    expect(promotionChain(gameData.unitTypes, gameData.characters.liuBei.unitType)[0].id).toBe('infantry');
+    // 유비는 군주 계열의 장수다 (모든 군주의 공통 병종, 2026-10-09 사용자 결정)
+    expect(promotionChain(gameData.unitTypes, gameData.characters.liuBei.unitType)[0].id).toBe('lord');
   });
 });
 
@@ -163,8 +163,10 @@ describe('실제 데이터로 6 vs 6', () => {
 });
 
 describe('숫자를 바꾸면 결과가 달라진다', () => {
+  // 기병이 반드시 나오도록 촉의 첫 장수를 기병으로 세운다 (기본 편성의 병종은 Lab에서 바뀐다)
+  const shuWithCavalry = presets.shu.map((e, i) => (i === 0 ? { ...e, unitType: 'cavalry' } : e));
   const sim = (balance: BalanceConfig, data = gameData) =>
-    BattleSimulator.run({ data, balance, teamA: presets.shu, teamB: presets.wei, iterations: 400, seed: 3, roles: 'alternate' });
+    BattleSimulator.run({ data, balance, teamA: shuWithCavalry, teamB: presets.wei, iterations: 400, seed: 3, roles: 'alternate' });
 
   // 한 열만 낮추면 기병이 사거리 2일 때 다른 열(후열)을 노려 오히려 피해가 늘 수 있어서 두 열 모두 낮춘다
   it('기병이 주는 피해 배수(열)를 낮추면 기병이 주는 피해가 줄어든다', () => {

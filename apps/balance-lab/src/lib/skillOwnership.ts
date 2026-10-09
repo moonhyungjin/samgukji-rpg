@@ -1,8 +1,8 @@
 import type { GameData, SkillData, UnitTypeData } from '@samgukji/battle-engine';
 
-/** 병종이 쓰는 스킬 id들: 일반공격 + 추가 스킬 */
+/** 병종이 쓰는 스킬 id들: 일반공격 + 추가 스킬 + 자동 버프 */
 export function skillIdsOf(unitType: UnitTypeData): string[] {
-  return [unitType.basicSkillId, ...unitType.extraSkillIds];
+  return [unitType.basicSkillId, ...unitType.extraSkillIds, ...(unitType.autoBuffSkillId ? [unitType.autoBuffSkillId] : [])];
 }
 
 /** 이 스킬을 쓰는 병종들 */
@@ -29,7 +29,7 @@ export function cloneSkillFor(data: GameData, typeId: string, skillId: string): 
   }
   const newId = freshSkillId(data.skills, typeId, skillId);
   const swap = (id: string) => (id === skillId ? newId : id);
-  const nextUnit: UnitTypeData = { ...unit, basicSkillId: swap(unit.basicSkillId), extraSkillIds: unit.extraSkillIds.map(swap) };
+  const nextUnit: UnitTypeData = { ...unit, basicSkillId: swap(unit.basicSkillId), extraSkillIds: unit.extraSkillIds.map(swap), ...(unit.autoBuffSkillId ? { autoBuffSkillId: swap(unit.autoBuffSkillId) } : {}) };
   return {
     skills: { ...data.skills, [newId]: { ...skill, id: newId } },
     unitTypes: { ...data.unitTypes, [typeId]: nextUnit },

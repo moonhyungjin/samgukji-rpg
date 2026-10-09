@@ -20,7 +20,7 @@
     "id": "guanYu",
     "name": "관우",
     "rank": "elite",
-    "unitType": "cavalry",
+    "unitType": "infantry",
     "level": 15,
     "stats": {
       "attack": 7,
@@ -122,7 +122,7 @@
     "id": "liuBei",
     "name": "유비",
     "rank": "elite",
-    "unitType": "infantry",
+    "unitType": "lord",
     "level": 15,
     "stats": {
       "attack": 4,
@@ -156,7 +156,7 @@
     "id": "xiahouDun",
     "name": "하후돈",
     "rank": "elite",
-    "unitType": "cavalry",
+    "unitType": "infantry",
     "level": 15,
     "stats": {
       "attack": 5,
@@ -252,6 +252,40 @@
       "diplomacy": 4,
       "politics": 7,
       "charm": 7
+    }
+  },
+  {
+    "id": "caoCao",
+    "name": "조조",
+    "rank": "elite",
+    "unitType": "lord",
+    "level": 15,
+    "stats": {
+      "attack": 6,
+      "defense": 5,
+      "intellect": 7,
+      "speed": 5,
+      "action": 3,
+      "diplomacy": 6,
+      "politics": 8,
+      "charm": 8
+    }
+  },
+  {
+    "id": "caoRen",
+    "name": "조인",
+    "rank": "elite",
+    "unitType": "shield",
+    "level": 15,
+    "stats": {
+      "attack": 5,
+      "defense": 7,
+      "intellect": 4,
+      "speed": 4,
+      "action": 3,
+      "diplomacy": 3,
+      "politics": 5,
+      "charm": 5
     }
   },
   {

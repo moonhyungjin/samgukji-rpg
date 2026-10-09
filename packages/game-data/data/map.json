@@ -1,275 +1,311 @@
 {
-  "id": "hebei-yellow-turbans",
-  "name": "황건적 토벌 (하북)",
+  "id": "yan-yellow-turbans",
+  "name": "황건적 토벌 (연주)",
   "factions": [
     {
-      "id": "liuBei",
-      "name": "유비군",
-      "color": "#3fa34d",
+      "id": "caoCao",
+      "name": "조조군",
+      "color": "#3f6fd4",
       "player": true
     },
     {
       "id": "yellow",
-      "name": "황건적",
+      "name": "청주 황건적",
       "color": "#d4a017"
     },
     {
       "id": "han",
-      "name": "한 조정 (중립)",
+      "name": "연주 관부 (중립)",
       "color": "#8a8f99",
       "neutral": true
     }
   ],
   "regions": [
     {
-      "id": "zhuo",
-      "name": "탁군",
-      "faction": "liuBei",
-      "terrain": "plain",
+      "id": "dongjun",
+      "name": "동군",
+      "faction": "caoCao",
+      "terrain": "river",
       "income": 300,
       "power": 2,
       "neighbors": [
-        "ji",
-        "hejian"
+        "chenliu",
+        "jiyin",
+        "dongping"
       ],
-      "x": 40,
-      "y": 28,
+      "x": 20,
+      "y": 22,
       "castles": [
         {
-          "id": "zhuo-1",
-          "name": "탁현",
-          "terrain": "plain",
+          "id": "dongjun-1",
+          "name": "동무양",
+          "terrain": "river",
           "garrison": null
         }
       ]
     },
     {
-      "id": "ji",
-      "name": "계",
+      "id": "chenliu",
+      "name": "진류",
       "faction": "han",
       "terrain": "plain",
       "income": 400,
       "power": 3,
       "neighbors": [
-        "zhuo",
-        "hejian"
+        "dongjun",
+        "jiyin"
       ],
-      "x": 45,
-      "y": 12,
+      "x": 14,
+      "y": 74,
       "castles": [
         {
-          "id": "ji-1",
-          "name": "계현",
+          "id": "chenliu-1",
+          "name": "진류현",
           "terrain": "plain",
           "garrison": {
             "preset": "yellowNormal",
-            "level": 3
+            "level": 2
           }
         },
         {
-          "id": "ji-2",
-          "name": "안차",
-          "terrain": "river",
+          "id": "chenliu-2",
+          "name": "옹구",
+          "terrain": "plain",
           "garrison": {
             "preset": "yellowNormal",
-            "level": 3
+            "level": 2
           }
         }
       ]
     },
     {
-      "id": "hejian",
-      "name": "하간",
-      "faction": "yellow",
-      "terrain": "river",
+      "id": "jiyin",
+      "name": "제음",
+      "faction": "han",
+      "terrain": "plain",
       "income": 300,
       "power": 2,
       "neighbors": [
-        "zhuo",
-        "ji",
-        "qinghe",
-        "pingyuan"
+        "dongjun",
+        "chenliu",
+        "shanyang",
+        "dongping"
       ],
-      "x": 57,
-      "y": 38,
-      "castles": [
-        {
-          "id": "hejian-1",
-          "name": "낙성",
-          "terrain": "river",
-          "garrison": {
-            "preset": "yellowEasy",
-            "level": 1
-          }
-        },
-        {
-          "id": "hejian-2",
-          "name": "무원",
-          "terrain": "plain",
-          "garrison": {
-            "preset": "yellowEasy",
-            "level": 1
-          }
-        }
-      ]
-    },
-    {
-      "id": "qinghe",
-      "name": "청하",
-      "faction": "yellow",
-      "terrain": "river",
-      "income": 300,
-      "power": 2,
-      "neighbors": [
-        "hejian",
-        "pingyuan",
-        "guangzong",
-        "julu"
-      ],
-      "x": 55,
+      "x": 34,
       "y": 60,
       "castles": [
         {
-          "id": "qinghe-1",
-          "name": "감릉",
-          "terrain": "river",
-          "garrison": {
-            "preset": "yellowNormal",
-            "level": 2
-          }
-        },
-        {
-          "id": "qinghe-2",
-          "name": "동무성",
+          "id": "jiyin-1",
+          "name": "정도",
           "terrain": "plain",
           "garrison": {
             "preset": "yellowNormal",
-            "level": 2
+            "level": 3
+          }
+        },
+        {
+          "id": "jiyin-2",
+          "name": "견성",
+          "terrain": "plain",
+          "garrison": {
+            "preset": "yellowNormal",
+            "level": 3
           }
         }
       ]
     },
     {
-      "id": "pingyuan",
-      "name": "평원",
+      "id": "shanyang",
+      "name": "산양",
       "faction": "han",
+      "terrain": "river",
+      "income": 300,
+      "power": 2,
+      "neighbors": [
+        "jiyin",
+        "rencheng"
+      ],
+      "x": 56,
+      "y": 82,
+      "castles": [
+        {
+          "id": "shanyang-1",
+          "name": "창읍",
+          "terrain": "plain",
+          "garrison": {
+            "preset": "yellowNormal",
+            "level": 3
+          }
+        },
+        {
+          "id": "shanyang-2",
+          "name": "거야",
+          "terrain": "river",
+          "garrison": {
+            "preset": "yellowNormal",
+            "level": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "dongping",
+      "name": "동평",
+      "faction": "yellow",
       "terrain": "plain",
       "income": 300,
       "power": 2,
       "neighbors": [
-        "hejian",
-        "qinghe"
+        "dongjun",
+        "jiyin",
+        "rencheng",
+        "jibei"
       ],
-      "x": 74,
-      "y": 62,
+      "x": 50,
+      "y": 38,
       "castles": [
         {
-          "id": "pingyuan-1",
-          "name": "평원현",
+          "id": "dongping-1",
+          "name": "수장",
           "terrain": "plain",
           "garrison": {
-            "preset": "yellowNormal",
-            "level": 3
+            "preset": "yellowEasy",
+            "level": 1
           }
         },
         {
-          "id": "pingyuan-2",
-          "name": "고당",
-          "terrain": "river",
+          "id": "dongping-2",
+          "name": "무염",
+          "terrain": "plain",
           "garrison": {
-            "preset": "yellowNormal",
-            "level": 3
+            "preset": "yellowEasy",
+            "level": 1
           }
         }
       ]
     },
     {
-      "id": "guangzong",
-      "name": "광종",
+      "id": "rencheng",
+      "name": "임성",
       "faction": "yellow",
       "terrain": "plain",
+      "income": 300,
+      "power": 2,
+      "neighbors": [
+        "dongping",
+        "shanyang",
+        "taishan"
+      ],
+      "x": 72,
+      "y": 62,
+      "castles": [
+        {
+          "id": "rencheng-1",
+          "name": "임성현",
+          "terrain": "plain",
+          "garrison": {
+            "preset": "yellowNormal",
+            "level": 2
+          }
+        },
+        {
+          "id": "rencheng-2",
+          "name": "번현",
+          "terrain": "river",
+          "garrison": {
+            "preset": "yellowNormal",
+            "level": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "taishan",
+      "name": "태산",
+      "faction": "yellow",
+      "terrain": "mountain",
       "income": 400,
       "power": 3,
       "neighbors": [
-        "qinghe",
-        "julu"
+        "rencheng",
+        "jibei"
       ],
-      "x": 46,
-      "y": 78,
+      "x": 84,
+      "y": 34,
       "castles": [
         {
-          "id": "guangzong-1",
-          "name": "광종현",
+          "id": "taishan-1",
+          "name": "거평",
           "terrain": "plain",
           "garrison": {
             "preset": "yellowNormal",
-            "level": 4
+            "level": 3
           }
         },
         {
-          "id": "guangzong-2",
-          "name": "경현",
-          "terrain": "plain",
+          "id": "taishan-2",
+          "name": "양보",
+          "terrain": "mountain",
           "garrison": {
             "preset": "yellowNormal",
-            "level": 4
+            "level": 3
           }
         },
         {
-          "id": "guangzong-3",
-          "name": "광천",
-          "terrain": "river",
+          "id": "taishan-3",
+          "name": "봉고",
+          "terrain": "mountain",
           "garrison": {
             "preset": "yellowHard",
-            "level": 4
+            "level": 3
           }
         }
       ]
     },
     {
-      "id": "julu",
-      "name": "거록",
+      "id": "jibei",
+      "name": "제북",
       "faction": "yellow",
-      "terrain": "mountain",
+      "terrain": "river",
       "income": 500,
       "power": 4,
       "neighbors": [
-        "qinghe",
-        "guangzong"
+        "dongping",
+        "taishan"
       ],
-      "x": 28,
-      "y": 62,
+      "x": 62,
+      "y": 14,
       "castles": [
         {
-          "id": "julu-1",
-          "name": "영도",
+          "id": "jibei-1",
+          "name": "사구",
           "terrain": "plain",
           "garrison": {
             "preset": "yellowHard",
-            "level": 5
+            "level": 4
           }
         },
         {
-          "id": "julu-2",
-          "name": "하곡양",
-          "terrain": "forest",
+          "id": "jibei-2",
+          "name": "강현",
+          "terrain": "plain",
+          "garrison": {
+            "preset": "yellowHard",
+            "level": 4
+          }
+        },
+        {
+          "id": "jibei-3",
+          "name": "성현",
+          "terrain": "river",
           "garrison": {
             "preset": "yellowHard",
             "level": 5
           }
         },
         {
-          "id": "julu-3",
-          "name": "양씨",
-          "terrain": "mountain",
-          "garrison": {
-            "preset": "yellowHard",
-            "level": 5
-          }
-        },
-        {
-          "id": "julu-4",
-          "name": "거록성",
+          "id": "jibei-4",
+          "name": "노현",
           "terrain": "mountain",
           "garrison": {
             "preset": "yellowHard",
@@ -279,5 +315,5 @@
       ]
     }
   ],
-  "goalRegion": "julu"
+  "goalRegion": "jibei"
 }

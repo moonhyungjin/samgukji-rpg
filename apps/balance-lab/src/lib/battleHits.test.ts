@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest';
 import { createDefaultState } from '../lab/defaults';
 import { explainHit, hitContext } from './battleHits';
 
-const { data, balance } = createDefaultState();
+const lab = createDefaultState();
+const { balance } = lab;
+// 자동 개인 버프(군주)도 빼서 버프가 없는 전투로 만든다
+const data = { ...lab.data, unitTypes: Object.fromEntries(Object.entries(lab.data.unitTypes).map(([id, u]) => [id, { ...u, autoBuffSkillId: undefined }])) };
 
 /** 버프가 없는 전투 (버프로 오른 스탯은 다시 계산할 수 없으므로) */
 function battle(attacker: LineupEntry[], defender: LineupEntry[], seed: number): BattleResult {

@@ -17,6 +17,7 @@ export const FAMILY_COLOR: Record<Family, number> = {
   strategist: 0x8d5fc4,
   taoist: 0x2fa3a3,
   geomancer: 0xc9a43a,
+  lord: 0xb83b3b,
 };
 
 export const FAMILY_GLYPH: Record<Family, string> = {
@@ -27,6 +28,7 @@ export const FAMILY_GLYPH: Record<Family, string> = {
   strategist: '책',
   taoist: '도',
   geomancer: '풍',
+  lord: '군',
 };
 
 export const SIDE_COLOR: Record<Side, number> = { attacker: 0x5b8cff, defender: 0xff6b6b };

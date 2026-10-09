@@ -8,6 +8,7 @@ export const FAMILY_LABEL: Record<Family, string> = {
   strategist: '책사',
   taoist: '도사',
   geomancer: '풍수사',
+  lord: '군주',
 };
 
 export const END_CAUSE_LABEL: Record<EndCause, string> = {

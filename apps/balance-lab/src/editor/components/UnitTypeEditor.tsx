@@ -305,6 +305,15 @@ export function UnitTypeEditor({ unitTypes, all, renderSkills, savedIds, changed
                   {!data.skills[u.basicSkillId] && <option value={u.basicSkillId}>{u.basicSkillId} (없음)</option>}
                 </select>,
               )}
+              {field(
+                '자동 버프',
+                <select aria-label={`${u.id} 자동 버프`} value={u.autoBuffSkillId ?? ''} onChange={(e) => onEdit(u.id, { autoBuffSkillId: e.target.value || undefined })}>
+                  <option value="">없음</option>
+                  {skillOptions((sk) => sk.kind === 'buff')}
+                  {u.autoBuffSkillId && !data.skills[u.autoBuffSkillId] && <option value={u.autoBuffSkillId}>{u.autoBuffSkillId} (없음)</option>}
+                </select>,
+                '1라운드가 시작될 때 AP 없이 자기 자신에게 한 번 걸리는 버프 (군주). 범위는 무시하고 자신만 받는다',
+              )}
             </div>
             <div className="checks" role="group" aria-label={`${u.id} 추가 스킬`}>
               <span className="check-title">추가 스킬</span>

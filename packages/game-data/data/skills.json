@@ -402,5 +402,25 @@
     "counterable": false,
     "reviveRatio": 0.2,
     "maxUses": 1
+  },
+  {
+    "id": "lord-presence",
+    "name": "위풍",
+    "kind": "buff",
+    "scalesWith": "intellect",
+    "power": 0,
+    "apCost": 1,
+    "counterable": false,
+    "buff": {
+      "type": "stats",
+      "pool": [
+        "attack",
+        "defense"
+      ],
+      "minCount": 2,
+      "maxCount": 2,
+      "amount": 1,
+      "maxStacks": 1
+    }
   }
 ]

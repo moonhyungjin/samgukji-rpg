@@ -101,12 +101,38 @@
       {
         "characterId": "liuBei",
         "row": "front",
-        "unitType": "infantry"
+        "unitType": "lord"
       },
       {
         "characterId": "guanYu",
         "row": "front",
         "unitType": "infantry"
+      }
+    ]
+  },
+  {
+    "id": "weiStart",
+    "label": "위 초반(조조군)",
+    "lineup": [
+      {
+        "characterId": "caoCao",
+        "row": "front",
+        "unitType": "lord"
+      },
+      {
+        "characterId": "xiahouDun",
+        "row": "front",
+        "unitType": "infantry"
+      },
+      {
+        "characterId": "caoRen",
+        "row": "front",
+        "unitType": "shield"
+      },
+      {
+        "characterId": "xiahouYuan",
+        "row": "back",
+        "unitType": "archer"
       }
     ]
   },

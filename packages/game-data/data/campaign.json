@@ -3,7 +3,7 @@
   "name": "황건적 토벌",
   "startGold": 1000,
   "startLevel": 3,
-  "startPreset": "shuStart",
+  "startPreset": "weiStart",
   "battles": [
     {
       "id": "yellow1",

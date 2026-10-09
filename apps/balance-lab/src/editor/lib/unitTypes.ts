@@ -10,6 +10,7 @@ export const FAMILY_LABEL: Record<Family, string> = {
   strategist: '책사',
   taoist: '도사',
   geomancer: '풍수사',
+  lord: '군주',
 };
 
 /** 병종 스탯 보정에 쓸 수 있는 스탯 */
@@ -48,6 +49,7 @@ export function normalizeUnitType(u: UnitTypeData): UnitTypeData {
     vulnerability: { physical: Number(u.vulnerability?.physical ?? 0), magic: Number(u.vulnerability?.magic ?? 0) },
     statMods: { attack: Number(mods.attack), defense: Number(mods.defense), intellect: Number(mods.intellect), speed: Number(mods.speed), action: Number(mods.action) },
     ...(u.cleanseOnHeal === true ? { cleanseOnHeal: true } : {}),
+    ...(u.autoBuffSkillId ? { autoBuffSkillId: u.autoBuffSkillId } : {}),
     ...(u.guard
       ? { guard: { start: Number(u.guard.start), gain: Number(u.guard.gain), gainPerIntellect: Number(u.guard.gainPerIntellect ?? 0), decay: Number(u.guard.decay), damageTaken: Number(u.guard.damageTaken ?? 1), scope: u.guard.scope === 'all' ? 'all' : 'row', interceptsMagic: u.guard.interceptsMagic === true, keepOnAttack: u.guard.keepOnAttack === true } }
       : {}),
@@ -135,6 +137,7 @@ export function validateUnitTypes(list: readonly UnitTypeData[], data: GameData)
       if (u.guard.start < 0 || u.guard.gain < 0 || (u.guard.gainPerIntellect ?? 0) < 0 || u.guard.decay < 0) err('가드의 시작/상승/지력당 상승/감소는 0 이상이어야 합니다.');
       if (!Number.isFinite(u.guard.damageTaken ?? 1) || (u.guard.damageTaken ?? 1) <= 0) err('가드 중 받는 피해 배수는 0보다 커야 합니다.');
     }
+    if (u.autoBuffSkillId && skillKind(u.autoBuffSkillId) !== 'buff') err(`자동 버프는 버프 스킬이어야 합니다 (${u.autoBuffSkillId}).`);
     if (u.canCounter && skillKind(u.basicSkillId) !== 'attack') warn('반격할 수 있는데 일반공격이 공격 스킬이 아니라 반격이 일어나지 않습니다.');
   }
   return issues;

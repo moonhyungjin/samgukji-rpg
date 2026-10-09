@@ -143,7 +143,7 @@
     },
     "damageDealtByRow": {
       "front": 1,
-      "back": 0.75
+      "back": 0.8
     },
     "typeBonus": {
       "physical": 30,
@@ -398,7 +398,7 @@
     },
     "damageDealtByRow": {
       "front": 1,
-      "back": 0.75
+      "back": 0.9
     },
     "typeBonus": {
       "physical": 30,
@@ -450,7 +450,7 @@
       "back": 0.8
     },
     "typeBonus": {
-      "physical": 30,
+      "physical": 35,
       "magic": 0
     },
     "vulnerability": {
@@ -474,7 +474,7 @@
       "front",
       "back"
     ],
-    "range": 1,
+    "range": 2,
     "canCounter": true,
     "counterPower": 1,
     "basicSkillId": "cavalry-charge-2",
@@ -499,7 +499,7 @@
       "back": 1
     },
     "typeBonus": {
-      "physical": 40,
+      "physical": 30,
       "magic": 0
     },
     "vulnerability": {
@@ -1787,5 +1787,53 @@
       "action": 0
     },
     "cleanseOnHeal": true
+  },
+  {
+    "id": "lord",
+    "name": "군주",
+    "family": "lord",
+    "tier": 1,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "counterPower": 1,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 1,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 24,
+      "replenish": 2,
+      "dismiss": 2
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 10,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 10
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 1,
+      "intellect": 1,
+      "speed": 0,
+      "action": 1
+    },
+    "autoBuffSkillId": "lord-presence"
   }
 ]

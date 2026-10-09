@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { lineupIssue, runCampaign, startCampaign } from '@samgukji/battle-engine';
-import { campaign, defaultBalance, gameData, resolveCampaign } from '../src';
+import { campaign, campaignFile as savedCampaignFile, defaultBalance, gameData, resolveCampaign } from '../src';
 
 // 캠페인 데이터(data/campaign.json)가 지켜야 하는 구조 규칙. 숫자는 계속 바뀌므로 값은 고정하지 않는다.
 describe('캠페인 데이터', () => {
@@ -50,7 +50,7 @@ function campaignFile() {
     name: campaign.name,
     startGold: campaign.startGold,
     startLevel: campaign.startLevel,
-    startPreset: 'shuStart',
+    startPreset: savedCampaignFile.startPreset,
     battles: [],
     exp: campaign.exp,
     promotionLevels: campaign.promotionLevels,

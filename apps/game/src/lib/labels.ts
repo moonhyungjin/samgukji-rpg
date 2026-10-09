@@ -9,6 +9,7 @@ export const FAMILY_LABEL: Record<Family, string> = {
   strategist: '책사',
   taoist: '도사',
   geomancer: '풍수사',
+  lord: '군주',
 };
 
 /** 버프가 올리는 스탯 */

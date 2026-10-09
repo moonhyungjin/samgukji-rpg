@@ -1,6 +1,6 @@
 // 전투 엔진의 공용 타입. React/PixiJS/DOM에 의존하지 않는다.
 
-export const FAMILIES = ['infantry', 'shield', 'cavalry', 'archer', 'strategist', 'taoist', 'geomancer'] as const;
+export const FAMILIES = ['infantry', 'shield', 'cavalry', 'archer', 'strategist', 'taoist', 'geomancer', 'lord'] as const;
 export type Family = (typeof FAMILIES)[number];
 
 export type Row = 'front' | 'back';
@@ -180,6 +180,11 @@ export interface UnitTypeData {
   troopScale?: number;
   /** true이면 이 병종의 치유가 대상의 디버프를 모두 지운다 (가인, 신선). 생략하면 false */
   cleanseOnHeal?: boolean;
+  /**
+   * 자동 개인 버프: 1라운드가 시작될 때 이 버프 스킬(kind buff)이 AP를 쓰지 않고 자기 자신에게 한 번 걸린다 (군주).
+   * 범위(area)는 무시하고 자신만 받는다. 1라운드의 행동 순서는 버프 전에 정해진다. 생략하면 없음
+   */
+  autoBuffSkillId?: string;
   /** 병종 기본 AP. 전투 총 AP = 병종 기본 AP + 캐릭터 행동력으로 얻는 추가 AP (생략하면 0) */
   baseAp?: number;
   /** 징병 단가(병사 1명당 돈). 아직 전투에서는 쓰지 않는다 (돈 체계가 생기면 쓴다) */

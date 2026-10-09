@@ -787,3 +787,31 @@ Balance Lab의 "파일에 저장"을 누를 때마다 자동으로 덧붙는다 
 - skills.alchemist-poison-smoke.power: 1.3 → 1.1
 - skills.alchemist-poison-smoke.debuff.chance: 100 → 75
 - skills.sage-poison-smoke.power: 2 → 1.5
+
+## 2026-10-09 18:25 — 병종
+- unitTypes.charge-cavalry.range: 1 → 2
+
+## 2026-10-09 18:27 — 병종
+- unitTypes.cavalry.damageDealtByRow.back: 0.75 → 0.8
+- unitTypes.light-cavalry.damageDealtByRow.back: 0.75 → 0.9
+- unitTypes.heavy-cavalry.typeBonus.physical: 30 → 35
+- unitTypes.charge-cavalry.typeBonus.physical: 40 → 30
+
+## 2026-10-09 — 병종, 스킬, 장수, 기본 편성, 캠페인 (에이전트 수동 기록)
+메모: 사용자 결정. 주인공을 조조로 하고 "군주" 계열(모든 군주가 쓰는 공통 병종)을 새로 둔다. 근접이고 보병보다 균형형, 초반에는 자동 개인 버프만 (범위 버프는 2차 승급부터). 1장 일행은 조조(군주)·하후돈(보병)·조인(방패병)·하후연(궁병). 기병은 이벤트로 늦게 준다 (하후돈, 관우). 값은 모두 임시
+- + unitTypes.lord: 군주 (family lord, 일반공격 infantry-attack(공용), 자동 버프 lord-presence, 스탯 보정 방어+1 지력+1 행동력+1, 병종 보정 물리 10, 취약 책략 10)
+- + skills.lord-presence: 위풍 (자동 버프: 공격 +1, 방어 +1)
+- + characters.caoCao: 조조 (군주, 공6 방5 지7 속5 행동력3 외교6 내정8 매력8)
+- + characters.caoRen: 조인 (방패병, 공5 방7 지4 속4 행동력3 외교3 내정5 매력5)
+- characters.xiahouDun.unitType: cavalry → infantry
+- characters.guanYu.unitType: cavalry → infantry
+- characters.liuBei.unitType: infantry → lord
+- presets.shuStart.lineup: liuBei의 병종 infantry → lord
+- + presets.weiStart: 위 초반(조조군) [caoCao(전, 군주), xiahouDun(전, 보병), caoRen(전, 방패병), xiahouYuan(후, 궁병)]
+- campaign.startPreset: shuStart → weiStart
+
+## 2026-10-09 — 지도 (에이전트 수동 기록)
+메모: 사용자 요청. 주인공이 조조가 되어(설계 문서 05) 1장 지도를 하북(유비군)에서 연주(조조군) 초안으로 바꾼다. 하북 지도는 git 기록(708e5da)에 있다. 중립 지역의 수비 부대는 아직 관군 편성이 없어 황건적 편성을 임시로 쓴다
+- map: 황건적 토벌 (하북) 7지역 → 황건적 토벌 (연주) 8지역
+- 세력: 조조군(플레이어) · 청주 황건적 · 연주 관부(중립)
+- 동군(조조군, 성 1: 동무양) / 진류·제음·산양(중립, 성 2씩) / 동평(성 2, 쉬움 Lv1) · 임성(성 2, 보통 Lv2) · 태산(성 3, Lv3) · 제북(성 4, 어려움 Lv4~6, 목표)
