@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>삼국지 RPG 전투 UI 독립 에셋 카탈로그 (전국란스 풍)</title>
+  <style>
+    :root {
+      --bg: #0d1217;
+      --card-bg: #141b22;
+      --border: #2d3846;
+      --gold: #d4a754;
+      --gold-light: #f3d489;
+      --gold-dark: #8a6421;
+      --text: #e6edf3;
+      --text-dim: #8b949e;
+      --accent: #3fb950;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+      padding: 32px 24px;
+      line-height: 1.5;
+    }
+    .header {
+      max-width: 1400px;
+      margin: 0 auto 32px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .title-area h1 {
+      font-size: 28px;
+      color: var(--gold-light);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+    .title-area p {
+      color: var(--text-dim);
+      font-size: 14px;
+      margin-top: 6px;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: var(--card-bg);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .btn-toggle {
+      background: #21262d;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-toggle:hover {
+      border-color: var(--gold);
+      color: var(--gold-light);
+    }
+    .btn-toggle.active {
+      background: linear-gradient(180deg, #443419, #231a09);
+      border-color: var(--gold);
+      color: var(--gold-light);
+      box-shadow: 0 0 10px rgba(212, 167, 84, 0.3);
+    }
+
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+    .category-section {
+      background: rgba(20, 27, 34, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .category-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(212, 167, 84, 0.2);
+      padding-bottom: 10px;
+    }
+    .category-title span {
+      font-size: 13px;
+      color: var(--text-dim);
+      font-weight: normal;
+    }
+    .asset-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .asset-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.15s, border-color 0.2s;
+    }
+    .asset-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-2px);
+    }
+    .preview-box {
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Background styles for transparent checking */
+    .bg-checker {
+      background-color: #1a222c;
+      background-image: 
+        linear-gradient(45deg, #121820 25%, transparent 25%), 
+        linear-gradient(-45deg, #121820 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #121820 75%), 
+        linear-gradient(-45deg, transparent 75%, #121820 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    }
+    .bg-dark {
+      background-color: #0b0f13;
+    }
+    .bg-light {
+      background-color: #e5dec9;
+    }
+
+    .preview-box img {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+      image-rendering: auto;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+      transition: transform 0.2s ease;
+    }
+    .preview-box:hover img {
+      transform: scale(1.15);
+    }
+    .asset-info {
+      padding: 12px 16px;
+      background: #11161d;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .asset-name {
+      font-weight: 700;
+      color: #fff;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .badge-trans {
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(63, 185, 80, 0.2);
+      color: #7ee787;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(63, 185, 80, 0.4);
+    }
+    .badge-solid {
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(88, 166, 255, 0.15);
+      color: #79c0ff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(88, 166, 255, 0.3);
+    }
+    .asset-dims {
+      color: var(--text-dim);
+    }
+    .asset-path {
+      color: #8b949e;
+      font-family: monospace;
+      font-size: 11px;
+      background: #090d11;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+    .asset-path:hover {
+      background: #1f2732;
+      color: var(--gold-light);
+    }
+    .asset-path span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .copy-hint {
+      font-size: 10px;
+      color: var(--gold);
+      margin-left: 6px;
+      flex-shrink: 0;
+    }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #238636;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="title-area">
+      <h1>
+        <span>⚔️ 삼국지 RPG 독립 UI 에셋 카탈로그</span>
+      </h1>
+      <p>전국란스(전술 SRPG) 스타일 3D 양각 황동 프레임 & 배지 독립 에셋 (Web App / PixiJS / React 호환)</p>
+    </div>
+    <div class="controls">
+      <span style="font-size: 13px; color: var(--text-dim); margin-right: 4px;">테마:</span>
+      <button class="btn-toggle active" id="btnThemeDark" onclick="setTheme('dark')">다크 테마 (기본)</button>
+      <button class="btn-toggle" id="btnThemeLight" onclick="setTheme('light')">라이트 테마 (양지/비단)</button>
+      <div style="width: 1px; height: 18px; background: var(--border); margin: 0 4px;"></div>
+      <span style="font-size: 13px; color: var(--text-dim); margin-right: 4px;">배경:</span>
+      <button class="btn-toggle active" id="btnBgCheck" onclick="setBg('checker')">체커</button>
+      <button class="btn-toggle" id="btnBgDark" onclick="setBg('dark')">다크</button>
+      <button class="btn-toggle" id="btnBgLight" onclick="setBg('light')">라이트</button>
+    </div>
+  </header>
+
+  <main class="main-container" id="catalogContent">
+    <!-- Populated dynamically by JS -->
+  </main>
+
+  <div class="toast" id="toast">경로가 클립보드에 복사되었습니다!</div>
+
+  <script>
+    let currentTheme = 'dark';
+    let currentBg = 'checker';
+
+    const ASSET_DATA = [
+      {
+        category: "1. 유닛 완성 패널 (선택 / 비선택 / 가드)",
+        sub: "전투 화면 하단 지휘 덱에 바로 탑재할 수 있는 완성형 지휘관 카드",
+        items: [
+          { name: "card_liu_bei.png", title: "유비 패널 (비선택/일반)", darkSize: "511 × 112", lightSize: "497 × 99", trans: false },
+          { name: "card_guan_yu_selected.png", title: "관우 패널 (선택 활성/골드 발광)", darkSize: "523 × 128", lightSize: "475 × 120", trans: false },
+          { name: "card_guan_yu.png", title: "관우 패널 (외곽 발광 제외)", darkSize: "511 × 116", lightSize: "463 × 108", trans: false },
+          { name: "card_zhang_fei_guard.png", title: "장비 패널 (가드 50% 배지 도킹)", darkSize: "511 × 128", lightSize: "497 × 127", trans: false },
+          { name: "card_zhang_fei.png", title: "장비 패널 (본체 프레임)", darkSize: "511 × 112", lightSize: "497 × 99", trans: false },
+        ]
+      },
+      {
+        category: "2. 캐릭터 개별 초상화 (흉상 + 황동 액자)",
+        sub: "개별 유닛 카드, 턴 오더 레일 타임라인, 상태창 등에 쓰이는 규격화 액자 흉상",
+        items: [
+          { name: "portrait_liu_bei.png", title: "유비 액자 흉상 (劉備)", darkSize: "92 × 100", lightSize: "95 × 100", trans: false },
+          { name: "portrait_guan_yu.png", title: "관우 액자 흉상 (關羽)", darkSize: "92 × 100", lightSize: "95 × 100", trans: false },
+          { name: "portrait_zhang_fei.png", title: "장비 액자 흉상 (張飛)", darkSize: "92 × 100", lightSize: "95 × 100", trans: false },
+        ]
+      },
+      {
+        category: "3. 클래스 / 병종 방패 문장 (Class Emblems)",
+        sub: "보병, 기병, 방패병을 상징하는 황동 테두리 문장 방패 (투명 RGBA)",
+        items: [
+          { name: "class_infantry_liu_trans.png", title: "보병 문장 방패 (劉 녹색)", darkSize: "50 × 57", lightSize: "54 × 59", trans: true },
+          { name: "class_cavalry_spears_trans.png", title: "기병 문장 방패 (교차창 황동)", darkSize: "51 × 57", lightSize: "56 × 59", trans: true },
+          { name: "class_shield_guard_trans.png", title: "방패병 문장 방패 (張 / 적색)", darkSize: "51 × 57", lightSize: "58 × 59", trans: true },
+        ]
+      },
+      {
+        category: "4. 특수 버프 / 상태 배지 및 현판 (Badges & Plaques)",
+        sub: "가드 태세 배지, 2라운드 용머리 헤더 현판, 사기 현판 (투명 RGBA)",
+        items: [
+          { name: "badge_guard_50_trans.png", title: "가드 50% 황동 방패 배지", darkSize: "138 × 41", lightSize: "112 × 40", trans: true },
+          { name: "badge_round_2_trans.png", title: "2 라운드 용머리 현판", darkSize: "358 × 47", lightSize: "357 × 43", trans: true },
+          { name: "badge_morale_trans.png", title: "사기 (士氣) 중앙 현판", darkSize: "164 × 48", lightSize: "200 × 55", trans: true },
+        ]
+      },
+      {
+        category: "5. 전투 전술 상태 아이콘 (Tactical HUD Icons)",
+        sub: "부대원 수, 계급, 기동력, 돌격, 방패벽, 괴력, 궁술 등 전투 상태 표시",
+        items: [
+          { name: "icon_troops.png", title: "👥 부대 인원수 (군중)", darkSize: "44 × 46", lightSize: "46 × 45", trans: false },
+          { name: "icon_rank2.png", title: "🔰 2단계 계급 / 사기", darkSize: "45 × 46", lightSize: "46 × 45", trans: false },
+          { name: "icon_cavalry.png", title: "🐎 기마 / 기동력", darkSize: "47 × 46", lightSize: "46 × 45", trans: false },
+          { name: "icon_charge.png", title: "🗡️ 돌격 / 창술 공격", darkSize: "46 × 46", lightSize: "46 × 45", trans: false },
+          { name: "icon_rank3.png", title: "〽️ 3단계 계급 / 진형", darkSize: "45 × 45", lightSize: "46 × 45", trans: false },
+        ]
+      },
+      {
+        category: "6. AP 게이지 큐브 & 바 (Action Points)",
+        sub: "전국란스 특유의 3D 골드 큐브 AP (사용 가능 / 소진 / 4연속 세트)",
+        items: [
+          { name: "ap_cube_available_trans.png", title: "사용 가능 AP 골드 큐브", darkSize: "25 × 25", lightSize: "25 × 25", trans: true },
+          { name: "ap_cube_depleted_trans.png", title: "소진된 AP 다크 큐브", darkSize: "25 × 25", lightSize: "25 × 25", trans: true },
+          { name: "ap_bar_4_full_trans.png", title: "AP 바 (4칸 전체 활성)", darkSize: "96 × 29", lightSize: "96 × 29", trans: true },
+          { name: "ap_bar_3_active_trans.png", title: "AP 바 (3칸 활성 + 1칸 소진)", darkSize: "96 × 29", lightSize: "96 × 29", trans: true },
+          { name: "ap_bar_2_active_trans.png", title: "AP 바 (2칸 활성 + 2칸 소진)", darkSize: "96 × 29", lightSize: "96 × 29", trans: true },
+          { name: "ap_bar_1_active_trans.png", title: "AP 바 (1칸 활성 + 3칸 소진)", darkSize: "96 × 29", lightSize: "96 × 29", trans: true },
+        ]
+      },
+      {
+        category: "7. 체력바 캡슐 (HP Gauge Bars)",
+        sub: "100%, 76%, 42%/54% 체력바 메탈릭 캡슐 게이지 (투명 RGBA)",
+        items: [
+          { name: "hp_bar_100_trans.png", title: "체력바 100% 풀 게이지", darkSize: "273 × 17", lightSize: "203 × 19", trans: true },
+          { name: "hp_bar_76_trans.png", title: "체력바 76% 중 게이지", darkSize: "273 × 17", lightSize: "203 × 19", trans: true },
+          { name: "hp_bar_42_trans.png", title: "체력바 경고 게이지", darkSize: "273 × 17", lightSize: "203 × 19", trans: true },
+        ]
+      },
+      {
+        category: "8. 전투 프레임 & 우세도 게이지 (Frames & Battle HUD)",
+        sub: "전국란스 시그니처 사기 줄다리기 바 & 황동 코너 브래킷 (투명 RGBA)",
+        items: [
+          { name: "morale_tug_bar_trans.png", title: "사기/우세도 줄다리기 바 (청 vs 적)", darkSize: "364 × 32", lightSize: "421 × 34", trans: true },
+          { name: "corner_bracket_left_trans.png", title: "좌측 황동 당초 코너 브래킷", darkSize: "78 × 54", lightSize: "90 × 75", trans: true },
+          { name: "corner_bracket_angular_l_trans.png", title: "90도 각형 황동 코너 브래킷 L", darkSize: "54 × 52", lightSize: "80 × 75", trans: true },
+          { name: "corner_bracket_angular_r_trans.png", title: "90도 각형 황동 코너 브래킷 R", darkSize: "44 × 52", lightSize: "80 × 75", trans: true },
+        ]
+      },
+      {
+        category: "9. 조작 버튼 (Interactive Command Buttons)",
+        sub: "전투 로그, 2배속 재생, 자동 전투 황동 테두리 버튼 (투명 RGBA)",
+        items: [
+          { name: "btn_battle_log_trans.png", title: "[전투 로그] 두루마리 버튼", darkSize: "111 × 41", lightSize: "93 × 50", trans: true },
+          { name: "btn_speed_2x_trans.png", title: "[2배속] 패스트포워드 버튼", darkSize: "90 × 41", lightSize: "66 × 50", trans: true },
+          { name: "btn_auto_trans.png", title: "[자동] 톱니바퀴 자동전투 버튼", darkSize: "80 × 41", lightSize: "77 × 50", trans: true },
+        ]
+      },
+      {
+        category: "10. 배경 데코 & 비단 군기 (Decorations & Banners)",
+        sub: "프레임 장식용 황동 모서리 및 촉군 비단 군기 (투명 RGBA)",
+        items: [
+          { name: "decor_acanthus_corner_1_trans.png", title: "당초무늬 황동 코너 장식 1", darkSize: "56 × 84", lightSize: "71 × 104", trans: true },
+          { name: "decor_acanthus_corner_2_trans.png", title: "당초무늬 황동 가로 연장 장식 2", darkSize: "105 × 84", lightSize: "109 × 104", trans: true },
+          { name: "banner_shu_silk_trans.png", title: "촉군 청록 비단 군기 (劉 / 용)", darkSize: "67 × 115", lightSize: "66 × 132", trans: true },
+        ]
+      }
+    ];
+
+    function renderCatalog() {
+      const container = document.getElementById('catalogContent');
+      container.innerHTML = '';
+
+      ASSET_DATA.forEach(cat => {
+        const section = document.createElement('section');
+        section.className = 'category-section';
+
+        const title = document.createElement('h2');
+        title.className = 'category-title';
+        title.innerHTML = `${cat.category} <span>— ${cat.sub}</span>`;
+        section.appendChild(title);
+
+        const grid = document.createElement('div');
+        grid.className = 'asset-grid';
+
+        cat.items.forEach(item => {
+          let fileName = item.name;
+          // Handle theme differences if any
+          if (currentTheme === 'light' && fileName === 'class_shield_guard_trans.png') {
+            fileName = 'class_shield_zhang_trans.png';
+          }
+          if (currentTheme === 'light' && fileName === 'icon_charge.png') {
+            fileName = 'icon_sword.png';
+          }
+          if (currentTheme === 'light' && fileName === 'corner_bracket_angular_l_trans.png') {
+            fileName = 'corner_bracket_right_trans.png';
+          }
+
+          const relativePath = `slices/${currentTheme}/${fileName}`;
+          const webPath = `/art/battle/ui/${currentTheme}/${fileName}`;
+          const dims = currentTheme === 'dark' ? item.darkSize : item.lightSize;
+
+          const card = document.createElement('div');
+          card.className = 'asset-card';
+
+          card.innerHTML = `
+            <div class="preview-box bg-${currentBg}">
+              <img src="${relativePath}" alt="${item.title}" onerror="this.src='slices/dark/${item.name}'">
+            </div>
+            <div class="asset-info">
+              <div class="asset-name">
+                <span>${item.title}</span>
+                <span class="${item.trans ? 'badge-trans' : 'badge-solid'}">${item.trans ? 'RGBA 투명' : 'RGB 솔리드'}</span>
+              </div>
+              <div class="asset-dims">규격: ${dims} px</div>
+              <div class="asset-path" onclick="copyPath('${webPath}')" title="클릭하여 웹 경로 복사">
+                <span>${fileName}</span>
+                <span class="copy-hint">복사 📋</span>
+              </div>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+
+        section.appendChild(grid);
+        container.appendChild(section);
+      });
+    }
+
+    function setTheme(theme) {
+      currentTheme = theme;
+      document.getElementById('btnThemeDark').classList.toggle('active', theme === 'dark');
+      document.getElementById('btnThemeLight').classList.toggle('active', theme === 'light');
+      renderCatalog();
+    }
+
+    function setBg(bg) {
+      currentBg = bg;
+      document.getElementById('btnBgCheck').classList.toggle('active', bg === 'checker');
+      document.getElementById('btnBgDark').classList.toggle('active', bg === 'dark');
+      document.getElementById('btnBgLight').classList.toggle('active', bg === 'light');
+      document.querySelectorAll('.preview-box').forEach(el => {
+        el.className = `preview-box bg-${bg}`;
+      });
+    }
+
+    function copyPath(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(`복사됨: ${text}`);
+      }).catch(() => {
+        showToast(text);
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    // Init with URL param support
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('theme')) {
+      setTheme(urlParams.get('theme'));
+    } else {
+      renderCatalog();
+    }
+  </script>
+</body>
+</html>

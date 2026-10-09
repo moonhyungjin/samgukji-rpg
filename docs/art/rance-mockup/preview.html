@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>전국란스 7 × 삼국지 전투 UI 목업 갤러리 & 인터랙티브 뷰어</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "Segoe UI", sans-serif;
+      padding: 30px 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .main-header {
+      border-bottom: 2px solid #30363d;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 28px;
+      color: #f5c518;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    p.desc {
+      color: #8b949e;
+      font-size: 15px;
+    }
+
+    /* 최상단 인터랙티브 뷰어 배너 */
+    .interactive-banner {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 2px solid #f5c518;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 36px;
+      box-shadow: 0 8px 30px rgba(245, 197, 24, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+    .banner-info h2 {
+      font-size: 22px;
+      color: #ffd54f;
+      margin-bottom: 8px;
+    }
+    .banner-info p {
+      color: #cbd5e1;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .banner-btn {
+      background: linear-gradient(180deg, #f59e0b, #d97706);
+      border: 2px solid #fef08a;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 900;
+      padding: 14px 28px;
+      border-radius: 6px;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .banner-btn:hover {
+      background: linear-gradient(180deg, #fbbf24, #b45309);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 197, 24, 0.5);
+    }
+
+    /* 섹션 제목 */
+    .section-title {
+      font-size: 20px;
+      color: #58a6ff;
+      margin: 32px 0 16px 0;
+      padding-left: 10px;
+      border-left: 4px solid #58a6ff;
+    }
+
+    /* 카드 */
+    .mockup-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      margin-bottom: 32px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .card-header {
+      padding: 16px 20px;
+      background: #21262d;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-header h2 {
+      font-size: 18px;
+      color: #f1f5f9;
+    }
+    .card-badge {
+      background: #1f6feb;
+      color: #fff;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 12px;
+    }
+    .img-wrapper {
+      padding: 16px;
+      background: #090d12;
+      text-align: center;
+    }
+    .img-wrapper img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+      transition: transform 0.2s ease;
+    }
+    .img-wrapper img:hover {
+      transform: scale(1.01);
+    }
+    .features {
+      padding: 16px 20px;
+      background: #161b22;
+    }
+    .features ul {
+      margin-left: 20px;
+      color: #c9d1d9;
+      font-size: 14px;
+    }
+    .features li {
+      margin-bottom: 6px;
+    }
+
+    /* 그리드 2열 */
+    .two-col-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="main-header">
+      <h1>⚔️ 전국란스 7 × 삼국지 전투 UI 목업 허브</h1>
+      <p class="desc">전국란스 7의 1:1 정통 전투 틀(6대6 대칭 그리드, 래더 게이지, 가로 턴 레일)과 삼국지 비주얼(샘플 1 UI 테마 + 샘플 3 캐릭터 연출) 통합 시안입니다.</p>
+    </div>
+
+    <!-- 최상단 인터랙티브 라이브 뷰어 바로가기 배너 -->
+    <div class="interactive-banner">
+      <div class="banner-info">
+        <h2>🔥 1:1 인터랙티브 라이브 목업 v3.2 (3D 양각 & 흉상 비율 정밀 완성본)</h2>
+        <p>
+          공유해주신 <strong>cb4647e1 황동 코너 브래킷 1:1</strong>과 <strong>3D 양각(Bevel & Emboss) 금속 몰딩</strong>,<br>
+          그리고 <strong>캐릭터 얼굴 비대화 수정(단정한 흉상 비율 & 여백)</strong>을 완벽 반영했습니다.<br>
+          버튼 클릭으로 <strong>3대3 + 중앙 지휘 독 ↔ 6대6 전열/후열 모드 전환</strong>, <strong>장수 선택</strong>, <strong>대사 컷인</strong>을 직접 조작해보실 수 있습니다.
+        </p>
+      </div>
+      <a href="rance-faithful-preview.html" class="banner-btn" target="_self">
+        <span>🎮 인터랙티브 뷰어 열기 (F5 새로고침)</span>
+      </a>
+    </div>
+
+    <!-- 0. 최신 렌더링 완성 스크린샷 카드 -->
+    <h3 class="section-title">🏆 최신 렌더링 완성본 v3.2 (요청 사항 100% 반영)</h3>
+    <div class="mockup-card" style="border: 2px solid #f5c518; margin-bottom: 30px;">
+      <div class="card-header" style="background: linear-gradient(90deg, #1e293b, #0f172a);">
+        <h2 style="color: #ffd54f;">전국란스 7 틀 × 삼국지 최신 통합 전투 화면 (3D 양각 & 흉상 정밀 보정)</h2>
+        <span class="card-badge" style="background:#d97706; color:#fff;">최신 v3.2 확정안</span>
+      </div>
+      <div class="img-wrapper">
+        <a href="preview-rendered-perfect-final.png" target="_blank" title="클릭하여 원본 고화질 보기">
+          <img src="preview-rendered-perfect-final.png" alt="최신 완성본 v3.2 스크린샷">
+        </a>
+      </div>
+      <div class="features">
+        <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <li><strong>1. 캐릭터 얼굴 비율 정상화:</strong> 얼굴만 꽉 차던 오버 줌을 해제하고, 머리·목·어깨·복식이 품격 있게 드러나는 흉상 구도 및 여백 확보</li>
+          <li><strong>2. cb4647e1 1:1 황동 코너 브래킷:</strong> 단순 사각 라인이 아닌 실제 당초무늬 조각 장식철물을 4개 모서리에 정밀 부착</li>
+          <li><strong>3. 3D 양각(Bevel & Emboss) 몰딩:</strong> 상단·좌측 하이라이트 림, 하단·우측 그림자 홈, 내부 음각 골로 묵직한 칠기/청동 입체감 완성</li>
+          <li><strong>4. 활성 턴 관우 황금 양각 발광:</strong> 3D 금괴형 테두리와 황금 코너 브래킷이 은은한 아우라를 뿜어내는 활성 프레임 탑재</li>
+          <li><strong>5. 상단 현판 서체 통일:</strong> Noto Serif KR 고급 명조 서체, 3D 캡슐형 네온 그린 HP 바, 금괴형 AP 큐브, 가드 50% 배지</li>
+          <li><strong>6. 1:1 중앙 지휘 독 & 6대6 토글:</strong> 관우 흉상 + [돌격]/[대기] 정밀 버튼 + 예상 피해 186/반격 62 및 6대6 전열/후열 모드 즉시 전환</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 1. 사용자 전달 레퍼런스 비교 -->
+    <h3 class="section-title">📌 사용자 제공 핵심 레퍼런스 (요청 기준점)</h3>
+    <div class="two-col-grid">
+      <!-- 샘플 1 (UI 스타일) -->
+      <div class="mockup-card">
+        <div class="card-header">
+          <h2>샘플 1. 밝은 상아색 / 엔틱 골드 UI 테마 (지정)</h2>
+          <span class="card-badge" style="background:#238636;">UI 스타일 기준</span>
+        </div>
+        <div class="img-wrapper">
+          <a href="user-sample-1-light.jpg" target="_blank" title="클릭하여 원본 보기">
+            <img src="user-sample-1-light.jpg" alt="샘플 1 밝은 상아색 UI">
+          </a>
+        </div>
+        <div class="features">
+          <ul>
+            <li><strong>카드 바탕:</strong> 밝은 상아색/크림 베이지 배경에 고급스러운 앤틱 골드/황동 프레임</li>
+            <li><strong>HP / 병력:</strong> 선명한 에메랄드 그린 체력바와 또렷한 병력 수치 (920/1000)</li>
+            <li><strong>AP 표시:</strong> 보석처럼 빛나는 황금색 네모 블록 카운터</li>
+            <li><strong>장수 직인:</strong> 붉은색 각인 한자 도장(劉, 關, 張)과 병종 배지</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 샘플 3 (캐릭터 연출) -->
+      <div class="mockup-card">
+        <div class="card-header">
+          <h2>샘플 3. 전국란스 7 원작 전장 캐릭터 연출 (지정)</h2>
+          <span class="card-badge" style="background:#8957e5;">캐릭터 연출 기준</span>
+        </div>
+        <div class="img-wrapper">
+          <a href="rance-original-sample-3.png" target="_blank" title="클릭하여 원본 보기">
+            <img src="rance-original-sample-3.png" alt="샘플 3 전국란스 캐릭터 연출">
+          </a>
+        </div>
+        <div class="features">
+          <ul>
+            <li><strong>전장 군단 도열:</strong> 장수가 선봉에 서고 소대 병사들이 뒤를 호위하는 2D 횡스크롤 진형</li>
+            <li><strong>대사 컷인:</strong> 장수 얼굴 일러스트와 역동적인 대사 말풍선 ("이 몸, 화려한 등장!")</li>
+            <li><strong>전국란스 틀:</strong> 상단 우세도 바 + 가로 턴 레일 + 중앙 사다리 게이지 + 하단 6대6 대칭 카드</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 다크 톤 레퍼런스 -->
+    <div class="mockup-card">
+      <div class="card-header">
+        <h2>보조 샘플. 어두운 톤 (다크 칠기 / 골드) 테마</h2>
+        <span class="card-badge" style="background:#6e7681;">다크 모드 옵션</span>
+      </div>
+      <div class="img-wrapper">
+        <a href="user-sample-2-dark.jpg" target="_blank" title="클릭하여 원본 보기">
+          <img src="user-sample-2-dark.jpg" alt="다크 테마 레퍼런스">
+        </a>
+      </div>
+      <div class="features">
+        <ul>
+          <li>흑요석 흑칠 프레임과 금박 테두리를 적용한 중후한 야간/다크 테마 (인터랙티브 뷰어에서 원클릭으로 토글 가능)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 2. 이전 컨셉 아트 시안 2종 -->
+    <h3 class="section-title">🎨 초기 컨셉 아트 시안</h3>
+    <div class="two-col-grid">
+      <div class="mockup-card">
+        <div class="card-header">
+          <h2>컨셉 아트 1. 정통 타임라인 & 지휘 도크형</h2>
+        </div>
+        <div class="img-wrapper">
+          <a href="sengoku-rance-mockup-1.jpg" target="_blank">
+            <img src="sengoku-rance-mockup-1.jpg" alt="시안 1">
+          </a>
+        </div>
+      </div>
+      <div class="mockup-card">
+        <div class="card-header">
+          <h2>컨셉 아트 2. 옻칠 프레임 & 아케이드 SRPG형</h2>
+        </div>
+        <div class="img-wrapper">
+          <a href="sengoku-rance-mockup-2.jpg" target="_blank">
+            <img src="sengoku-rance-mockup-2.jpg" alt="시안 2">
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>전국란스 7 × 삼국지 - 정통 6vs6 전략 RPG 전투 화면</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700;900&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    body {
+      background: #020406;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "Noto Serif KR", serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      overflow-x: hidden;
+    }
+
+    /* 메인 게임 윈도우 (1024x768 전국란스 4:3 표준 규격) */
+    .game-window {
+      width: 1024px;
+      height: 768px;
+      background: #000;
+      border: 3px solid #8e7343;
+      border-top-color: #d4af37;
+      border-bottom-color: #4a3818;
+      border-radius: 4px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95), 0 0 0 1px #1a1208;
+      overflow: hidden;
+    }
+
+    /* ========================================================
+       1. 최상단 세력 우세도 줄다리기 바 (height: 44px)
+       ======================================================== */
+    .battle-header-bar {
+      width: 100%;
+      height: 44px;
+      background: #06090d;
+      border-bottom: 2px solid #5a4625;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      position: relative;
+      z-index: 10;
+    }
+    .faction-label {
+      font-size: 16px;
+      font-weight: 900;
+      color: #ffd700;
+      font-family: 'Noto Serif KR', serif;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 2;
+    }
+    .tug-gauge-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 2;
+    }
+    .round-plaque-img {
+      height: 18px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.9));
+      margin-bottom: 1px;
+    }
+    .tug-bar-track {
+      position: relative;
+      width: 420px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tug-bar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+    }
+    .tug-pointer {
+      position: absolute;
+      top: -1px;
+      left: 54%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 10px solid #ffeb3b;
+      filter: drop-shadow(0 2px 4px #000);
+      z-index: 12;
+      animation: pointer-bob 1.5s infinite alternate ease-in-out;
+      transition: left 0.4s ease;
+    }
+    @keyframes pointer-bob {
+      from { transform: translateX(-50%) translateY(0); }
+      to { transform: translateX(-50%) translateY(2px); }
+    }
+
+    /* ========================================================
+       2. 상단 2D 전장 필드 (height: 316px)
+       ======================================================== */
+    .battlefield-stage {
+      height: 316px;
+      background-image: url('sample2_battlefield.png');
+      background-size: cover;
+      background-position: center bottom;
+      position: relative;
+      border-bottom: 3px solid #1a202c;
+      overflow: hidden;
+    }
+
+    /* 관우 군단 발밑 황금 링 */
+    .commander-ground-ring {
+      position: absolute;
+      bottom: 60px;
+      left: 254px;
+      width: 105px;
+      height: 24px;
+      border: 3px solid #ffd700;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(255, 215, 0, 0.45) 0%, rgba(255, 215, 0, 0) 70%);
+      box-shadow: 0 0 16px #ffd700, inset 0 0 8px #ffd700;
+      animation: ring-pulse 2s infinite ease-in-out;
+      pointer-events: none;
+      z-index: 4;
+    }
+    @keyframes ring-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.85; }
+      50% { transform: scale(1.08); opacity: 1; box-shadow: 0 0 22px #ffeb3b; }
+    }
+
+    /* 대사 컷인 */
+    .speech-cutin-box {
+      position: absolute;
+      top: 14px;
+      left: 18px;
+      display: flex;
+      align-items: center;
+      background: rgba(10, 16, 26, 0.92);
+      border: 2px solid #ffd700;
+      border-radius: 4px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.85);
+      z-index: 8;
+      backdrop-filter: blur(4px);
+    }
+    .cutin-portrait {
+      width: 60px;
+      height: 60px;
+      border-right: 2px solid #ffd700;
+      overflow: hidden;
+      background: #000;
+    }
+    .cutin-portrait img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .cutin-body {
+      padding: 6px 14px;
+    }
+    .cutin-name {
+      font-size: 13px;
+      font-weight: 900;
+      color: #ffd700;
+      margin-bottom: 2px;
+    }
+    .cutin-text {
+      font-size: 12px;
+      color: #f8fafc;
+      letter-spacing: 0.02em;
+    }
+
+    /* 대미지 팝업 */
+    .damage-hit-popup {
+      position: absolute;
+      top: 90px;
+      right: 280px;
+      font-size: 52px;
+      font-weight: 900;
+      font-family: Impact, "Arial Black", sans-serif;
+      color: #ffeb3b;
+      -webkit-text-stroke: 2.5px #b91c1c;
+      text-shadow: 4px 4px 0 #7f1d1d, 0 0 24px #f97316;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 15;
+    }
+    .damage-hit-popup.animate {
+      animation: dmg-pop 0.8s ease-out forwards;
+    }
+    @keyframes dmg-pop {
+      0% { opacity: 0; transform: translateY(20px) scale(0.6); }
+      20% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+      70% { opacity: 1; transform: translateY(-18px) scale(1); }
+      100% { opacity: 0; transform: translateY(-35px) scale(0.9); }
+    }
+
+    /* 전장 피격 흔들림 */
+    .shake-effect {
+      animation: battlefield-shake 0.35s ease;
+    }
+    @keyframes battlefield-shake {
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-6px, 3px); }
+      40% { transform: translate(5px, -3px); }
+      60% { transform: translate(-4px, 2px); }
+      80% { transform: translate(3px, -1px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    /* ========================================================
+       3. 가로형 행동 순서 바 (Action Order Rail, height: 26px)
+       ======================================================== */
+    .turn-order-rail {
+      height: 26px;
+      background: #0d131a;
+      border-bottom: 2px solid #000;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 6px;
+      overflow: hidden;
+      z-index: 8;
+    }
+    .rail-label {
+      font-size: 10px;
+      font-weight: 900;
+      color: #94a3b8;
+      letter-spacing: 0.1em;
+      margin-right: 6px;
+    }
+    .turn-chip {
+      height: 18px;
+      padding: 0 8px;
+      font-size: 11px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      border-radius: 2px;
+      white-space: nowrap;
+      font-family: 'Noto Serif KR', serif;
+    }
+    .turn-chip.ally { background: #1e3a5f; color: #bfdbfe; border: 1px solid #3b82f6; }
+    .turn-chip.ally.current {
+      background: linear-gradient(180deg, #facc15, #ca8a04);
+      color: #000;
+      border: 1px solid #fef08a;
+      font-weight: 900;
+      box-shadow: 0 0 8px #facc15;
+    }
+    .turn-chip.enemy { background: #7f1d1d; color: #fecaca; border: 1px solid #ef4444; }
+
+    /* ========================================================
+       4. 하단 정통 전국란스 6 vs 6 유닛 그리드 (height: 356px)
+       ======================================================== */
+    .battle-grid-deck {
+      height: 356px;
+      background: #080c10 radial-gradient(circle at 50% 50%, #101722 0%, #080c10 100%);
+      display: flex;
+      padding: 8px 12px;
+      gap: 8px;
+      position: relative;
+    }
+
+    /* 좌/우 군단 그리드 (각 470px, 2열 x 3행) */
+    .army-slot-grid {
+      width: 470px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: repeat(3, 108px);
+      gap: 6px;
+    }
+
+    /* 중앙 정통 래더 게이지 (width: 36px) */
+    .center-ladder-column {
+      width: 36px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      background: #05080c;
+      border: 2px solid #5a4625;
+      border-radius: 3px;
+      padding: 6px 2px;
+      box-shadow: inset 0 0 10px #000;
+    }
+    .ladder-label {
+      font-size: 8.5px;
+      font-weight: 900;
+      color: #94a3b8;
+      letter-spacing: 0.05em;
+    }
+    .ladder-rungs-box {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 3px;
+      width: 100%;
+      align-items: center;
+      padding: 2px 0;
+    }
+    .ladder-rung {
+      width: 26px;
+      height: 5px;
+      background: #38bdf8;
+      border-radius: 1px;
+      box-shadow: 0 0 5px #38bdf8;
+    }
+    .ladder-rung.off {
+      background: #1e293b;
+      box-shadow: none;
+      opacity: 0.25;
+    }
+
+    /* ========================================================
+       [3D 양각 베벨 골드 몰딩 유닛 카드 (1:1 에셋 기반)]
+       ======================================================== */
+    .unit-card-slot {
+      height: 108px;
+      background: #0c1218 radial-gradient(circle at 45% 35%, #18222d 0%, #0d1319 75%, #070a0e 100%);
+      border: 3px solid #6b5536;
+      border-top-color: #dfbb6e;
+      border-left-color: #af8c4b;
+      border-right-color: #3b2c17;
+      border-bottom-color: #201509;
+      border-radius: 4px;
+      outline: 2px solid #140e06;
+      outline-offset: -3px;
+      display: flex;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255, 235, 150, 0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .unit-card-slot:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.95), inset 0 1px 2px rgba(255, 235, 150, 0.5);
+    }
+
+    /* 모서리 황동 코너 브래킷 */
+    .bracket-img {
+      position: absolute;
+      width: 13px;
+      height: 13px;
+      pointer-events: none;
+      z-index: 10;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+    }
+    .bracket-img.tl { top: 1px; left: 1px; }
+    .bracket-img.tr { top: 1px; right: 1px; transform: scaleX(-1); }
+    .bracket-img.bl { bottom: 1px; left: 1px; transform: scaleY(-1); }
+    .bracket-img.br { bottom: 1px; right: 1px; transform: scale(-1); }
+
+    /* [활성 장수: 황금빛 양각 네온 발광 프레임] */
+    .unit-card-slot.active-turn {
+      border: 3px solid #ffd700 !important;
+      border-top-color: #fff9c4 !important;
+      border-bottom-color: #b45309 !important;
+      outline: 1px solid #ffcc00 !important;
+      outline-offset: -3px;
+      box-shadow: 0 0 16px rgba(255, 204, 0, 0.85), 0 0 24px rgba(255, 180, 0, 0.45) !important;
+      animation: card-gold-pulse 1.8s infinite alternate;
+    }
+    @keyframes card-gold-pulse {
+      from { box-shadow: 0 0 12px rgba(255, 204, 0, 0.8); }
+      to { box-shadow: 0 0 22px rgba(255, 235, 59, 1); }
+    }
+
+    /* 카드 좌측: 정밀 흉상 액자 */
+    .card-portrait-box {
+      width: 70px;
+      height: 100%;
+      background: #080c10;
+      border-right: 2px solid #5a4625;
+      padding: 3px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .portrait-inner-frame {
+      width: 100%;
+      height: 100%;
+      border: 1px solid #78603e;
+      border-top-color: #9e7f42;
+      border-bottom-color: #3d2f1b;
+      border-radius: 2px;
+      overflow: hidden;
+      background: #000;
+    }
+    .portrait-inner-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* 카드 우측: 본문 정보 */
+    .card-info-box {
+      flex: 1;
+      padding: 4px 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-width: 0;
+    }
+    .card-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .name-badge-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .unit-name {
+      font-size: 15px;
+      font-weight: 900;
+      color: #fff;
+      font-family: 'Noto Serif KR', serif;
+      letter-spacing: 0.02em;
+    }
+    .class-crest-img {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+    }
+    .class-label {
+      font-size: 11px;
+      font-weight: bold;
+      color: #cbd5e1;
+      font-family: 'Noto Serif KR', serif;
+    }
+    .troops-number {
+      font-family: 'Cinzel', Consolas, serif;
+      font-weight: 900;
+      font-size: 11px;
+      color: #ffffff;
+      white-space: nowrap;
+    }
+    .troops-number .max-num {
+      color: #64748b;
+      font-size: 9.5px;
+    }
+
+    /* 메탈릭 캡슐 HP 바 */
+    .card-hp-track {
+      width: 100%;
+      height: 7px;
+      margin: 2px 0;
+      display: flex;
+      align-items: center;
+    }
+    .card-hp-img {
+      width: 100%;
+      height: 7px;
+      object-fit: fill;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+    }
+
+    /* 카드 하단 위젯 행 (AP 큐브 + 가드/전술 배지) */
+    .card-bottom-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .ap-cubes-group {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .ap-label {
+      font-size: 9.5px;
+      font-weight: 900;
+      color: #cbd5e1;
+      font-family: 'Cinzel', serif;
+    }
+    .ap-cube-row {
+      display: flex;
+      gap: 2px;
+    }
+    .ap-cube-icon {
+      width: 10px;
+      height: 10px;
+      object-fit: contain;
+    }
+
+    .guard-pill-asset {
+      height: 18px;
+      object-fit: contain;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+    }
+    .tactical-icon-mini {
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+    }
+
+    /* 빈 슬롯 (출전 대기 슬롯) */
+    .unit-card-slot.empty-slot {
+      background: rgba(12, 18, 24, 0.45);
+      border: 2px dashed #4a3b25;
+      outline: none;
+      box-shadow: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #475569;
+      font-size: 12px;
+      font-weight: bold;
+      font-family: 'Noto Serif KR', serif;
+    }
+
+    /* 부대 전멸 슬롯 */
+    .unit-card-slot.destroyed {
+      opacity: 0.45;
+      filter: grayscale(0.8);
+    }
+    .destroyed-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 900;
+      color: #ef4444;
+      background: rgba(0, 0, 0, 0.65);
+      letter-spacing: 0.1em;
+      text-shadow: 0 0 8px #000;
+      z-index: 11;
+    }
+
+    /* ========================================================
+       5. 관우 활성 커맨드 도킹 바 (하단 통합 지휘 패널)
+       ======================================================== */
+    .active-command-dock {
+      position: absolute;
+      bottom: 34px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 560px;
+      background: #090e15 radial-gradient(circle at 50% 30%, #151e2b 0%, #080c10 100%);
+      border: 2px solid #ffd700;
+      border-radius: 5px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.95), 0 0 16px rgba(255, 215, 0, 0.5);
+      padding: 8px 12px;
+      z-index: 25;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .dock-top-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 3px;
+    }
+    .dock-title-label {
+      font-size: 14px;
+      font-weight: 900;
+      color: #ffd700;
+      font-family: 'Noto Serif KR', serif;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dock-buttons-row {
+      display: flex;
+      gap: 8px;
+    }
+    .cmd-action-btn {
+      flex: 1;
+      height: 44px;
+      border: 2px solid #8e7343;
+      border-radius: 4px;
+      background: linear-gradient(180deg, #2a2213 0%, #161209 100%);
+      color: #f1f5f9;
+      font-size: 13.5px;
+      font-weight: 900;
+      font-family: 'Noto Serif KR', serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s;
+    }
+    .cmd-action-btn:hover {
+      border-color: #ffd700;
+      background: linear-gradient(180deg, #45361b 0%, #20170a 100%);
+      color: #ffd700;
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+      transform: translateY(-1px);
+    }
+    .cmd-action-btn.primary {
+      border-color: #ffd700;
+      background: linear-gradient(180deg, #d4af37 0%, #8c6d17 100%);
+      color: #000;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+    .cmd-action-btn.primary:hover {
+      background: linear-gradient(180deg, #ffe066 0%, #aa851c 100%);
+      box-shadow: 0 0 16px rgba(255, 215, 0, 0.9);
+    }
+    .dock-stats-preview-row {
+      display: flex;
+      justify-content: space-around;
+      background: #040608;
+      border: 1px solid #1e293b;
+      border-radius: 3px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    /* ========================================================
+       6. 최하단 전국란스 정통 시스템 푸터 바 (height: 26px)
+       ======================================================== */
+    .system-footer-bar {
+      height: 26px;
+      background: #101620;
+      border-top: 1px solid #2d3748;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #94a3b8;
+      gap: 16px;
+      z-index: 10;
+    }
+    .system-menu-btn {
+      background: #b91c1c;
+      color: #fff;
+      padding: 1px 7px;
+      border-radius: 2px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 메인 게임 윈도우 (1024x768 전국란스 규격) -->
+  <div class="game-window">
+
+    <!-- 1. 최상단 세력 우세도 줄다리기 바 -->
+    <div class="battle-header-bar">
+      <div class="faction-label">
+        <span style="color: #4ade80;">蜀軍</span> (촉군)
+      </div>
+
+      <div class="tug-gauge-container">
+        <img src="../../../apps/game/public/art/battle/ui/dark/badge_round_2_trans.png" class="round-plaque-img" alt="2 라운드">
+        <div class="tug-bar-track">
+          <img src="../../../apps/game/public/art/battle/ui/dark/morale_tug_bar_trans.png" class="tug-bar-img" alt="사기 바">
+          <div class="tug-pointer" id="tugPointer"></div>
+        </div>
+      </div>
+
+      <div class="faction-label">
+        <span style="color: #facc15;">黃巾軍</span> (황건군)
+      </div>
+    </div>
+
+    <!-- 2. 상단 2D 전장 필드 -->
+    <div class="battlefield-stage" id="battlefield">
+      <!-- 관우 군단 발밑 황금 링 -->
+      <div class="commander-ground-ring"></div>
+
+      <!-- 타격 대미지 팝업 -->
+      <div class="damage-hit-popup" id="dmgPopup">186</div>
+
+      <!-- 장수 대사 컷인 -->
+      <div class="speech-cutin-box">
+        <div class="cutin-portrait">
+          <img src="../../../apps/game/public/art/battle/ui/dark/portrait_guan_yu.png" id="cutinFace" alt="관우">
+        </div>
+        <div class="cutin-body">
+          <div class="cutin-name" id="cutinName">관운장 (關羽)</div>
+          <div class="cutin-text" id="cutinText">"관운장이 여기 있거늘, 적의 두목은 어찌 목을 내놓지 않는가!"</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 가로형 행동 순서 바 (Action Order Rail) -->
+    <div class="turn-order-rail">
+      <span class="rail-label">TURN ORDER</span>
+      <div class="turn-chip ally current">🐴 관우 [차례]</div>
+      <div class="turn-chip enemy">🛡️ 황건 방패병</div>
+      <div class="turn-chip ally">⚔️ 유비</div>
+      <div class="turn-chip enemy">🏹 황건 궁병A</div>
+      <div class="turn-chip ally">🛡️ 장비</div>
+      <div class="turn-chip enemy">⚔️ 황건 보병</div>
+      <div class="turn-chip ally">🐎 촉군 기병</div>
+    </div>
+
+    <!-- 4. 하단 정통 전국란스 6 vs 6 유닛 그리드 (총 12개 슬롯) -->
+    <div class="battle-grid-deck">
+
+      <!-- ================= 좌측: 아군 6슬롯 (2열 x 3행) ================= -->
+      <div class="army-slot-grid">
+
+        <!-- [후열 1: 상단] 촉군 보병대 -->
+        <div class="unit-card-slot" onclick="selectCard('rear1')">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tr">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img bl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img br">
+          <div class="card-portrait-box"><div class="portrait-inner-frame"><img src="../../../apps/game/public/art/battle/shu-infantry-idle-v1.png" style="object-position: top;" alt="촉군 보병"></div></div>
+          <div class="card-info-box">
+            <div class="card-top-row">
+              <div class="name-badge-group"><span class="unit-name">촉군 보병</span><span class="class-label">보병</span></div>
+              <div class="troops-number">800<span class="max-num">/800</span></div>
+            </div>
+            <div class="card-hp-track"><img src="../../../apps/game/public/art/battle/ui/dark/hp_bar_100_trans.png" class="card-hp-img"></div>
+            <div class="card-bottom-row">
+              <div class="ap-cubes-group"><span class="ap-label">AP</span><div class="ap-cube-row"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"></div></div>
+              <img src="../../../apps/game/public/art/battle/ui/dark/icon_troops.png" class="tactical-icon-mini">
+            </div>
+          </div>
+        </div>
+
+        <!-- [전열 1: 상단] 유비 (보병) -->
+        <div class="unit-card-slot" id="cardLiuBei" onclick="selectCard('liubei')">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tr">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img bl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img br">
+          <div class="card-portrait-box"><div class="portrait-inner-frame"><img src="../../../apps/game/public/art/battle/ui/dark/portrait_liu_bei.png" alt="유비"></div></div>
+          <div class="card-info-box">
+            <div class="card-top-row">
+              <div class="name-badge-group"><span class="unit-name">유비</span><img src="../../../apps/game/public/art/battle/ui/dark/class_infantry_liu_trans.png" class="class-crest-img"><span class="class-label">보병</span></div>
+              <div class="troops-number">920<span class="max-num">/1000</span></div>
+            </div>
+            <div class="card-hp-track"><img src="../../../apps/game/public/art/battle/ui/dark/hp_bar_100_trans.png" class="card-hp-img"></div>
+            <div class="card-bottom-row">
+              <div class="ap-cubes-group"><span class="ap-label">AP</span><div class="ap-cube-row"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"></div></div>
+              <img src="../../../apps/game/public/art/battle/ui/dark/icon_rank2.png" class="tactical-icon-mini">
+            </div>
+          </div>
+        </div>
+
+        <!-- [후열 2: 중단] 촉군 호위기병 -->
+        <div class="unit-card-slot" onclick="selectCard('rear2')">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tr">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img bl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img br">
+          <div class="card-portrait-box"><div class="portrait-inner-frame"><img src="../../../apps/game/public/art/battle/shu-cavalry-mounted-v1.png" style="object-position: top;" alt="촉군 기병"></div></div>
+          <div class="card-info-box">
+            <div class="card-top-row">
+              <div class="name-badge-group"><span class="unit-name">호위 기병</span><span class="class-label">기병</span></div>
+              <div class="troops-number">650<span class="max-num">/650</span></div>
+            </div>
+            <div class="card-hp-track"><img src="../../../apps/game/public/art/battle/ui/dark/hp_bar_100_trans.png" class="card-hp-img"></div>
+            <div class="card-bottom-row">
+              <div class="ap-cubes-group"><span class="ap-label">AP</span><div class="ap-cube-row"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"></div></div>
+              <img src="../../../apps/game/public/art/battle/ui/dark/icon_cavalry.png" class="tactical-icon-mini">
+            </div>
+          </div>
+        </div>
+
+        <!-- [전열 2: 중단] 관우 (기병) - ★ 활성 차례 (황금 네온 양각 발광) ★ -->
+        <div class="unit-card-slot active-turn" id="cardGuanYu" onclick="selectCard('guanyu')">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_left_trans.png" class="bracket-img tl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_left_trans.png" class="bracket-img tr">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_left_trans.png" class="bracket-img bl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_left_trans.png" class="bracket-img br">
+          <div class="card-portrait-box"><div class="portrait-inner-frame"><img src="../../../apps/game/public/art/battle/ui/dark/portrait_guan_yu.png" alt="관우"></div></div>
+          <div class="card-info-box">
+            <div class="card-top-row">
+              <div class="name-badge-group"><span class="unit-name" style="color: #fef08a;">관우</span><img src="../../../apps/game/public/art/battle/ui/dark/class_cavalry_spears_trans.png" class="class-crest-img"><span class="class-label">기병</span></div>
+              <div class="troops-number">760<span class="max-num">/800</span></div>
+            </div>
+            <div class="card-hp-track"><img src="../../../apps/game/public/art/battle/ui/dark/hp_bar_76_trans.png" class="card-hp-img"></div>
+            <div class="card-bottom-row">
+              <div class="ap-cubes-group"><span class="ap-label">AP</span><div class="ap-cube-row"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"></div></div>
+              <div style="display: flex; gap: 2px;"><img src="../../../apps/game/public/art/battle/ui/dark/icon_cavalry.png" class="tactical-icon-mini"><img src="../../../apps/game/public/art/battle/ui/dark/icon_charge.png" class="tactical-icon-mini"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- [후열 3: 하단] 빈 예비 슬롯 -->
+        <div class="unit-card-slot empty-slot">
+          <span>+ 예비 부대 (미출전)</span>
+        </div>
+
+        <!-- [전열 3: 하단] 장비 (방패병 - 가드 50% 배지) -->
+        <div class="unit-card-slot" id="cardZhangFei" onclick="selectCard('zhangfei')">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tr">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img bl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img br">
+          <div class="card-portrait-box"><div class="portrait-inner-frame"><img src="../../../apps/game/public/art/battle/ui/dark/portrait_zhang_fei.png" alt="장비"></div></div>
+          <div class="card-info-box">
+            <div class="card-top-row">
+              <div class="name-badge-group"><span class="unit-name">장비</span><img src="../../../apps/game/public/art/battle/ui/dark/class_shield_guard_trans.png" class="class-crest-img"><span class="class-label">방패병</span></div>
+              <div class="troops-number">980<span class="max-num">/1000</span></div>
+            </div>
+            <div class="card-hp-track"><img src="../../../apps/game/public/art/battle/ui/dark/hp_bar_100_trans.png" class="card-hp-img"></div>
+            <div class="card-bottom-row">
+              <div class="ap-cubes-group"><span class="ap-label">AP</span><div class="ap-cube-row"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_available_trans.png" class="ap-cube-icon"></div></div>
+              <img src="../../../apps/game/public/art/battle/ui/dark/badge_guard_50_trans.png" class="guard-pill-asset" alt="가드 50%">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= 중앙: 정통 래더 게이지 ================= -->
+      <div class="center-ladder-column">
+        <span class="ladder-label">ROUND</span>
+        <div class="ladder-rungs-box">
+          <div class="ladder-rung"></div><div class="ladder-rung"></div><div class="ladder-rung"></div>
+          <div class="ladder-rung"></div><div class="ladder-rung"></div><div class="ladder-rung"></div>
+          <div class="ladder-rung"></div><div class="ladder-rung"></div><div class="ladder-rung"></div>
+          <div class="ladder-rung off"></div><div class="ladder-rung off"></div><div class="ladder-rung off"></div>
+        </div>
+        <span class="ladder-label" style="color: #38bdf8;">ACTION</span>
+      </div>
+
+      <!-- ================= 우측: 적군 6슬롯 (2열 x 3행) ================= -->
+      <div class="army-slot-grid">
+
+        <!-- [전열 1: 상단] 황건 방패병 -->
+        <div class="unit-card-slot" onclick="targetSlot('황건 방패병')">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tr">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img bl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img br">
+          <div class="card-portrait-box"><div class="portrait-inner-frame"><img src="portrait-yt-shield-bust.png" alt="황건 방패"></div></div>
+          <div class="card-info-box">
+            <div class="card-top-row">
+              <div class="name-badge-group"><span class="unit-name">황건 방패</span><span class="class-label">방패병</span></div>
+              <div class="troops-number">740<span class="max-num">/800</span></div>
+            </div>
+            <div class="card-hp-track"><img src="../../../apps/game/public/art/battle/ui/dark/hp_bar_100_trans.png" class="card-hp-img"></div>
+            <div class="card-bottom-row">
+              <div class="ap-cubes-group"><span class="ap-label">AP</span><div class="ap-cube-row"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"></div></div>
+              <img src="../../../apps/game/public/art/battle/ui/dark/badge_guard_50_trans.png" class="guard-pill-asset" alt="가드 50%">
+            </div>
+          </div>
+        </div>
+
+        <!-- [후열 1: 상단] 황건 궁병A -->
+        <div class="unit-card-slot" onclick="targetSlot('황건 궁병A')">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tr">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img bl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img br">
+          <div class="card-portrait-box"><div class="portrait-inner-frame"><img src="portrait-yt-archer-bust.png" alt="황건 궁병A"></div></div>
+          <div class="card-info-box">
+            <div class="card-top-row">
+              <div class="name-badge-group"><span class="unit-name">황건 궁병A</span><span class="class-label">궁병</span></div>
+              <div class="troops-number">540<span class="max-num">/680</span></div>
+            </div>
+            <div class="card-hp-track"><img src="../../../apps/game/public/art/battle/ui/dark/hp_bar_76_trans.png" class="card-hp-img"></div>
+            <div class="card-bottom-row">
+              <div class="ap-cubes-group"><span class="ap-label">AP</span><div class="ap-cube-row"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"></div></div>
+              <img src="class-yt-archer.png" style="height: 16px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- [전열 2: 중단] 황건 보병 -->
+        <div class="unit-card-slot" onclick="targetSlot('황건 보병')">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tr">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img bl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img br">
+          <div class="card-portrait-box"><div class="portrait-inner-frame"><img src="portrait-yt-infantry-bust.png" alt="황건 보병"></div></div>
+          <div class="card-info-box">
+            <div class="card-top-row">
+              <div class="name-badge-group"><span class="unit-name">황건 보병</span><span class="class-label">보병</span></div>
+              <div class="troops-number">680<span class="max-num">/800</span></div>
+            </div>
+            <div class="card-hp-track"><img src="../../../apps/game/public/art/battle/ui/dark/hp_bar_76_trans.png" class="card-hp-img"></div>
+            <div class="card-bottom-row">
+              <div class="ap-cubes-group"><span class="ap-label">AP</span><div class="ap-cube-row"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"></div></div>
+              <img src="class-yt-infantry.png" style="height: 16px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- [후열 2: 중단] 장만성 (부대괴멸!) -->
+        <div class="unit-card-slot destroyed" onclick="targetSlot('장만성 (괴멸)')">
+          <div class="destroyed-overlay">부대괴멸</div>
+          <div class="card-portrait-box"><div class="portrait-inner-frame"><img src="portrait-zhang-man-cheng.png" alt="장만성"></div></div>
+          <div class="card-info-box">
+            <div class="card-top-row"><span class="unit-name">장만성</span><div class="troops-number">0<span class="max-num">/850</span></div></div>
+            <div class="card-hp-track"><img src="../../../apps/game/public/art/battle/ui/dark/hp_bar_42_trans.png" class="card-hp-img" style="filter: grayscale(1);"></div>
+          </div>
+        </div>
+
+        <!-- [전열 3: 하단] 황건 대장 -->
+        <div class="unit-card-slot" onclick="targetSlot('황건 대장')">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tr">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img bl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img br">
+          <div class="card-portrait-box"><div class="portrait-inner-frame"><img src="portrait-zhang-man-cheng.png" alt="황건 대장"></div></div>
+          <div class="card-info-box">
+            <div class="card-top-row">
+              <div class="name-badge-group"><span class="unit-name">황건 대장</span><span class="class-label">사령관</span></div>
+              <div class="troops-number">790<span class="max-num">/850</span></div>
+            </div>
+            <div class="card-hp-track"><img src="../../../apps/game/public/art/battle/ui/dark/hp_bar_100_trans.png" class="card-hp-img"></div>
+            <div class="card-bottom-row">
+              <div class="ap-cubes-group"><span class="ap-label">AP</span><div class="ap-cube-row"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"></div></div>
+              <img src="../../../apps/game/public/art/battle/ui/dark/icon_rank2.png" class="tactical-icon-mini">
+            </div>
+          </div>
+        </div>
+
+        <!-- [후열 3: 하단] 황건 궁병B -->
+        <div class="unit-card-slot" onclick="targetSlot('황건 궁병B')">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img tr">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img bl">
+          <img src="../../../apps/game/public/art/battle/ui/dark/corner_bracket_angular_l_trans.png" class="bracket-img br">
+          <div class="card-portrait-box"><div class="portrait-inner-frame"><img src="portrait-yt-archer-bust.png" alt="황건 궁병B"></div></div>
+          <div class="card-info-box">
+            <div class="card-top-row">
+              <div class="name-badge-group"><span class="unit-name">황건 궁병B</span><span class="class-label">궁병</span></div>
+              <div class="troops-number">680<span class="max-num">/680</span></div>
+            </div>
+            <div class="card-hp-track"><img src="../../../apps/game/public/art/battle/ui/dark/hp_bar_100_trans.png" class="card-hp-img"></div>
+            <div class="card-bottom-row">
+              <div class="ap-cubes-group"><span class="ap-label">AP</span><div class="ap-cube-row"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"><img src="../../../apps/game/public/art/battle/ui/dark/ap_cube_depleted_trans.png" class="ap-cube-icon"></div></div>
+              <img src="class-yt-archer.png" style="height: 16px;">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= 5. 활성 장수 통합 커맨드 도킹 바 (하단 플로팅) ================= -->
+      <div class="active-command-dock" id="cmdDock">
+        <div class="dock-top-title-row">
+          <div class="dock-title-label">
+            <span>🐴</span>
+            <span id="activeCmdName">관우</span>
+            <span style="font-size: 11px; color: #94a3b8; font-weight: normal;">(행동 가능 / 커맨드 선택)</span>
+          </div>
+          <div style="font-size: 11px; color: #ffd700; font-weight: bold;">AP 소모 1</div>
+        </div>
+        <div class="dock-buttons-row">
+          <button class="cmd-action-btn primary" onclick="executeSkill('청룡 돌격')">
+            🗡️ [청룡 돌격] 적 전열 돌파
+          </button>
+          <button class="cmd-action-btn" onclick="executeSkill('대기')">
+            🛡️ [대기] 전열 방어
+          </button>
+        </div>
+        <div class="dock-stats-preview-row">
+          <span>대상: <strong style="color: #fde047;">황건 방패병</strong></span>
+          <span>예상 피해: <strong style="color: #ef4444;">186</strong></span>
+          <span>반격 피해: <strong style="color: #38bdf8;">62</strong></span>
+          <span>가드 확률: <strong style="color: #60a5fa;">50%</strong></span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= 6. 최하단 전국란스 정통 시스템 푸터 바 ================= -->
+    <div class="system-footer-bar">
+      <span class="system-menu-btn" onclick="alert('시스템 메뉴')">시스템</span>
+      <span style="cursor: pointer;">아이템</span>
+      <span style="cursor: pointer;">병력</span>
+      <div style="flex: 1;"></div>
+      <span>사기 <strong style="color: #ef4444;">120</strong></span>
+      <span>金 <strong style="color: #f59e0b;">45,200</strong></span>
+      <span>턴 <strong>12</strong></span>
+      <span style="color: #60a5fa; font-style: italic;">Samgukji VII</span>
+    </div>
+
+  </div>
+
+  <script>
+    function selectCard(who) {
+      const cards = ['cardLiuBei', 'cardGuanYu', 'cardZhangFei'];
+      cards.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active-turn');
+      });
+
+      const title = document.getElementById('activeCmdName');
+      const cutinFace = document.getElementById('cutinFace');
+      const cutinName = document.getElementById('cutinName');
+      const cutinText = document.getElementById('cutinText');
+
+      if (who === 'guanyu') {
+        document.getElementById('cardGuanYu').classList.add('active-turn');
+        title.textContent = '관우';
+        cutinFace.src = '../../../apps/game/public/art/battle/ui/dark/portrait_guan_yu.png';
+        cutinName.textContent = '관운장 (關羽)';
+        cutinText.textContent = '"관운장이 여기 있거늘, 적의 두목은 어찌 목을 내놓지 않는가!"';
+      } else if (who === 'liubei') {
+        document.getElementById('cardLiuBei').classList.add('active-turn');
+        title.textContent = '유비';
+        cutinFace.src = '../../../apps/game/public/art/battle/ui/dark/portrait_liu_bei.png';
+        cutinName.textContent = '유현덕 (劉備)';
+        cutinText.textContent = '"한실의 부흥과 백성의 안녕을 위해, 모두 진격하시오!"';
+      } else if (who === 'zhangfei') {
+        document.getElementById('cardZhangFei').classList.add('active-turn');
+        title.textContent = '장비';
+        cutinFace.src = '../../../apps/game/public/art/battle/ui/dark/portrait_zhang_fei.png';
+        cutinName.textContent = '장익덕 (張飛)';
+        cutinText.textContent = '"연인 장익덕이 여기 있다! 목숨이 아깝거든 어서 항복해라!"';
+      }
+    }
+
+    function executeSkill(skillName) {
+      const bf = document.getElementById('battlefield');
+      const popup = document.getElementById('dmgPopup');
+      const pointer = document.getElementById('tugPointer');
+
+      if (skillName.includes('돌격')) {
+        bf.classList.remove('shake-effect');
+        void bf.offsetWidth;
+        bf.classList.add('shake-effect');
+
+        popup.classList.remove('animate');
+        void popup.offsetWidth;
+        popup.classList.add('animate');
+
+        pointer.style.left = '520px';
+      }
+
+      alert(`[${skillName}] 실행 완료! 적 부대에 타격을 입혔습니다.`);
+    }
+
+    function targetSlot(name) {
+      alert(`[${name}] 부대를 타겟으로 지정했습니다.`);
+    }
+  </script>
+</body>
+</html>
