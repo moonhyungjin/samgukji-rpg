@@ -3,7 +3,20 @@ import type { ViewUnit } from '../battle/viewState';
 
 const base = `${import.meta.env.BASE_URL}art/battle/`;
 export const ART_URLS = {
-  field: `${base}plain-v1.png`,
+  field: `${base}battlefield_camp_bg.png`,
+  headerBg: `${base}ui/header/header_bg_bar.png`,
+  factionFrame: `${base}ui/header/faction_frame.png`,
+  factionFrameFlipped: `${base}ui/header/faction_frame_flipped.png`,
+  factionInnerGreen: `${base}ui/header/faction_inner_green.png`,
+  factionInnerOchre: `${base}ui/header/faction_inner_ochre.png`,
+  factionInnerBlue: `${base}ui/header/faction_inner_blue.png`,
+  plaqueShu: `${base}ui/header/plaque_faction_shu.png`,
+  plaqueYellow: `${base}ui/header/plaque_faction_yellow.png`,
+  plaqueRound: `${base}ui/header/plaque_round_dragons_ornate.png`,
+  moraleBar: `${base}ui/header/gauge_morale_tug_bar.png`,
+  moralePointer: `${base}ui/header/pointer_morale_indicator.png`,
+  bracketL: `${base}ui/header/decor_header_bracket_l.png`,
+  bracketR: `${base}ui/header/decor_header_bracket_r.png`,
   liuBei: `${base}liu-bei-idle-v1.png`,
   shuSoldier: `${base}shu-infantry-idle-v1.png`,
   yellowCaptain: `${base}yellow-turban-captain-idle-v1.png`,

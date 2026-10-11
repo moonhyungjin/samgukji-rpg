@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>삼국지 전략 RPG - 진영 프레임 에셋 분리 및 원본 비교 검증</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0f1217;
+    color: #e5ded0;
+    font-family: 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+  }
+  h1 { font-size: 22px; color: #d4af37; text-align: center; }
+  .subtitle { font-size: 13px; color: #8c97a8; margin-top: 4px; }
+  
+  .section {
+    background: #151a22;
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    padding: 24px;
+    width: 100%;
+    max-width: 1040px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .section-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #c8a96e;
+    border-bottom: 1px solid #232b38;
+    padding-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .badge {
+    background: #232b38;
+    color: #a0aec0;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: normal;
+  }
+  
+  .row-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .card {
+    background: #0b0e13;
+    border: 1px solid #1a2230;
+    border-radius: 6px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .card-label {
+    font-size: 12px;
+    color: #94a3b8;
+    width: 100%;
+    font-weight: bold;
+  }
+  
+  /* Checkerboard for transparency */
+  .checker-bg {
+    background-color: #12161f;
+    background-image: 
+      linear-gradient(45deg, #181f2c 25%, transparent 25%), 
+      linear-gradient(-45deg, #181f2c 25%, transparent 25%), 
+      linear-gradient(45deg, transparent 75%, #181f2c 75%), 
+      linear-gradient(-45deg, transparent 75%, #181f2c 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    border: 1px solid #263345;
+    border-radius: 4px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+  }
+
+  /* Live CSS Layer Composition */
+  .plaque-composite {
+    position: relative;
+    width: 276px;
+    height: 58px;
+  }
+  .plaque-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 276px;
+    height: 58px;
+  }
+  .plaque-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 276px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Batang', 'Malgun Gothic', serif;
+    font-size: 20px;
+    font-weight: bold;
+    color: #f7eed7;
+    text-shadow: 
+      -1px -1px 0 #0f1612,  
+       1px -1px 0 #0f1612,
+      -1px  1px 0 #0f1612,
+       1px  1px 0 #0f1612,
+       0 2px 4px rgba(0,0,0,0.8);
+    pointer-events: none;
+    padding-left: 20px; /* Slight offset for dragon on left */
+  }
+  .plaque-composite.flipped .plaque-text {
+    padding-left: 0;
+    padding-right: 20px; /* Offset for flipped dragon on right */
+  }
+
+  .asset-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .asset-item {
+    background: #0e1218;
+    border: 1px solid #202735;
+    border-radius: 4px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .asset-name {
+    font-size: 11px;
+    color: #c8a96e;
+    font-family: monospace;
+  }
+  .asset-desc {
+    font-size: 10px;
+    color: #718096;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+  <div>
+    <h1>삼국지 전략 RPG — 전투 UI 진영 프레임 에셋 분리 및 원본 비교 검증</h1>
+    <p class="subtitle" style="text-align: center;">기존 원본 전투 화면의 어두운 금속 질감·색감 100% 보존 / 텍스트 제외 / 단일 공통 프레임 수평 반전 재사용</p>
+  </div>
+
+  <!-- 1. 원본 캡처 vs 분리 조립 1:1 대조 -->
+  <div class="section">
+    <div class="section-title">
+      <span>1. 원본 기준 캡처 vs 분리 에셋 1:1 조립 대조</span>
+      <span class="badge">Pixel-Accurate Comparison</span>
+    </div>
+
+    <div class="row-compare">
+      <!-- 좌측 촉군 원본 -->
+      <div class="card">
+        <div class="card-label">[A-1] 원본 기준 캡처 — 좌측 촉군 (Baked-in Text)</div>
+        <div class="checker-bg">
+          <img src="orig_crop_test.png" style="width: 276px; height: 58px; object-fit: contain;" alt="Original Shu">
+        </div>
+        <p class="asset-desc">원본 캡처: 글자 "촉군"이 그림에 일체형으로 각인되어 교체 불가 상태</p>
+      </div>
+
+      <!-- 좌측 분리 에셋 조립 -->
+      <div class="card">
+        <div class="card-label">[A-2] 분리 에셋 조립 — 좌측 촉군 (Frame + Plate + Text)</div>
+        <div class="checker-bg">
+          <div class="plaque-composite">
+            <img class="plaque-layer" src="faction_inner_green.png" alt="Green Plate">
+            <img class="plaque-layer" src="faction_frame.png" alt="Faction Frame">
+            <div class="plaque-text">촉 군</div>
+          </div>
+        </div>
+        <p class="asset-desc">조립 결과: 녹색 배경판 + 텍스트 없는 공통 프레임 + HTML/CSS 텍스트 렌더링</p>
+      </div>
+    </div>
+
+    <div class="row-compare">
+      <!-- 우측 황건군 원본 -->
+      <div class="card">
+        <div class="card-label">[B-1] 원본 기준 캡처 — 우측 황건군 (Baked-in Text)</div>
+        <div class="checker-bg">
+          <img src="orig_crop_right_test.png" style="width: 276px; height: 58px; object-fit: contain;" alt="Original Yellow Turban">
+        </div>
+        <p class="asset-desc">원본 캡처: 우측 황토색 현판 ("황건군" 텍스트 포함)</p>
+      </div>
+
+      <!-- 우측 분리 에셋 조립 -->
+      <div class="card">
+        <div class="card-label">[B-2] 분리 에셋 조립 — 우측 황건군 (Flipped Frame + Flipped Plate + Text)</div>
+        <div class="checker-bg">
+          <div class="plaque-composite flipped">
+            <img class="plaque-layer" src="faction_inner_ochre.png" style="transform: scaleX(-1);" alt="Ochre Plate">
+            <img class="plaque-layer" src="faction_frame_flipped.png" alt="Flipped Frame">
+            <div class="plaque-text">황 건 군</div>
+          </div>
+        </div>
+        <p class="asset-desc">조립 결과: 황토색 배경판 + 수평 반전된 동일 프레임 + 코드 텍스트 렌더링</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 동적 진영 색상 교체 확장성 -->
+  <div class="section">
+    <div class="section-title">
+      <span>2. 동적 배경색 교체 확장성 (촉군 Green / 위군 Blue / 황건군 Ochre)</span>
+      <span class="badge">Dynamic Faction Switching</span>
+    </div>
+
+    <div class="asset-grid">
+      <div class="card">
+        <div class="card-label">촉군 (Green Lacquer)</div>
+        <div class="checker-bg">
+          <div class="plaque-composite">
+            <img class="plaque-layer" src="faction_inner_green.png">
+            <img class="plaque-layer" src="faction_frame.png">
+            <div class="plaque-text">촉 군</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">위군 (Navy/Blue Lacquer)</div>
+        <div class="checker-bg">
+          <div class="plaque-composite">
+            <img class="plaque-layer" src="faction_inner_blue.png">
+            <img class="plaque-layer" src="faction_frame.png">
+            <div class="plaque-text">위 군</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">황건군 (Ochre Lacquer)</div>
+        <div class="checker-bg">
+          <div class="plaque-composite">
+            <img class="plaque-layer" src="faction_inner_ochre.png">
+            <img class="plaque-layer" src="faction_frame.png">
+            <div class="plaque-text">황 건 군</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 개별 분리 에셋 목록 -->
+  <div class="section">
+    <div class="section-title">
+      <span>3. 생성된 5종 개별 투명 PNG 에셋 목록</span>
+      <span class="badge">276 x 58 Transparent PNG</span>
+    </div>
+
+    <div class="asset-grid">
+      <div class="asset-item">
+        <div class="asset-name">faction_frame.png</div>
+        <div class="checker-bg" style="width: 100%;">
+          <img src="faction_frame.png" style="width: 100%; object-fit: contain;">
+        </div>
+        <div class="asset-desc">공통 외곽 프레임 (청동 용 조각 + 상서로운 구름)</div>
+      </div>
+
+      <div class="asset-item">
+        <div class="asset-name">faction_frame_flipped.png</div>
+        <div class="checker-bg" style="width: 100%;">
+          <img src="faction_frame_flipped.png" style="width: 100%; object-fit: contain;">
+        </div>
+        <div class="asset-desc">우측용 수평 반전 공통 프레임</div>
+      </div>
+
+      <div class="asset-item">
+        <div class="asset-name">faction_inner_green.png</div>
+        <div class="checker-bg" style="width: 100%;">
+          <img src="faction_inner_green.png" style="width: 100%; object-fit: contain;">
+        </div>
+        <div class="asset-desc">녹색 칠기 내부 배경판 (촉군)</div>
+      </div>
+
+      <div class="asset-item">
+        <div class="asset-name">faction_inner_ochre.png</div>
+        <div class="checker-bg" style="width: 100%;">
+          <img src="faction_inner_ochre.png" style="width: 100%; object-fit: contain;">
+        </div>
+        <div class="asset-desc">황토색 칠기 내부 배경판 (황건군)</div>
+      </div>
+
+      <div class="asset-item">
+        <div class="asset-name">faction_inner_blue.png</div>
+        <div class="checker-bg" style="width: 100%;">
+          <img src="faction_inner_blue.png" style="width: 100%; object-fit: contain;">
+        </div>
+        <div class="asset-desc">남색/푸른색 칠기 내부 배경판 (위군)</div>
+      </div>
+
+      <div class="asset-item">
+        <div class="asset-name">comparison_master.png</div>
+        <div class="checker-bg" style="width: 100%;">
+          <img src="comparison_master.png" style="width: 100%; object-fit: contain;">
+        </div>
+        <div class="asset-desc">1:1 원본 대조 마스터 비교 보드</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
+

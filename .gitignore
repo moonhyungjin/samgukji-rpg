@@ -2,3 +2,6 @@ node_modules/
 dist/
 out/
 *.log
+
+# 에셋 원본 보관함 (제미나이가 만든 전부, 안 쓰는 시안). 올리지 않는다. 설명: tools/art/README.md
+art-inbox/

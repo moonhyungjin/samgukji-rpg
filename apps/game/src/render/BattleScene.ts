@@ -47,6 +47,9 @@ export class BattleScene implements SceneLike {
   private readonly defenderTitle: Text;
   private readonly attackerMoraleText: Text;
   private readonly defenderMoraleText: Text;
+  private readonly moralePointerSprite?: Sprite;
+  private attackerPlateSprite?: Sprite;
+  private defenderPlateSprite?: Sprite;
   private readonly sprites = new Map<string, UnitSprite>();
 
   private speed = 1;
@@ -84,13 +87,15 @@ export class BattleScene implements SceneLike {
     this.roundText.anchor.set(.5, 0.5);
     this.roundText.position.set(640, 22);
 
-    this.attackerTitle = new Text({ text: '공격군', style: { fontFamily: FONT, fontSize: 20, fill: 0xf5eedb, fontWeight: 'bold' } });
+    const leftTitleX = this.textures.factionFrame ? 155 : 220;
+    const rightTitleX = this.textures.factionFrame ? WORLD_W - 155 : 1060;
+    this.attackerTitle = new Text({ text: '공격군', style: { fontFamily: FONT, fontSize: 18, fill: 0xf5eedb, fontWeight: 'bold' } });
     this.attackerTitle.anchor.set(0.5, 0.5);
-    this.attackerTitle.position.set(220, 35);
+    this.attackerTitle.position.set(leftTitleX, 35);
 
-    this.defenderTitle = new Text({ text: '방어군', style: { fontFamily: FONT, fontSize: 20, fill: 0xf5eedb, fontWeight: 'bold' } });
+    this.defenderTitle = new Text({ text: '방어군', style: { fontFamily: FONT, fontSize: 18, fill: 0xf5eedb, fontWeight: 'bold' } });
     this.defenderTitle.anchor.set(0.5, 0.5);
-    this.defenderTitle.position.set(1060, 35);
+    this.defenderTitle.position.set(rightTitleX, 35);
 
     this.moraleCenterLabel = new Text({ text: '사기', style: { fontFamily: FONT, fontSize: 10, fill: 0xe5d8b8, fontWeight: 'bold' } });
     this.moraleCenterLabel.anchor.set(0.5, 0.5);
@@ -104,12 +109,20 @@ export class BattleScene implements SceneLike {
     this.defenderMoraleText.anchor.set(0, 0.5);
     this.defenderMoraleText.position.set(MORALE_BAR.x + MORALE_BAR.w + 10, MORALE_BAR.y + MORALE_BAR.h / 2);
 
+    if (this.textures.moralePointer) {
+      this.moralePointerSprite = new Sprite(this.textures.moralePointer);
+      this.moralePointerSprite.anchor.set(0.5, 0.2);
+      this.moralePointerSprite.width = 16;
+      this.moralePointerSprite.height = 20;
+    }
+
     this.world.addChild(
       this.drawBackground(), this.armyLayer, this.armyLabels, this.unitsLayer,
       this.effectsLayer, this.moraleBar, this.moraleCenterLabel, this.overlayLayer,
       this.roundText, this.attackerTitle, this.defenderTitle,
       this.attackerMoraleText, this.defenderMoraleText,
     );
+    if (this.moralePointerSprite) this.world.addChild(this.moralePointerSprite);
 
     this.app.renderer.on('resize', () => this.fit());
     this.fit();
@@ -134,9 +147,29 @@ export class BattleScene implements SceneLike {
       this.armyLayer.addChild(sprite.army.root);
       this.armyLabels.addChild(sprite.army.annotation);
     }
-    this.attackerTitle.text = inferFactionName(state.units, 'attacker');
+    const attackerName = inferFactionName(state.units, 'attacker');
+    this.attackerTitle.text = attackerName;
+    if (this.attackerPlateSprite) {
+      if (attackerName.includes('위') && this.textures.factionInnerBlue) {
+        this.attackerPlateSprite.texture = this.textures.factionInnerBlue;
+      } else if (attackerName.includes('황건') && this.textures.factionInnerOchre) {
+        this.attackerPlateSprite.texture = this.textures.factionInnerOchre;
+      } else if (this.textures.factionInnerGreen) {
+        this.attackerPlateSprite.texture = this.textures.factionInnerGreen;
+      }
+    }
     this.refreshOccupiedSlots();
-    this.defenderTitle.text = inferFactionName(state.units, 'defender');
+    const defenderName = inferFactionName(state.units, 'defender');
+    this.defenderTitle.text = defenderName;
+    if (this.defenderPlateSprite) {
+      if (defenderName.includes('위') && this.textures.factionInnerBlue) {
+        this.defenderPlateSprite.texture = this.textures.factionInnerBlue;
+      } else if (defenderName.includes('촉') && this.textures.factionInnerGreen) {
+        this.defenderPlateSprite.texture = this.textures.factionInnerGreen;
+      } else if (this.textures.factionInnerOchre) {
+        this.defenderPlateSprite.texture = this.textures.factionInnerOchre;
+      }
+    }
     this.updateRound(state.round);
     this.morale = state.defenderMorale;
     this.drawMorale(state.defenderMorale);
@@ -369,28 +402,92 @@ export class BattleScene implements SceneLike {
     }
 
     // 최상단 헤더 배경 (Y: 0~70)
-    g.rect(0, 0, WORLD_W, 70).fill(0x0a0e14);
-    g.moveTo(0, 70).lineTo(WORLD_W, 70).stroke({ width: 2, color: 0xc8a96e });
+    if (this.textures.headerBg) {
+      const headerBar = new Sprite(this.textures.headerBg);
+      headerBar.position.set(0, 0);
+      headerBar.width = WORLD_W;
+      headerBar.height = 70;
+      layer.addChild(headerBar);
+    } else {
+      g.rect(0, 0, WORLD_W, 70).fill(0x0a0e14);
+      g.moveTo(0, 70).lineTo(WORLD_W, 70).stroke({ width: 2, color: 0xc8a96e });
+    }
 
-    // 좌측 진영 현판 (W: 160, H: 46, center: 220, 35)
-    g.roundRect(140, 12, 160, 46, 6).fill(0x0d1f1c).stroke({ width: 2, color: 0xc8a96e });
-    g.roundRect(144, 16, 152, 38, 4).stroke({ width: 1, color: 0x5a482b });
-    g.circle(146, 18, 1.5).fill(0xf5eedb);
-    g.circle(294, 18, 1.5).fill(0xf5eedb);
-    g.circle(146, 52, 1.5).fill(0xf5eedb);
-    g.circle(294, 52, 1.5).fill(0xf5eedb);
+    // 진영 현판: 모듈형 외곽 프레임 + 내부 배경 분리 구조
+    if (this.textures.factionFrame) {
+      // 좌측 진영: 배경판 (기본 녹색 칠기) + 공통 프레임
+      if (this.textures.factionInnerGreen) {
+        this.attackerPlateSprite = new Sprite(this.textures.factionInnerGreen);
+        this.attackerPlateSprite.position.set(0, 6);
+        layer.addChild(this.attackerPlateSprite);
+      }
+      const frameL = new Sprite(this.textures.factionFrame);
+      frameL.position.set(0, 6);
+      layer.addChild(frameL);
 
-    // 우측 진영 현판 (W: 160, H: 46, center: 1060, 35)
-    g.roundRect(980, 12, 160, 46, 6).fill(0x1f1214).stroke({ width: 2, color: 0xc8a96e });
-    g.roundRect(984, 16, 152, 38, 4).stroke({ width: 1, color: 0x5a482b });
-    g.circle(986, 18, 1.5).fill(0xf5eedb);
-    g.circle(1134, 18, 1.5).fill(0xf5eedb);
-    g.circle(986, 52, 1.5).fill(0xf5eedb);
-    g.circle(1134, 52, 1.5).fill(0xf5eedb);
+      // 우측 진영: 배경판 (기본 황토색 칠기, 수평 반전) + 동일 프레임 수평 반전 재사용
+      if (this.textures.factionInnerOchre) {
+        this.defenderPlateSprite = new Sprite(this.textures.factionInnerOchre);
+        this.defenderPlateSprite.scale.x = -1;
+        this.defenderPlateSprite.position.set(WORLD_W, 6);
+        layer.addChild(this.defenderPlateSprite);
+      }
+      const frameR = new Sprite(this.textures.factionFrameFlipped ?? this.textures.factionFrame);
+      if (!this.textures.factionFrameFlipped) frameR.scale.x = -1;
+      frameR.position.set(this.textures.factionFrameFlipped ? WORLD_W - 276 : WORLD_W, 6);
+      layer.addChild(frameR);
+    } else {
+      // 레거시 폴백 (단일 현판 또는 절차적 도형)
+      if (this.textures.bracketL) {
+        const bl = new Sprite(this.textures.bracketL);
+        bl.position.set(0, 0);
+        bl.width = 68;
+        bl.height = 68;
+        layer.addChild(bl);
+      }
+      if (this.textures.bracketR) {
+        const br = new Sprite(this.textures.bracketR);
+        br.position.set(WORLD_W - 68, 0);
+        br.width = 68;
+        br.height = 68;
+        layer.addChild(br);
+      }
+      if (this.textures.plaqueShu) {
+        const plaque = new Sprite(this.textures.plaqueShu);
+        plaque.anchor.set(0.5);
+        plaque.position.set(220, 35);
+        plaque.width = 175;
+        plaque.height = 50;
+        layer.addChild(plaque);
+      } else {
+        g.roundRect(140, 12, 160, 46, 6).fill(0x0d1f1c).stroke({ width: 2, color: 0xc8a96e });
+        g.roundRect(144, 16, 152, 38, 4).stroke({ width: 1, color: 0x5a482b });
+      }
+      if (this.textures.plaqueYellow) {
+        const plaque = new Sprite(this.textures.plaqueYellow);
+        plaque.anchor.set(0.5);
+        plaque.position.set(1060, 35);
+        plaque.width = 175;
+        plaque.height = 50;
+        layer.addChild(plaque);
+      } else {
+        g.roundRect(980, 12, 160, 46, 6).fill(0x1f1214).stroke({ width: 2, color: 0xc8a96e });
+        g.roundRect(984, 16, 152, 38, 4).stroke({ width: 1, color: 0x5a482b });
+      }
+    }
 
     // 중앙 라운드 현판 (center: 640, 22)
-    g.roundRect(550, 8, 180, 28, 4).fill(0x10151c).stroke({ width: 1.5, color: 0xc8a96e });
-    g.roundRect(553, 11, 174, 22, 2).stroke({ width: 1, color: 0x4a3d24 });
+    if (this.textures.plaqueRound) {
+      const roundDisc = new Sprite(this.textures.plaqueRound);
+      roundDisc.anchor.set(0.5);
+      roundDisc.position.set(640, 22);
+      roundDisc.width = 54;
+      roundDisc.height = 54;
+      layer.addChild(roundDisc);
+    } else {
+      g.roundRect(550, 8, 180, 28, 4).fill(0x10151c).stroke({ width: 1.5, color: 0xc8a96e });
+      g.roundRect(553, 11, 174, 22, 2).stroke({ width: 1, color: 0x4a3d24 });
+    }
 
     // 하단 전체 배경
     g.rect(0, 495, WORLD_W, WORLD_H - 495).fill(0x0a0e13);
@@ -454,6 +551,12 @@ export class BattleScene implements SceneLike {
     if (split < w) g.roundRect(x + split, y, Math.max(w - split, 3), h, 3).fill(0xdc2626);
     // 중앙 분할선
     g.rect(x + split - 1, y - 2, 2, h + 4).fill(0xffffff);
+
+    // 사기 역삼각형 골드 포인터 (▼)
+    if (this.moralePointerSprite) {
+      this.moralePointerSprite.position.set(x + split, y - 4);
+      this.moralePointerSprite.visible = true;
+    }
 
     // 중앙 "사기" 배지
     g.roundRect(640 - 18, y - 1, 36, h + 2, 3).fill(0x0a0e14).stroke({ width: 1, color: 0xc8a96e });
