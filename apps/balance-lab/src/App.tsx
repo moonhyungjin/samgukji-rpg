@@ -13,6 +13,7 @@ import { PresetsTab } from './components/PresetsTab';
 import { SaveBar } from './components/SaveBar';
 import { SettingsTab } from './components/SettingsTab';
 import { SimulationTab } from './components/SimulationTab';
+import { ArtReviewTab } from './components/ArtReviewTab';
 import { LabProvider, useLab } from './lab/LabContext';
 import { NavContext } from './lab/NavContext';
 import type { LabTab } from './lab/NavContext';
@@ -38,6 +39,7 @@ const TABS = [
   { id: 'presets', label: '기본 편성' },
   { id: 'campaign', label: '캠페인' },
   { id: 'map', label: '지도' },
+  { id: 'art', label: '에셋 검수' },
   { id: 'settings', label: '경고 기준 · 가져오기' },
 ] as const;
 
@@ -135,6 +137,7 @@ function Shell() {
         {tab === 'presets' && <PresetsTab />}
         {tab === 'campaign' && <CampaignTab />}
         {tab === 'map' && <MapTab />}
+        {tab === 'art' && <ArtReviewTab />}
         {tab === 'settings' && <SettingsTab />}
       </main>
     </div>

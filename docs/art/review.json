@@ -1,0 +1,15 @@
+{
+  "apps/game/public/art/battle/ui/header/header_bg_bar.png": "ok",
+  "apps/game/public/art/battle/ui/header/plaque_faction_shu.png": "ok",
+  "apps/game/public/art/battle/ui/header/plaque_faction_yellow.png": "ok",
+  "apps/game/public/art/battle/ui/header/plaque_frame_border_left.png": "ok",
+  "apps/game/public/art/battle/ui/header/plaque_frame_border_right.png": "ok",
+  "apps/game/public/art/battle/ui/header/plaque_round_2.png": "ok",
+  "docs/art/ui-sheets/plaque-parts/preview_shu_assembled.png": "no",
+  "docs/art/ui-sheets/plaque-parts/preview_yt_assembled.png": "no",
+  "docs/art/ui-sheets/slices/dark/badge_round_2_trans.png": "no",
+  "docs/art/ui-sheets/slices/dark/badge_round_2.png": "no",
+  "docs/art/ui-sheets/top-section/plaque_faction_shu_solid.png": "no",
+  "docs/art/ui-sheets/top-section/plaque_faction_yellow_solid.png": "no",
+  "docs/art/ui-sheets/top-section/plaque_round_2_solid.png": "no"
+}

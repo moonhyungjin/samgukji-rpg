@@ -9,6 +9,15 @@ import { BattleView } from './BattleView';
 
 const nameOf = (id: string) => gameData.characters[id]?.name ?? id;
 
+/** 전투 목록 카드의 보상 줄: 새 장수는 "합류", 이미 있는 장수는 "보직 변경", 아무 일도 없으면 마지막 전투만 "최종 전투" */
+function routeNote(index: number): string {
+  const present = new Set(campaign.start.map((s) => s.characterId));
+  campaign.battles.slice(0, index).forEach((b) => b.joins.forEach((j) => present.add(j.characterId)));
+  const battle = campaign.battles[index];
+  const events = battle.joins.map((j) => (present.has(j.characterId) ? `${nameOf(j.characterId)} ${gameData.unitTypes[j.unitType ?? '']?.name ?? ''}(으)로 보직 변경` : `${nameOf(j.characterId)} 합류`));
+  return `승리 보상 ${battle.reward.toLocaleString()}${events.length ? ` · ${events.join(', ')}` : index === campaign.battles.length - 1 ? ' · 최종 전투' : ''}`;
+}
+
 export function CampaignView({ onExit }: { onExit: () => void }) {
   const [loaded] = useState(loadProgress);
   const [progress, setProgress] = useState<CampaignProgress | null>(null);
@@ -66,7 +75,7 @@ export function CampaignView({ onExit }: { onExit: () => void }) {
   if (!progress) return <section className="campaign campaign-intro">
     <p className="campaign-eyebrow">연속 전투 캠페인</p><h2>{campaign.name}</h2>
     <p>군단을 정비하고 다음 전투로 나아가세요.<br />병력과 자금은 전투 사이에 이어집니다.</p>
-    <ol className="campaign-route">{campaign.battles.map((b, i) => <li key={b.id}><span>{i + 1}전</span><strong>{b.name}</strong><small>승리 보상 {b.reward.toLocaleString()} · {b.joins.length ? `${b.joins.map(j => nameOf(j.characterId)).join(', ')} 합류` : '최종 전투'}</small></li>)}</ol>
+    <ol className="campaign-route">{campaign.battles.map((b, i) => <li key={b.id}><span>{i + 1}전</span><strong>{b.name}</strong><small>{routeNote(i)}</small></li>)}</ol>
     {error && <p role="alert" className="error">{error}</p>}
     <div className="row">
       {loaded.progress && <button className="primary" onClick={() => enter(loaded.progress!)}>이어하기</button>}
@@ -87,6 +96,7 @@ export function CampaignView({ onExit }: { onExit: () => void }) {
       <h3>{summary.won ? summary.finished ? '황건적 토벌 완료' : '승리' : '패배 · 정비 후 재도전'}</h3>
       <p>획득 자금 <strong>+{summary.goldGained.toLocaleString()}</strong></p>
       <ul>{summary.units.map(u => <li key={u.characterId}><strong>{nameOf(u.characterId)}</strong><span>경험치 +{u.expGained}</span><span>{u.levelsGained ? `레벨 +${u.levelsGained}` : '레벨 유지'}</span><span>남은 병력 {u.troopsAfter}</span></li>)}</ul>
+      {summary.retrained && summary.retrained.length > 0 && <p className="campaign-joins">보직 변경 · {summary.retrained.map((id) => `${nameOf(id)} → ${gameData.unitTypes[state.roster.find((u) => u.characterId === id)?.unitType ?? '']?.name ?? ''}`).join(', ')}</p>}
       {summary.joined.length > 0 && <p className="campaign-joins">새로운 동료 · {summary.joined.map(nameOf).join(', ')}</p>}
       <button className="primary" onClick={() => commit({ ...progress, phase: 'prepare', summary: null })}>{summary.finished ? '군단 확인' : summary.won ? '다음 전투 정비' : '재도전 정비'}</button>
     </div> : <>

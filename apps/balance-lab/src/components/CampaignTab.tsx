@@ -310,6 +310,7 @@ function CampaignResultView({ summary, sample, campaign, ms, name }: { summary: 
             <div className="note">
               {l.summary.units.map((u) => `${name(u.characterId)} 경험치 +${u.expGained}${u.levelsGained > 0 ? ` (레벨 +${u.levelsGained})` : ''}${u.captured > 0 ? `, 포획 +${u.captured}` : ''}, 남은 병력 ${num(u.troopsAfter)}`).join(' · ')}
               {l.summary.joined.length > 0 ? ` · 합류: ${l.summary.joined.map(name).join(', ')}` : ''}
+              {l.summary.retrained?.length ? ` · 보직 변경: ${l.summary.retrained.map(name).join(', ')}` : ''}
             </div>
           </li>
         ))}

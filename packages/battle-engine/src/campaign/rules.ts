@@ -215,11 +215,28 @@ export function applyBattleResult(state: CampaignState, campaign: CampaignData, 
   });
 
   const joined: string[] = [];
+  const retrained: string[] = [];
   if (won) {
     next.gold += battle.reward;
     const avgLevel = Math.max(1, Math.round(next.roster.reduce((s, u) => s + u.level, 0) / Math.max(1, next.roster.length)));
     for (const join of battle.joins) {
-      if (unitOf(next, join.characterId) || !data.characters[join.characterId]) continue;
+      const existing = unitOf(next, join.characterId);
+      if (existing) {
+        // 이미 있는 장수에게 병종이 적혀 있으면 보직 변경 (이야기 이벤트): 레벨과 경험치는 그대로, 정원은 새 병종의 레벨 상한으로, 병력은 채워져 있던 비율대로 [임시]
+        if (join.unitType && join.unitType !== existing.unitType && data.unitTypes[join.unitType]) {
+          const cap = unitCap({ unitType: join.unitType, level: existing.level }, data, balance);
+          const ratio = existing.capacity > 0 ? existing.troops / existing.capacity : 1;
+          next = withUnit(next, { ...existing, unitType: join.unitType, capacity: cap, troops: Math.min(cap, Math.max(1, Math.round(cap * ratio))) });
+          const allowed = data.unitTypes[join.unitType].allowedRows;
+          const current = next.lineup.find((s) => s.characterId === join.characterId);
+          if (current && !allowed.includes(current.row)) {
+            next = { ...next, lineup: placeInLineup(next.lineup.filter((s) => s.characterId !== join.characterId), join.characterId, allowed) };
+          }
+          retrained.push(join.characterId);
+        }
+        continue;
+      }
+      if (!data.characters[join.characterId]) continue;
       const unitType = join.unitType ?? data.characters[join.characterId].unitType;
       const cap = unitCap({ unitType, level: avgLevel }, data, balance);
       next = { ...next, roster: [...next.roster, { characterId: join.characterId, unitType, level: avgLevel, exp: 0, capacity: cap, troops: cap }] };
@@ -232,7 +249,7 @@ export function applyBattleResult(state: CampaignState, campaign: CampaignData, 
   } else {
     next.attempt = state.attempt + 1;
   }
-  return { state: next, summary: { won, goldGained: won ? battle.reward : 0, units, joined, finished: next.finished } };
+  return { state: next, summary: { won, goldGained: won ? battle.reward : 0, units, joined, ...(retrained.length > 0 ? { retrained } : {}), finished: next.finished } };
 }
 
 /** 합류한 장수를 설 수 있는 열의 빈자리에 넣는다 (자리가 없으면 넣지 않는다) */

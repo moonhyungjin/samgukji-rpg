@@ -5,6 +5,7 @@ import { SetupPanel } from './components/SetupPanel';
 import { parseConfig } from './lib/config';
 import { CampaignView } from './components/CampaignView';
 import { StrategyPreview } from './components/StrategyPreview';
+import { ArtViewer } from './components/ArtViewer';
 
 export default function App() {
   const presetNames = useMemo(() => Object.keys(presets), []);
@@ -15,6 +16,9 @@ export default function App() {
   const [artTrial, setArtTrial] = useState(() => new URLSearchParams(window.location.search).get('artTrial') === '1');
   const [inCampaign, setInCampaign] = useState(() => new URLSearchParams(window.location.search).get('campaign') === '1');
   const [inStrategy, setInStrategy] = useState(() => new URLSearchParams(window.location.search).get('strategy') === '1');
+
+  // 에셋 검수 Viewer: Lab의 iframe 안에서 화면만 보여 준다
+  if (new URLSearchParams(window.location.search).get('viewer') === '1') return <ArtViewer />;
 
   return (
     <div className="app">

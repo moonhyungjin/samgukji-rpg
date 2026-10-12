@@ -28,11 +28,17 @@ export const ART_URLS = {
 };
 export type BattleTextures = Partial<Record<keyof typeof ART_URLS, Texture>>;
 
+/** 에셋 검수 Viewer가 후보 그림을 화면에 끼워 볼 때 쓰는 교체 목록 (키 → 주소). 평소에는 비어 있다 */
+let artOverrides: Partial<Record<keyof typeof ART_URLS, string>> = {};
+export function setArtOverrides(overrides: Partial<Record<keyof typeof ART_URLS, string>>): void {
+  artOverrides = { ...overrides };
+}
+
 /** Missing artwork falls back to labeled tokens; gameplay remains available. */
 export async function loadBattleArt(units?: readonly Pick<ViewUnit, 'characterId' | 'family'>[]): Promise<BattleTextures> {
   const keys = units ? battleArtKeys(units) : Object.keys(ART_URLS) as (keyof typeof ART_URLS)[];
   const entries = await Promise.all(keys.map(async key => {
-    const url = ART_URLS[key];
+    const url = artOverrides[key] ?? ART_URLS[key];
     try { return [key, await Assets.load<Texture>({ src: url, data: { autoGenerateMipmaps: true, scaleMode: 'linear' } })] as const; }
     catch { return [key, undefined] as const; }
   }));
@@ -63,17 +69,31 @@ export function unitArt(unit: Pick<ViewUnit, 'characterId' | 'family'>): {
   if (unit.characterId === 'guanYu' && unit.family === 'cavalry') {
     return { commander: SPRITE_SPECS.guanYu, soldier: SPRITE_SPECS.shuCavalry };
   }
+  // 유비는 군주 계열(자기 병종)이 된 뒤에도 같은 그림을 쓴다. 다른 병종(기병 등)으로 바뀌면 그림이 맞지 않아 표식으로 돌아간다
+  if (unit.characterId === 'liuBei' && (unit.family === 'infantry' || unit.family === 'lord')) return { commander: SPRITE_SPECS.liuBei, soldier: SPRITE_SPECS.shuSoldier, portrait: 'liuPortrait' };
   if (unit.family !== 'infantry') return null;
-  if (unit.characterId === 'liuBei') return { commander: SPRITE_SPECS.liuBei, soldier: SPRITE_SPECS.shuSoldier, portrait: 'liuPortrait' };
   if (unit.characterId === 'ytInfantryA' || unit.characterId === 'ytInfantryB') {
     return { commander: SPRITE_SPECS.yellowCaptain, soldier: SPRITE_SPECS.yellowSoldier, portrait: 'yellowPortrait' };
   }
   return null;
 }
 
-/** Load only art used by this lineup; a new character must not enlarge every battle download. */
+/** 군단과 상관없이 전투 화면 틀에 항상 쓰이는 그림 (상단 헤더). 대체 그림 경로로만 쓰이는 현판/괄호(plaqueShu, plaqueYellow, bracketL/R)는 뺐다 */
+export const FRAME_ART_KEYS = [
+  'headerBg',
+  'factionFrame',
+  'factionFrameFlipped',
+  'factionInnerGreen',
+  'factionInnerOchre',
+  'factionInnerBlue',
+  'plaqueRound',
+  'moraleBar',
+  'moralePointer',
+] as const satisfies readonly (keyof typeof ART_URLS)[];
+
+/** Load only art used by this lineup (plus the screen frame); a new character must not enlarge every battle download. */
 export function battleArtKeys(units: readonly Pick<ViewUnit, 'characterId' | 'family'>[]): (keyof typeof ART_URLS)[] {
-  const keys = new Set<keyof typeof ART_URLS>(['field']);
+  const keys = new Set<keyof typeof ART_URLS>(['field', ...FRAME_ART_KEYS]);
   for (const unit of units) {
     const art = unitArt(unit);
     if (!art) continue;

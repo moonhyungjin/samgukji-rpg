@@ -87,5 +87,7 @@ export interface BattleOutcomeSummary {
   /** 군단별: 얻은 경험치, 오른 레벨 수, 포획한 병사(실제로 들어간 수), 전투 뒤 병력 (포획 포함) */
   units: { characterId: string; expGained: number; levelsGained: number; captured: number; troopsAfter: number }[];
   joined: string[];
+  /** 이야기 이벤트로 병종이 바뀐 장수 (하후돈: 보병 → 기병 같은 보직 변경). 없으면 생략 */
+  retrained?: string[];
   finished: boolean;
 }

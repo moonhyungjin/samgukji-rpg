@@ -819,3 +819,16 @@ Balance Lab의 "파일에 저장"을 누를 때마다 자동으로 덧붙는다 
 ## 2026-10-11 — 지도 (에이전트 수동 기록)
 메모: 전략 규칙(선전포고, 성 공격, 턴 종료) 구현과 함께 턴당 행동 수를 지도 데이터에 둔다 (설계 문서 04 v0.4). 값은 임시
 - + map.actionsPerTurn: 3
+
+## 2026-10-12 — 1장 황건적 토벌 7단계
+메모: 사용자 구상(조조 일행 1장, 기병·책사·풍수사 순서, 장각 보스)을 데이터로 옮김. 값은 모두 임시, 시뮬레이션(sim:campaign)으로 조정.
+- characters: + zhangJiao(장각, 도사), ytCavalryCaptain(황건 기마장), ytShieldCaptain(방패장), ytInfantryCaptain(보병장), ytArcherCaptain(궁수장), ytGeomancerA(풍수사A)
+- presets: + yellowStart(조조, 하후돈), ytStage1~ytStage7 (전투 7단계의 적 편성)
+- campaign: startPreset weiStart → yellowStart, startGold 1000 → 2000, 전투 3개 → 7개 (적 레벨 3·3·5·5·6·7·7, 보상 1500~4500), joins: 조인, 하후연, 4전 뒤 하후돈 기병 보직 변경 + 순욱, 5전 뒤 손건
+- campaign.exp: win 120 → 50, perKill 20 → 5, perLevel 100 (유지). promotionLevels [5, 10] → [9, 15]
+
+## 2026-10-12 — 군주 승급 트리
+메모: 군주 → 패왕/영웅 → 마왕/성황 (사용자가 이름과 구조를 정함. 연결과 값은 임시).
+- unitTypes: + conqueror(패왕), hero(영웅), demon-king(마왕), saint-emperor(성황). lord.promotesTo [] → [conqueror, hero], conqueror → demon-king, hero → saint-emperor
+- unitTypes.*.statMods (부모 대비): 패왕 공+2 / 영웅 공+1 방+1 지+1 / 마왕 공+2 방+1 속+1 / 성황 방+1 지+2 행+1, 2차 baseAp 3
+- skills: + demon-king-menace(위압: 아군 전체, 공격·속도 중 1~2가지 +1), saint-emperor-virtue(성덕: 아군 전체, 방어·지력 중 1~2가지 +1). 둘 다 AP 2

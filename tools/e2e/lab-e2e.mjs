@@ -127,9 +127,19 @@ const restoreChangelog = () => (originalChangelog === null ? rmSync(CHANGELOG, {
 const readChangelog = () => (existsSync(CHANGELOG) ? readFileSync(CHANGELOG, 'utf-8') : '');
 const readData = (name) => JSON.parse(readFileSync(join(DATA_DIR, `${name}.json`), 'utf-8'));
 const writeData = (name, value) => writeFileSync(join(DATA_DIR, `${name}.json`), JSON.stringify(value, null, 2) + '\n');
+// 에셋 검수 시험이 만드는 파일: 검수 결과(review.json)와 임시 그림 폴더
+const REVIEW = resolve('docs/art/review.json');
+const originalReview = existsSync(REVIEW) ? readFileSync(REVIEW, 'utf-8') : null;
+const ART_TMP = resolve('docs/art/_e2e-tmp');
+const restoreArt = () => {
+  rmSync(ART_TMP, { recursive: true, force: true });
+  if (originalReview === null) rmSync(REVIEW, { force: true });
+  else writeFileSync(REVIEW, originalReview);
+};
 const restoreAll = () => {
   DATA_NAMES.forEach((n) => writeFileSync(join(DATA_DIR, `${n}.json`), originals[n]));
   restoreChangelog();
+  restoreArt();
 };
 const filesEqualOriginal = () =>
   DATA_NAMES.every((n) => readFileSync(join(DATA_DIR, `${n}.json`), 'utf-8') === originals[n]) && readChangelog() === (originalChangelog ?? '');
@@ -379,6 +389,69 @@ try {
   writeData('skills', JSON.parse(originals.skills)); // 스킬 변경은 여기서 되돌린다
   await sleep(1500);
   await load();
+
+  // ---- 2b. 에셋 검수 탭: 슬롯 목록, 그림 표시, OK/NO 저장, NO 정리 ----
+  {
+    const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+    mkdirSync(ART_TMP, { recursive: true });
+    writeFileSync(join(ART_TMP, 'e2e-keep.png'), PNG);
+    writeFileSync(join(ART_TMP, 'e2e-drop.png'), PNG);
+    await tabs('에셋 검수');
+    await waitFor(`document.querySelectorAll('.art-slot').length > 10`, 20000, '슬롯 목록');
+    check('에셋 검수 탭: 슬롯 목록(A~F)이 나온다', (await evalJs(`['A1','B1','D1','E3','F2'].every(id => !!document.querySelector('[data-slot="'+id+'"]'))`)) === true);
+    await evalJs(`document.querySelector('[data-view="all"]').click()`);
+    await sleep(500);
+    await waitFor(`!!document.querySelector('.art-card[data-path="docs/art/_e2e-tmp/e2e-keep.png"]')`, 15000, '임시 그림 카드');
+    await evalJs(`document.querySelector('.art-card[data-path="docs/art/_e2e-tmp/e2e-keep.png"]').scrollIntoView()`);
+    await sleep(800);
+    check('에셋 검수 탭: 그림이 실제로 그려진다 (미리보기 로드)', (await evalJs(`(() => { const im = document.querySelector('.art-card[data-path="docs/art/_e2e-tmp/e2e-keep.png"] img'); return !!im && im.complete && im.naturalWidth === 1; })()`)) === true);
+    const act = (path, a) => evalJs(`document.querySelector('.art-card[data-path="${path}"] [data-act="${a}"]').click()`);
+    await act('docs/art/_e2e-tmp/e2e-keep.png', 'ok');
+    await act('docs/art/_e2e-tmp/e2e-drop.png', 'no');
+    await sleep(600);
+    const review = JSON.parse(readFileSync(REVIEW, 'utf-8'));
+    check('OK/NO 표시가 docs/art/review.json에 저장된다', review['docs/art/_e2e-tmp/e2e-keep.png'] === 'ok' && review['docs/art/_e2e-tmp/e2e-drop.png'] === 'no');
+    await evalJs(`window.confirm = () => true`);
+    await evalJs(`document.querySelector('[data-action="apply"]').click()`);
+    await sleep(1200);
+    check('NO 정리: NO만 지워지고 OK와 대기는 남는다', !existsSync(join(ART_TMP, 'e2e-drop.png')) && existsSync(join(ART_TMP, 'e2e-keep.png')));
+    check('NO 정리 뒤 검수 결과에서 NO 기록이 빠진다', !('docs/art/_e2e-tmp/e2e-drop.png' in JSON.parse(readFileSync(REVIEW, 'utf-8'))));
+    // 게임이 쓰는 그림은 NO로 표시해도 지워지지 않는다
+    const GAME_FILE = 'apps/game/public/art/battle/liu-bei-idle-v1.png';
+    await evalJs(`fetch('/api/art/review', { method: 'POST', body: JSON.stringify({ '${GAME_FILE}': 'no' }) }).then(r => r.ok)`);
+    const applied = await evalJs(`fetch('/api/art/apply', { method: 'POST', body: '{}' }).then(r => r.json())`);
+    check('NO 정리: 게임이 쓰는 파일은 지우지 않고 알려 준다', existsSync(resolve(GAME_FILE)) && applied.blocked.includes(GAME_FILE), JSON.stringify(applied.blocked));
+    await evalJs(`fetch('/api/art/review', { method: 'POST', body: JSON.stringify({ '${GAME_FILE}': null }) })`);
+    await evalJs(`fetch('/api/art/review', { method: 'POST', body: JSON.stringify({ '../../package.json': 'no' }) }).then(r => r.status)`).then((status) => check('검수 API는 아트 폴더 밖 경로를 거부한다', status === 400, String(status)));
+    restoreArt();
+  }
+
+  // ---- 2c. 에셋 검수 Viewer: Lab 안의 게임 화면 (게임 서버 주소 GAME_URL이 있을 때만) ----
+  if (process.env.GAME_URL) {
+    await evalJs(`localStorage.setItem('art-viewer-game-url', ${JSON.stringify(process.env.GAME_URL)})`);
+    await load();
+    await tabs('에셋 검수');
+    await waitFor(`document.querySelectorAll('.art-slot').length > 10`, 20000, '슬롯 목록');
+    await evalJs(`window.__ready = []; window.addEventListener('message', (e) => { if (e.data && e.data.type === 'art-viewer:ready') window.__ready.push(e.data); })`);
+    await evalJs(`document.querySelector('[data-action="viewer-reopen"]').click()`);
+    await waitFor(`document.querySelector('.art-viewer-iframe').dataset.viewerReady === 'true'`, 40000, 'Viewer 연결');
+    check('에셋 검수: 게임 화면 Viewer가 Lab 안에서 연결된다', true);
+    await evalJs(`document.querySelector('[data-slot="A1"]').click()`);
+    await sleep(800);
+    check('에셋 검수: 그림을 끼울 수 있는 슬롯은 "화면에 적용" 버튼이 있고, 코드로 그리는 슬롯은 없다', (await evalJs(`!!document.querySelector('.art-card [data-act="view"]')`)) === true);
+    // 후보 그림을 끼우면 게임 화면이 다시 그려지고 그 그림을 실제로 읽는다 (Lab 개발 서버에서 다른 포트로 읽기)
+    await evalJs(`window.__ready.length = 0; document.querySelector('.art-card [data-act="view"]').click()`);
+    await waitFor(`window.__ready.length > 0 && window.__ready[window.__ready.length - 1].overrides.includes('headerBg')`, 40000, '그림 끼우기 완료');
+    check('에셋 검수: 끼운 그림을 게임 화면이 읽어서 그린다 (다른 포트의 그림 읽기)', (await evalJs(`window.__ready[window.__ready.length - 1].loaded.split(',').includes('headerBg')`)) === true);
+    check('에셋 검수: 적용 중인 그림이 표시되고 "원래대로"가 켜진다', (await evalJs(`document.body.textContent.includes('적용 중: headerBg') && !document.querySelector('[data-action="viewer-reset"]').disabled`)) === true);
+    await evalJs(`window.__ready.length = 0; document.querySelector('[data-action="viewer-reset"]').click()`);
+    await waitFor(`window.__ready.length > 0 && window.__ready[window.__ready.length - 1].overrides.length === 0`, 40000, '원래대로');
+    check('에셋 검수: 원래대로를 누르면 끼운 그림이 없어진다', (await evalJs(`document.querySelector('[data-action="viewer-reset"]').disabled`)) === true);
+    await evalJs(`document.querySelector('[data-slot="D5"]').click()`);
+    await sleep(600);
+    check('에셋 검수: 이 슬롯은 지금 코드가 그림을 쓰지 않아 끼워 볼 수 없다고 안내한다', (await evalJs(`!document.querySelector('.art-card [data-act="view"]') && document.querySelector('.art-viewer-bar').textContent.includes('끼워 볼 수 없습니다')`)) === true);
+    await evalJs(`localStorage.removeItem('art-viewer-game-url')`);
+  }
 
   // ---- 3. 장수 탭: 계산값, 수정, 저장 ----
   await tabs('장수');

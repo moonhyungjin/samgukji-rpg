@@ -240,3 +240,51 @@ describe('캠페인: 편성과 전투', () => {
     expect(a.log).toEqual(b.log);
   });
 });
+
+describe('보직 변경 (이미 있는 장수에게 병종이 적힌 합류)', () => {
+  const retrain: CampaignData = {
+    ...campaign,
+    battles: [{ ...campaign.battles[0], joins: [{ characterId: 'inf', unitType: 'backline' }, { characterId: 'infFast', unitType: 'inf' }, { characterId: 'arc' }] }, campaign.battles[1]],
+  };
+  const win = (state: CampaignState) => {
+    const input = campaignBattleInput(state, retrain, data, testBalance, 1);
+    const result = runBattle({ ...input, policy: undefined } as never);
+    return { ...result, winner: 'attacker' as const };
+  };
+
+  it('이미 있는 장수의 병종이 바뀌고 레벨, 경험치, 돈은 그대로다 (같은 병종이면 변화 없음)', () => {
+    const state = startCampaign(retrain, data, testBalance);
+    const before = state.roster.find((u) => u.characterId === 'inf')!;
+    const { state: next, summary } = applyBattleResult(state, retrain, win(state), data, testBalance);
+    const after = next.roster.find((u) => u.characterId === 'inf')!;
+    expect(after.unitType).toBe('backline');
+    expect(after.level).toBeGreaterThanOrEqual(before.level);
+    expect(summary.retrained).toEqual(['inf']); // infFast는 이미 같은 병종이라 바뀌지 않았다
+    expect(summary.joined).toEqual(['arc']);
+  });
+
+  it('새 병종이 설 수 없는 열이면 설 수 있는 열로 옮긴다', () => {
+    const state = startCampaign(retrain, data, testBalance);
+    const { state: next } = applyBattleResult(state, retrain, win(state), data, testBalance);
+    expect(next.lineup.find((s) => s.characterId === 'inf')!.row).toBe('back');
+    expect(lineupIssue(next, next.lineup, data)).toBeNull();
+  });
+
+  it('정원은 새 병종의 레벨 상한으로 다시 정해지고 병력은 채워져 있던 비율을 따른다', () => {
+    const state = startCampaign(retrain, data, testBalance);
+    const half = { ...state, roster: state.roster.map((u) => (u.characterId === 'inf' ? { ...u, troops: Math.round(u.capacity / 2) } : u)) };
+    const { state: next } = applyBattleResult(half, retrain, { ...win(half), units: win(half).units.map((u) => (u.uid === 'attacker:0' ? { ...u, finalTroops: Math.round(half.roster[0].capacity / 2) } : u)) }, data, testBalance);
+    const after = next.roster.find((u) => u.characterId === 'inf')!;
+    expect(after.capacity).toBe(unitCap({ unitType: 'backline', level: after.level }, data, testBalance));
+    expect(after.troops).toBeLessThanOrEqual(after.capacity);
+    expect(after.troops / after.capacity).toBeGreaterThan(0.3);
+  });
+
+  it('병종이 적히지 않았거나 없는 병종이면 이미 있는 장수는 그대로다', () => {
+    const state = startCampaign(retrain, data, testBalance);
+    const plain: CampaignData = { ...retrain, battles: [{ ...retrain.battles[0], joins: [{ characterId: 'inf' }, { characterId: 'infFast', unitType: 'nothing' }] }, retrain.battles[1]] };
+    const { state: next, summary } = applyBattleResult(state, plain, win(state), data, testBalance);
+    expect(summary.retrained).toBeUndefined();
+    expect(next.roster.find((u) => u.characterId === 'inf')!.unitType).toBe('inf');
+  });
+});

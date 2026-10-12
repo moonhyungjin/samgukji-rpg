@@ -1802,7 +1802,10 @@
     "counterPower": 1,
     "basicSkillId": "infantry-attack",
     "extraSkillIds": [],
-    "promotesTo": [],
+    "promotesTo": [
+      "conqueror",
+      "hero"
+    ],
     "traitIds": [],
     "troopScale": 1,
     "baseAp": 2,
@@ -1831,6 +1834,206 @@
       "attack": 0,
       "defense": 1,
       "intellect": 1,
+      "speed": 0,
+      "action": 1
+    },
+    "autoBuffSkillId": "lord-presence"
+  },
+  {
+    "id": "conqueror",
+    "name": "패왕",
+    "family": "lord",
+    "tier": 2,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "counterPower": 1,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [],
+    "promotesTo": [
+      "demon-king"
+    ],
+    "traitIds": [],
+    "troopScale": 1,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 24,
+      "replenish": 2,
+      "dismiss": 2
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 10,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 10
+    },
+    "statMods": {
+      "attack": 2,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 0,
+      "action": 0
+    },
+    "autoBuffSkillId": "lord-presence"
+  },
+  {
+    "id": "hero",
+    "name": "영웅",
+    "family": "lord",
+    "tier": 2,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "counterPower": 1,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [],
+    "promotesTo": [
+      "saint-emperor"
+    ],
+    "traitIds": [],
+    "troopScale": 1,
+    "baseAp": 2,
+    "recruit": {
+      "reinforce": 24,
+      "replenish": 2,
+      "dismiss": 2
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 10,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 10
+    },
+    "statMods": {
+      "attack": 1,
+      "defense": 1,
+      "intellect": 1,
+      "speed": 0,
+      "action": 0
+    },
+    "autoBuffSkillId": "lord-presence"
+  },
+  {
+    "id": "demon-king",
+    "name": "마왕",
+    "family": "lord",
+    "tier": 3,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "counterPower": 1,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [
+      "demon-king-menace"
+    ],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 1,
+    "baseAp": 3,
+    "recruit": {
+      "reinforce": 24,
+      "replenish": 2,
+      "dismiss": 2
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 10,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 10
+    },
+    "statMods": {
+      "attack": 2,
+      "defense": 1,
+      "intellect": 0,
+      "speed": 1,
+      "action": 0
+    },
+    "autoBuffSkillId": "lord-presence"
+  },
+  {
+    "id": "saint-emperor",
+    "name": "성황",
+    "family": "lord",
+    "tier": 3,
+    "allowedRows": [
+      "front",
+      "back"
+    ],
+    "range": 1,
+    "canCounter": true,
+    "counterPower": 1,
+    "basicSkillId": "infantry-attack",
+    "extraSkillIds": [
+      "saint-emperor-virtue"
+    ],
+    "promotesTo": [],
+    "traitIds": [],
+    "troopScale": 1,
+    "baseAp": 3,
+    "recruit": {
+      "reinforce": 24,
+      "replenish": 2,
+      "dismiss": 2
+    },
+    "damageTakenByType": {
+      "physical": 1,
+      "magic": 1
+    },
+    "damageDealtByRow": {
+      "front": 1,
+      "back": 1
+    },
+    "typeBonus": {
+      "physical": 10,
+      "magic": 0
+    },
+    "vulnerability": {
+      "physical": 0,
+      "magic": 10
+    },
+    "statMods": {
+      "attack": 0,
+      "defense": 1,
+      "intellect": 2,
       "speed": 0,
       "action": 1
     },

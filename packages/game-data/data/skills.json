@@ -422,5 +422,47 @@
       "amount": 1,
       "maxStacks": 1
     }
+  },
+  {
+    "id": "demon-king-menace",
+    "name": "위압",
+    "kind": "buff",
+    "scalesWith": "intellect",
+    "power": 0,
+    "apCost": 2,
+    "counterable": false,
+    "area": "all",
+    "buff": {
+      "type": "stats",
+      "pool": [
+        "attack",
+        "speed"
+      ],
+      "minCount": 1,
+      "maxCount": 2,
+      "amount": 1,
+      "maxStacks": 1
+    }
+  },
+  {
+    "id": "saint-emperor-virtue",
+    "name": "성덕",
+    "kind": "buff",
+    "scalesWith": "intellect",
+    "power": 0,
+    "apCost": 2,
+    "counterable": false,
+    "area": "all",
+    "buff": {
+      "type": "stats",
+      "pool": [
+        "defense",
+        "intellect"
+      ],
+      "minCount": 1,
+      "maxCount": 2,
+      "amount": 1,
+      "maxStacks": 1
+    }
   }
 ]

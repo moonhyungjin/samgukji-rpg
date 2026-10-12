@@ -1,24 +1,67 @@
 {
   "id": "yellow-turbans",
   "name": "황건적 토벌",
-  "startGold": 1000,
+  "startGold": 2000,
   "startLevel": 3,
-  "startPreset": "weiStart",
+  "startPreset": "yellowStart",
   "battles": [
     {
       "id": "yellow1",
-      "name": "황건적 (쉬움)",
-      "enemyPreset": "yellowEasy",
+      "name": "1전 황건적 정찰대",
+      "enemyPreset": "ytStage1",
       "enemyLevel": 3,
-      "reward": 1000,
-      "joins": []
+      "reward": 1500,
+      "joins": [
+        {
+          "characterId": "caoRen",
+          "unitType": "shield"
+        }
+      ]
     },
     {
       "id": "yellow2",
-      "name": "황건적 (보통)",
-      "enemyPreset": "yellowNormal",
+      "name": "2전 황건적 궁수대",
+      "enemyPreset": "ytStage2",
       "enemyLevel": 3,
-      "reward": 1300,
+      "reward": 1800,
+      "joins": [
+        {
+          "characterId": "xiahouYuan",
+          "unitType": "archer"
+        }
+      ]
+    },
+    {
+      "id": "yellow3",
+      "name": "3전 황건적 사격진",
+      "enemyPreset": "ytStage3",
+      "enemyLevel": 5,
+      "reward": 2400,
+      "joins": []
+    },
+    {
+      "id": "yellow4",
+      "name": "4전 장량군 기마대",
+      "enemyPreset": "ytStage4",
+      "enemyLevel": 5,
+      "reward": 3200,
+      "joins": [
+        {
+          "characterId": "xiahouDun",
+          "unitType": "cavalry"
+        },
+        {
+          "characterId": "xunYu",
+          "unitType": "strategist"
+        }
+      ]
+    },
+    {
+      "id": "yellow5",
+      "name": "5전 황건 기병대",
+      "enemyPreset": "ytStage5",
+      "enemyLevel": 6,
+      "reward": 3600,
       "joins": [
         {
           "characterId": "char1",
@@ -27,23 +70,31 @@
       ]
     },
     {
-      "id": "yellow3",
-      "name": "황건적 (어려움)",
-      "enemyPreset": "yellowHard",
-      "enemyLevel": 3,
-      "reward": 1600,
+      "id": "yellow6",
+      "name": "6전 황건 본진 외곽",
+      "enemyPreset": "ytStage6",
+      "enemyLevel": 7,
+      "reward": 4000,
+      "joins": []
+    },
+    {
+      "id": "yellow7",
+      "name": "7전 장각",
+      "enemyPreset": "ytStage7",
+      "enemyLevel": 7,
+      "reward": 4500,
       "joins": []
     }
   ],
   "exp": {
-    "win": 120,
+    "win": 50,
     "lose": 40,
-    "perKill": 20,
+    "perKill": 5,
     "perLevel": 100
   },
   "promotionLevels": [
-    5,
-    10
+    9,
+    15
   ],
   "captureRate": 0.05
 }

@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import type { Plugin } from 'vite';
+import { artApi } from './artApi';
 
 // 게임 데이터의 원본 파일들. Lab에서 "파일에 저장"하면 이 파일이 바뀌고, 게임/시뮬레이터가 이 파일을 읽는다.
 const DATA_DIR = fileURLToPath(new URL('../../packages/game-data/data/', import.meta.url));
@@ -99,7 +100,7 @@ const reloadOnData = (): Plugin => ({
 });
 
 export default defineConfig({
-  plugins: [react(), dataApi(), reloadOnData()],
+  plugins: [react(), dataApi(), artApi(), reloadOnData()],
   worker: { format: 'es' },
   server: { port: 5173 },
 });

@@ -508,5 +508,107 @@
       "politics": 5,
       "charm": 5
     }
+  },
+  {
+    "id": "zhangJiao",
+    "name": "장각",
+    "rank": "elite",
+    "unitType": "taoist",
+    "level": 15,
+    "stats": {
+      "attack": 1,
+      "defense": 4,
+      "intellect": 9,
+      "speed": 5,
+      "action": 2,
+      "diplomacy": 7,
+      "politics": 6,
+      "charm": 9
+    }
+  },
+  {
+    "id": "ytCavalryCaptain",
+    "name": "황건 기마장",
+    "rank": "normal",
+    "unitType": "cavalry",
+    "level": 15,
+    "stats": {
+      "attack": 6,
+      "defense": 5,
+      "intellect": 2,
+      "speed": 6,
+      "action": 2,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytGeomancerA",
+    "name": "황건 풍수사A",
+    "rank": "normal",
+    "unitType": "geomancer",
+    "level": 15,
+    "stats": {
+      "attack": 2,
+      "defense": 2,
+      "intellect": 4,
+      "speed": 3,
+      "action": 1,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytShieldCaptain",
+    "name": "황건 방패장",
+    "rank": "normal",
+    "unitType": "shield",
+    "level": 15,
+    "stats": {
+      "attack": 5,
+      "defense": 7,
+      "intellect": 2,
+      "speed": 3,
+      "action": 2,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytInfantryCaptain",
+    "name": "황건 보병장",
+    "rank": "normal",
+    "unitType": "infantry",
+    "level": 15,
+    "stats": {
+      "attack": 7,
+      "defense": 5,
+      "intellect": 2,
+      "speed": 4,
+      "action": 2,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
+  },
+  {
+    "id": "ytArcherCaptain",
+    "name": "황건 궁수장",
+    "rank": "normal",
+    "unitType": "archer",
+    "level": 15,
+    "stats": {
+      "attack": 7,
+      "defense": 4,
+      "intellect": 2,
+      "speed": 4,
+      "action": 2,
+      "diplomacy": 5,
+      "politics": 5,
+      "charm": 5
+    }
   }
 ]

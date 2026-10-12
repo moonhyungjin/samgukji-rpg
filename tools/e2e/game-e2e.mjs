@@ -93,6 +93,11 @@ const goto = async (query) => {
 const text = (sel) => evalJs(`document.querySelector(${JSON.stringify(sel)})?.textContent ?? ''`);
 const clickSkill = () =>
   evalJs(`(() => { const b = [...document.querySelectorAll('.command .row button')].find(b => /\\(AP \\d/.test(b.textContent) && !/대기/.test(b.textContent)); if (!b) return false; b.click(); return b.textContent; })()`);
+/** 화면이 그려질 때까지 기다렸다가 누른다 (페이지를 막 열었을 때 버튼이 아직 없는 경우를 막는다) */
+const clickWhenReady = async (label) => {
+  await waitFor(`[...document.querySelectorAll('button')].some(b => b.textContent.includes(${JSON.stringify(label)}) && !b.disabled)`, 20000, `${label} 버튼`);
+  return clickButton(label);
+};
 const clickButton = (label) =>
   evalJs(`(() => { const b = [...document.querySelectorAll('button')].find(b => b.textContent.includes(${JSON.stringify(label)})); if (!b) return false; b.click(); return true; })()`);
 
@@ -509,38 +514,67 @@ try {
     await clickButton('출전');
     await waitFor(`!!document.querySelector('.stage canvas')`, 20000);
     check('출전하면 캠페인 병력으로 전투를 열고 중간 초기화 버튼을 숨긴다', (await saved()).phase === 'battle' && !await evalJs(`[...document.querySelectorAll('.toolbar button')].some(b => b.textContent.includes('처음부터 다시'))`));
-    await goto('?campaign=1'); await clickButton('이어하기');
+    await goto('?campaign=1'); await clickWhenReady('이어하기');
     await fightCampaign();
     let outcome = await saved();
     check('승리 결과에 보상·경험치·합류를 표시하고 다음 전투로 진행한다', outcome.summary.won && outcome.state.battleIndex === 1 && outcome.summary.units.length > 0 && outcome.state.roster.length > initialCampaign.state.roster.length);
     await shot('campaign-result');
-    await goto('?campaign=1'); await clickButton('이어하기');
+    await goto('?campaign=1'); await clickWhenReady('이어하기');
     check('결과 화면을 다시 불러와도 보상을 중복 지급하지 않는다', JSON.stringify((await saved()).state) === JSON.stringify(outcome.state));
     await clickButton('다음 전투 정비');
-    for (let battle = 1; battle < 3; battle++) {
+    // 데이터의 전투 수만큼 AI로 끝까지 싸운다. 지면 "재도전 정비"로 다시 도전한다 (전투 수는 Lab에서 바뀌는 값이다)
+    const campaignBattles = JSON.parse(readFileSync(resolve('packages/game-data/data/campaign.json'), 'utf-8')).battles.length;
+    let fights = 1;
+    for (; fights < campaignBattles * 4 && !(outcome.summary.won && outcome.summary.finished); fights++) {
+      await clickButton(outcome.summary.won ? '다음 전투 정비' : '재도전 정비');
       // Each upkeep click must render before the next reads the current state.
       const ids = (await saved()).state.roster.map(u => u.characterId);
       for (const id of ids) {
         await evalJs(`[...document.querySelector('[data-roster="${id}"]').querySelectorAll('button')].find(b => b.textContent.startsWith('정원까지 보충') && !b.disabled)?.click()`);
       }
       await clickButton('출전'); await fightCampaign(); outcome = await saved();
-      check(`캠페인 ${battle + 1}전 결과가 이어진다`, outcome.summary.won && outcome.state.battleIndex === battle + 1);
-      await clickButton(outcome.summary.finished ? '군단 확인' : '다음 전투 정비');
     }
+    check(`캠페인 ${campaignBattles}전을 AI로 끝까지 이어 간다 (${fights}번 싸움)`, outcome.summary.won && outcome.summary.finished && outcome.state.battleIndex === campaignBattles);
+    await clickButton('군단 확인');
     check('최종 승리 후 출전 대신 토벌 완료를 표시한다', (await saved()).state.finished && await evalJs(`document.querySelector('.campaign').textContent.includes('모든 전투를 완료') && !document.querySelector('.campaign-depart')`));
     // UI fixtures live only in this test browser's storage, never game data files.
-    const weak = structuredClone(initialCampaign); weak.state.battleIndex = 2; weak.state.roster.forEach(u => { u.troops = 1; });
+    const weak = structuredClone(initialCampaign); weak.state.battleIndex = campaignBattles - 1; weak.state.roster.forEach(u => { u.troops = 1; });
     await evalJs(`localStorage.setItem('samgukji-campaign-v1', ${JSON.stringify(JSON.stringify(weak))})`);
-    await goto('?campaign=1'); await clickButton('이어하기'); await clickButton('출전'); await fightCampaign();
+    await goto('?campaign=1'); await clickWhenReady('이어하기'); await clickButton('출전'); await fightCampaign();
     const lost = await saved();
-    check('패배는 같은 전투·다음 도전 횟수·손실을 보존하고 보상을 주지 않는다', !lost.summary.won && lost.state.battleIndex === 2 && lost.state.attempt === 2 && lost.summary.goldGained === 0);
+    check('패배는 같은 전투·다음 도전 횟수·손실을 보존하고 보상을 주지 않는다', !lost.summary.won && lost.state.battleIndex === campaignBattles - 1 && lost.state.attempt === 2 && lost.summary.goldGained === 0);
     await clickButton('재도전 정비');
     check('전멸한 군단은 보충 전 출전할 수 없다', await evalJs(`document.querySelector('.campaign-depart button').disabled`));
-    const promoted = structuredClone(initialCampaign); promoted.state.roster[0].level = 10;
+    // 승급할 수 있는 병종(승급 대상이 있는)의 군단을 골라, 승급 레벨을 채워 불러온다 (군주 등 승급 갈래가 없는 병종은 건너뛴다)
+    const unitTypeFile = JSON.parse(readFileSync(resolve('packages/game-data/data/unitTypes.json'), 'utf-8'));
+    const campaignFile = JSON.parse(readFileSync(resolve('packages/game-data/data/campaign.json'), 'utf-8'));
+    const promoted = structuredClone(initialCampaign);
+    const promotableIndex = promoted.state.roster.findIndex((u) => (unitTypeFile.find((t) => t.id === u.unitType)?.promotesTo ?? []).length > 0);
+    promoted.state.roster[promotableIndex].level = Math.max(campaignFile.promotionLevels[0], 1);
+    const promoteId = promoted.state.roster[promotableIndex].characterId;
     await evalJs(`localStorage.setItem('samgukji-campaign-v1', ${JSON.stringify(JSON.stringify(promoted))})`);
-    await goto('?campaign=1'); await clickButton('이어하기');
-    await evalJs(`document.querySelector('[data-roster="${firstId}"] .campaign-promote button').click()`);
-    check('승급 선택을 엔진에 요청하고 새 병종을 저장한다', (await saved()).state.roster[0].unitType !== initialCampaign.state.roster[0].unitType);
+    await goto('?campaign=1'); await clickWhenReady('이어하기');
+    await evalJs(`document.querySelector('[data-roster="${promoteId}"] .campaign-promote button').click()`);
+    check('승급 선택을 엔진에 요청하고 새 병종을 저장한다', (await saved()).state.roster[promotableIndex].unitType !== initialCampaign.state.roster[promotableIndex].unitType);
+  }
+  // 에셋 검수 Viewer (?viewer=1): 슬롯 영역 표시와 후보 그림 끼우기 (Lab의 에셋 검수 탭이 iframe으로 쓴다)
+  if (!process.env.GAME_E2E_SECTION) {
+    await goto('?viewer=1');
+    await waitFor(`!!document.querySelector('[data-art-viewer-stage] canvas') && document.querySelector('[data-art-viewer-stage]').dataset.artLoaded !== undefined`, 30000, 'Viewer 화면');
+    check('Viewer: 실제 전투 화면(전장 배경 포함)을 그린다', (await evalJs(`document.querySelector('[data-art-viewer-stage]').dataset.artLoaded.split(',').includes('field')`)) === true);
+    await evalJs(`window.postMessage({ type: 'art-viewer:highlight', rects: [{ x: 0, y: 0, w: 1280, h: 70 }, { x: 40, y: 510, w: 430, h: 364 }], label: 'A1 시험' }, '*')`);
+    await waitFor(`document.querySelectorAll('.art-viewer-highlight').length === 2`, 5000, '슬롯 점선');
+    check('Viewer: 슬롯 영역이 점선 상자로 표시된다 (논리 좌표 → 백분율)', (await evalJs(`(() => { const [a, b] = [...document.querySelectorAll('.art-viewer-highlight')]; return a.style.left === '0%' && a.style.width === '100%' && Math.abs(parseFloat(a.style.height) - 70 / 9) < 0.01 && a.textContent === 'A1 시험' && Math.abs(parseFloat(b.style.left) - 40 / 12.8) < 0.01; })()`)) === true);
+    await evalJs(`window.postMessage({ type: 'art-viewer:highlight', rects: [], label: '' }, '*')`);
+    await waitFor(`document.querySelectorAll('.art-viewer-highlight').length === 0`, 5000, '점선 지우기');
+    check('Viewer: 슬롯이 없으면 표시를 지운다', true);
+    // 후보 그림 끼우기: 같은 서버의 다른 그림으로 전장 배경을 바꿔 본다
+    await evalJs(`window.postMessage({ type: 'art-viewer:overrides', overrides: { field: location.origin + '/art/battle/plain-v1.png' } }, '*')`);
+    await waitFor(`document.querySelector('[data-art-viewer-stage]')?.dataset.artOverrides === 'field' && !!document.querySelector('[data-art-viewer-stage] canvas')`, 30000, '그림 끼우기');
+    check('Viewer: 후보 그림을 끼우면 화면을 다시 그리고, 그 그림을 실제로 읽는다', (await evalJs(`document.querySelector('[data-art-viewer-stage]').dataset.artLoaded.split(',').includes('field')`)) === true);
+    await evalJs(`window.postMessage({ type: 'art-viewer:overrides', overrides: {} }, '*')`);
+    await waitFor(`document.querySelector('[data-art-viewer-stage]')?.dataset.artOverrides === '' && !!document.querySelector('[data-art-viewer-stage] canvas')`, 30000, '원래대로');
+    check('Viewer: 원래대로 돌리면 끼운 그림이 없어진다', true);
   }
   // Optional local art-review page; no changes to runtime data or assets.
   if (process.env.ART_REVIEW_PATH) {

@@ -197,5 +197,181 @@
         "row": "back"
       }
     ]
+  },
+  {
+    "id": "yellowStart",
+    "label": "황건 1장 시작(조조, 하후돈)",
+    "lineup": [
+      {
+        "characterId": "caoCao",
+        "row": "front"
+      },
+      {
+        "characterId": "xiahouDun",
+        "row": "front"
+      }
+    ]
+  },
+  {
+    "id": "ytStage1",
+    "label": "황건 1장 1전(보병 둘)",
+    "lineup": [
+      {
+        "characterId": "ytInfantryA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytInfantryB",
+        "row": "front"
+      }
+    ]
+  },
+  {
+    "id": "ytStage2",
+    "label": "황건 1장 2전(보병 둘, 궁병)",
+    "lineup": [
+      {
+        "characterId": "ytInfantryA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytInfantryB",
+        "row": "front"
+      },
+      {
+        "characterId": "ytArcherA",
+        "row": "back"
+      }
+    ]
+  },
+  {
+    "id": "ytStage3",
+    "label": "황건 1장 3전(방패병, 보병장, 궁병 둘)",
+    "lineup": [
+      {
+        "characterId": "ytShieldA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytInfantryCaptain",
+        "row": "front"
+      },
+      {
+        "characterId": "ytArcherA",
+        "row": "back"
+      },
+      {
+        "characterId": "ytArcherB",
+        "row": "back"
+      }
+    ]
+  },
+  {
+    "id": "ytStage4",
+    "label": "황건 1장 4전(기마장 등장)",
+    "lineup": [
+      {
+        "characterId": "ytCavalryCaptain",
+        "row": "front"
+      },
+      {
+        "characterId": "ytShieldA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytInfantryA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytArcherA",
+        "row": "back"
+      }
+    ]
+  },
+  {
+    "id": "ytStage5",
+    "label": "황건 1장 5전(기마장, 기병, 방패장, 궁병 둘)",
+    "lineup": [
+      {
+        "characterId": "ytCavalryCaptain",
+        "row": "front"
+      },
+      {
+        "characterId": "ytCavalryA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytShieldCaptain",
+        "row": "front"
+      },
+      {
+        "characterId": "ytArcherA",
+        "row": "back"
+      },
+      {
+        "characterId": "ytArcherB",
+        "row": "back"
+      }
+    ]
+  },
+  {
+    "id": "ytStage6",
+    "label": "황건 1장 6전(방패장, 보병장, 기병, 궁수장, 궁병, 풍수사)",
+    "lineup": [
+      {
+        "characterId": "ytShieldCaptain",
+        "row": "front"
+      },
+      {
+        "characterId": "ytInfantryCaptain",
+        "row": "front"
+      },
+      {
+        "characterId": "ytCavalryA",
+        "row": "front"
+      },
+      {
+        "characterId": "ytArcherCaptain",
+        "row": "back"
+      },
+      {
+        "characterId": "ytArcherA",
+        "row": "back"
+      },
+      {
+        "characterId": "ytGeomancerA",
+        "row": "back"
+      }
+    ]
+  },
+  {
+    "id": "ytStage7",
+    "label": "황건 1장 7전(장각)",
+    "lineup": [
+      {
+        "characterId": "ytShieldCaptain",
+        "row": "front"
+      },
+      {
+        "characterId": "ytInfantryCaptain",
+        "row": "front"
+      },
+      {
+        "characterId": "ytCavalryCaptain",
+        "row": "front"
+      },
+      {
+        "characterId": "ytArcherCaptain",
+        "row": "back"
+      },
+      {
+        "characterId": "zhangJiao",
+        "row": "back"
+      },
+      {
+        "characterId": "ytGeomancerA",
+        "row": "back"
+      }
+    ]
   }
 ]
