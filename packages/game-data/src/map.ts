@@ -25,6 +25,8 @@ export interface MapFile {
   factions: MapFaction[];
   regions: MapRegionFile[];
   goalRegion: string;
+  /** 한 턴의 행동 횟수 */
+  actionsPerTurn: number;
 }
 
 /** 지도 파일(편성 이름)을 엔진이 쓰는 StrategyMap(편성 목록)으로 푼다. 없는 편성 이름이면 오류 */
@@ -46,11 +48,12 @@ export function resolveMap(file: MapFile, presetMap: Record<string, (typeof pres
     factions: file.factions.map((f) => ({ ...f })),
     regions: file.regions.map((r) => ({ ...r, neighbors: [...r.neighbors], castles: r.castles.map((c) => castle(c, r.name)) })),
     goalRegion: file.goalRegion,
+    actionsPerTurn: file.actionsPerTurn,
   };
 }
 
 /** map.json 그대로 (편성 이름 상태) */
 export const mapFile: MapFile = mapJson as MapFile;
 
-/** 첫 지도 (황건적 토벌, 하북) */
+/** 첫 지도 (1장, 황건적 토벌 연주) */
 export const strategyMap: StrategyMap = resolveMap(mapFile);

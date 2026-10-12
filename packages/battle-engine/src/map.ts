@@ -62,4 +62,6 @@ export interface StrategyMap {
   regions: MapRegion[];
   /** 이 지역을 차지하면 클리어 (첫 단계) */
   goalRegion: string;
+  /** 한 턴의 행동 횟수 [임시] */
+  actionsPerTurn: number;
 }

@@ -59,6 +59,7 @@ export function mapIssues(files: DataFiles): Issue[] {
   if (factionIds.size !== map.factions.length) err('세력 id가 겹칩니다.');
   if (regionIds.size !== map.regions.length) err('지역 id가 겹칩니다.');
   if (!regionIds.has(map.goalRegion)) err(`목표 지역 "${map.goalRegion}"이(가) 없습니다.`);
+  if (!Number.isInteger(map.actionsPerTurn) || map.actionsPerTurn < 1) err('턴당 행동 수는 1 이상의 정수여야 합니다.');
   const castleIds = new Set<string>();
   for (const r of map.regions) {
     if (!factionIds.has(r.faction)) err(`${r.name}: 세력 "${r.faction}"이(가) 없습니다.`);

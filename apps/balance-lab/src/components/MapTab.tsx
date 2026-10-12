@@ -154,6 +154,10 @@ export function MapTab() {
             ))}
           </select>
         </label>
+        <label className="field">
+          <span>턴당 행동 수</span>
+          <input type="number" min={1} step={1} aria-label="턴당 행동 수" value={map.actionsPerTurn} onChange={(e) => setMap((m) => ({ ...m, actionsPerTurn: Number(e.target.value) }))} />
+        </label>
       </section>
 
       {region && (

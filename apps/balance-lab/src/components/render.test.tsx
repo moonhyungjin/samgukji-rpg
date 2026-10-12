@@ -96,7 +96,7 @@ describe('Balance Lab 화면 렌더링', () => {
   it('지도 탭: 미리보기, 세력, 지역 편집이 나온다', () => {
     const html = render(<MapTab />);
     expectClean(html);
-    for (const label of ['지도 미리보기', '세력', '목표 지역', '맞닿은 지역', '수비 부대 편성', '성 추가', '지역 추가']) expect(html).toContain(label);
+    for (const label of ['지도 미리보기', '세력', '목표 지역', '턴당 행동 수', '맞닿은 지역', '수비 부대 편성', '성 추가', '지역 추가']) expect(html).toContain(label);
     for (const r of state.map.regions) expect(html).toContain(r.name);
   });
 

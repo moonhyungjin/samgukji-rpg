@@ -74,7 +74,8 @@ export function normalizeState(saved: LabState): LabState {
     },
     sim: { ...defaults.sim, ...saved.sim },
     campaign: saved.campaign ?? defaults.campaign,
-    map: saved.map ?? defaults.map,
+    // 턴당 행동 수(2026-10-11)가 없는 옛 저장은 기본값으로 채운다 (파일과 같은 자리: 맨 끝)
+    map: saved.map ? { ...saved.map, actionsPerTurn: saved.map.actionsPerTurn ?? defaults.map.actionsPerTurn } : defaults.map,
     // 예전의 "목표 지표"(targets)는 버리고 경고 기준(warnings)을 쓴다 (2026-10-09)
     targets: undefined,
     warnings: { ...defaults.warnings, ...saved.warnings },

@@ -315,5 +315,6 @@
       ]
     }
   ],
-  "goalRegion": "jibei"
+  "goalRegion": "jibei",
+  "actionsPerTurn": 3
 }

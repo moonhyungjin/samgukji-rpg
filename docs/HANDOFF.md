@@ -46,7 +46,7 @@
 
 ```bash
 npm install
-npm test                 # 560개 (엔진, 데이터, Lab, 게임 로직/패널). 서버 불필요
+npm test                 # 571개 (엔진, 데이터, Lab, 게임 로직/패널). 서버 불필요
 npm run typecheck        # 모든 패키지를 각각 tsc -p 로 검사
 
 npm run lab              # Balance Lab http://localhost:5173 (데이터 편집과 "파일에 저장"은 이 개발 서버에서만 된다)
@@ -121,6 +121,8 @@ packages/game-data/data/*.json  ←(파일에 저장)←  Balance Lab 작업 중
 중앙 지휘 UI는 `BattleView.tsx`의 `.command-dock`으로 카드 사이에 배치한다. 화면 폭 1100px 이하에서는 전장 아래로 내려간다. 커맨드의 규칙/미리보기는 기존 컨트롤러를 그대로 사용하고 로그는 하단에 둔다. 카드 좌표를 바꾸면 `styles.css`의 패널 위치와 e2e의 겹침 검사도 함께 확인한다.
 
 **캠페인 화면** (2026-10-09, 디자인 담당): `components/CampaignView.tsx`와 `campaign/`(저장은 `campaign/progress.ts`, 브라우저 `samgukji-campaign-v1`). 규칙은 엔진 `campaign/`의 반환값만 표시한다. 정비/결과/전투 진입 때 저장하고, 결과 화면 재접속으로 보상이 두 번 들어가지 않는다. 전투 중에 닫으면 같은 입력과 시드로 그 전투를 처음부터 다시 한다. 저장 형식이 안 맞으면 새로 시작할지 묻는다.
+
+**전략 규칙** (2026-10-11, 개발 담당, 설계 문서 04 v0.4): `packages/battle-engine/src/strategy/`. 순수 함수이고 상태(`StrategyState`)를 새로 돌려준다. 할 수 있는지는 `declareWarIssue`, `attackIssue`가 이유 문장(또는 null)으로 알려 준다. 성 전투는 `strategyBattleInput` → `runBattle`(또는 수동 플레이 세션) → `applyCastleBattle`이고, 안에서 캠페인의 `campaignBattleInput`/`applyBattleResult`를 성 하나짜리 캠페인으로 불러 경험치·포획 규칙을 같이 쓴다. 군단 정비는 `state.army`에 캠페인 함수를 쓰고 `withArmy`로 넣는다. 시험은 `packages/game-data/test/strategy.test.ts`(작은 시험 지도 + 실제 지도 흐름).
 
 **전략 지도 시안** (2026-10-09, 디자인 담당): `components/StrategyPreview.tsx`, `strategy.css`. 지역 선택과 키보드 조작만 있고, 자원 칸은 "—", 행동 버튼은 비활성이다. 실제 진행에 필요한 엔진 API(초기 상태, 행동 목록·가능 여부·불가 사유·비용, 실행 결과, 성 소유, 전투 입출력)는 `TODO.md`의 담당 간 요청에 있다.
 
