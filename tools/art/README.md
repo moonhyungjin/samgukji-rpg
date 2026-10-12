@@ -22,8 +22,14 @@ python tools/art/audit.py --dups     # 내용이 같은 파일 묶음
 
 분류는 파일 이름이 코드/문서/스크립트에 나오는지로 본다. 이름을 조합해서 불러오면 놓칠 수 있으니 지우기 전에 확인한다. 이 스크립트는 파일을 지우거나 옮기지 않는다.
 
-## 알려 둔 남은 정리 (아트 담당이 정할 일)
+## 중복을 만들지 않는 규칙
 
-- **중복:** `docs/art/first-batch/sprites`, `docs/art/cavalry/sprites` 등이 `apps/game/public/art/battle`과 같은 파일이다 (약 15MB). 미리보기 페이지(`preview.html`)가 상대 경로로 부르고 있어서, 페이지 경로를 `public/art`로 고친 뒤 복사본을 지우면 된다.
-- **UI 슬라이스 3벌:** `public/art/battle/ui`, `ui/dark`, `ui/light`와 `docs/art/ui-sheets/slices/{dark,light}`가 같은 슬라이스다. 게임이 쓰는 한 벌만 `public`에 두고 나머지는 `docs/art`나 `art-inbox/`에 둔다.
-- **올라간 것은 히스토리에 남는다.** 이미 push된 파일을 지워도 저장소 용량은 줄지 않는다 (히스토리 재작성이 필요). 앞으로 불어나는 것을 막는 게 목적이다.
+- **한 파일은 한 곳에만 둔다.** 게임이 쓰는 그림의 원본은 `apps/game/public/art/` 하나다. `docs/art/`의 미리보기 페이지는 `../../../apps/game/public/art/...` 상대 경로로 그 파일을 부른다 (2026-10-12에 중복 230개 20.6MB를 이렇게 정리했다).
+- **게임이 안 쓰는 그림은 `public/art`에 넣지 않는다.** 이 폴더는 빌드에 통째로 들어간다. UI 슬라이스처럼 후보가 많은 것은 `docs/art/ui-sheets/slices/`에 두고, 쓰기로 한 조각만 `public/art/battle/ui/`로 복사한다 (`scripts/generate_ui_assets.py`는 이제 docs에만 만든다).
+- **에셋을 만드는 스크립트**(`scripts/build_*.py` 등)가 `public`과 `docs`에 같은 결과를 둘 다 쓰면 중복이 다시 생긴다. 그런 스크립트는 `public`에만 쓰거나, docs 쪽은 미리보기 페이지로 대신한다.
+- **이미 올라간 파일은 히스토리에 남는다.** 지워도 저장소 용량은 줄지 않으니 앞으로 불어나는 것을 막는 게 목적이다. 확인은 `python tools/art/audit.py --dups`.
+
+## 아직 정하지 않은 것
+
+- **이미지 용량 정책:** 캐릭터 그림이 1500px 안팎인데 화면에서는 머리 높이 64~120px로 쓰인다. 표시 크기 기준 축소와 WebP 변환을 쓸지 미정이다 (HANDOFF 참고).
+- **안 쓰는 시안(`docs/art/rance-mockup` 등):** 어디서도 안 쓰는 파일은 지워도 저장소 크기에 영향이 없다 (히스토리에 남는다). 샘플 3번 방향의 새 에셋이 생기면 그때 `art-inbox/`로 치운다.

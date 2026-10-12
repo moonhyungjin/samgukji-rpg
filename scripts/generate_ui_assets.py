@@ -4,7 +4,6 @@ Script to slice and generate all game-ready UI assets from the design sheets:
 - docs/art/ui-sheets/ui-sheet-light.jpg
 
 Outputs to:
-- apps/game/public/art/battle/ui/ (runtime web app assets)
 - docs/art/ui-sheets/slices/ (documentation and inspection)
 """
 
@@ -199,7 +198,7 @@ LIGHT_MANIFEST = [
 def process_theme(theme_name, sheet_path, manifest, dist_thresh=22):
     img = Image.open(sheet_path)
     out_dirs = [
-        f"apps/game/public/art/battle/ui/{theme_name}",
+        # 슬라이스는 docs에만 만든다. 게임이 쓰기로 한 조각만 apps/game/public/art/battle/ui/ 로 직접 복사한다 (tools/art/README.md)
         f"docs/art/ui-sheets/slices/{theme_name}"
     ]
     for d in out_dirs:
@@ -240,12 +239,6 @@ def main():
     dark_results = process_theme("dark", "docs/art/ui-sheets/ui-sheet-dark.jpg", DARK_MANIFEST, dist_thresh=24)
     light_results = process_theme("light", "docs/art/ui-sheets/ui-sheet-light.jpg", LIGHT_MANIFEST, dist_thresh=22)
     
-    # Also copy primary dark assets to apps/game/public/art/battle/ui/ root
-    root_ui = "apps/game/public/art/battle/ui"
-    dark_dir = os.path.join(root_ui, "dark")
-    for fname in os.listdir(dark_dir):
-        shutil.copy2(os.path.join(dark_dir, fname), os.path.join(root_ui, fname))
-    print(f"Synced {len(os.listdir(dark_dir))} files to {root_ui}/")
     
     print("\n UI Asset Generation Completed Successfully!")
 
