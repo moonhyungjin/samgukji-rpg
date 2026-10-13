@@ -3,7 +3,7 @@ import { defaultBalance, gameData, presets } from '@samgukji/game-data';
 import { describe, expect, it } from 'vitest';
 import { createDefaultState } from '../lab/defaults';
 import { isLabState, normalizeState } from '../lab/LabContext';
-import { formatBattleLog } from './battleLog';
+import { formatBattleLog } from '../features/sim/battleLog';
 import { evaluateReport } from './metrics';
 import type { LabState } from '../lab/types';
 import { getIn, setIn } from './path';

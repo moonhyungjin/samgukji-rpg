@@ -67,6 +67,11 @@ npm run lab:build / game:build
 ```text
 apps/game/           React + PixiJS 전투 화면
 apps/balance-lab/    React + Vite. 밸런스 도구 겸 데이터 편집기. 시뮬레이션은 Web Worker, 고친 값은 "파일에 저장" (개발 서버의 /api/data)
+                       src/nav.ts          탭 분류 (결과 보기 · 데이터 편집 · 캠페인/지도 · 에셋 · 설정). 탭을 더하거나 옮길 때 여기만 고친다
+                       src/features/<분류>/ sim(시뮬레이션, 비교, 전투 1회, 피해 계산기, 상성표) · balance(밸런스 수치, 공식) · data(병종·스킬, 장수, 편성, editor/) · campaign(캠페인, 지도) · art(에셋 검수) · settings
+                       src/shared/         여러 탭이 같이 쓰는 입력칸(Fields), 저장 줄(SaveBar)
+                       src/lab/            상태(LabContext), 탭 이동(NavContext), 시뮬레이션 훅
+                       src/styles/         구역별 CSS (index.css가 순서대로 가져온다. 순서가 곧 우선순위)
 packages/battle-engine/   순수 TypeScript. React/PixiJS/DOM에 의존하지 않는다 (tsconfig에서 DOM 타입도 막아 둠)
 packages/game-data/       게임 데이터: data/*.json (skills, traits, unitTypes, characters, presets, balance) + changelog.md + 로더
 tools/sim/                시뮬레이션 CLI

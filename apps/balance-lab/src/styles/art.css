@@ -1,0 +1,281 @@
+/* 에셋 검수 탭 */
+.art-bar {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.art-ok {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.art-no {
+  border-color: var(--err);
+  color: var(--err);
+}
+
+.art-layout.slots {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.art-slots {
+  max-height: 78vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+}
+
+.art-group {
+  margin: 8px 4px 2px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.art-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+  padding: 5px 8px;
+  margin-bottom: 2px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.art-slot small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.art-slot.active {
+  border-color: var(--accent, #6aa0ff);
+  background: var(--panel-2);
+}
+
+.art-slot-info h4 {
+  margin: 0 0 2px;
+}
+
+.art-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.art-card {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.art-card.ok {
+  border-color: var(--ok);
+}
+
+.art-card.no {
+  border-color: var(--err);
+  opacity: 0.65;
+}
+
+.art-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+  padding: 0;
+  border: 0;
+  cursor: zoom-in;
+  background-color: #2a2d33;
+  background-image: linear-gradient(45deg, #343840 25%, transparent 25%, transparent 75%, #343840 75%), linear-gradient(45deg, #343840 25%, transparent 25%, transparent 75%, #343840 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+}
+
+.art-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.art-card figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.art-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.art-card small {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.art-badges {
+  display: flex;
+  gap: 4px;
+  min-height: 20px;
+}
+
+.art-used {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.art-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.art-btn {
+  flex: 1;
+  padding: 5px 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.art-btn.ok.on {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #0c1a10;
+}
+
+.art-btn.no.on {
+  background: var(--err);
+  border-color: var(--err);
+  color: #fff;
+}
+
+.art-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.88);
+  cursor: zoom-out;
+}
+
+.art-lightbox img {
+  max-width: 94vw;
+  max-height: 84vh;
+  object-fit: contain;
+  background-color: #2a2d33;
+}
+
+.art-lightbox p {
+  margin: 0;
+  color: #ddd;
+  font-size: 12px;
+}
+
+/* 에셋 검수 Viewer 패널 */
+.art-viewer-panel {
+  margin: 10px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.art-viewer-panel summary {
+  cursor: pointer;
+}
+
+.art-viewer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.art-viewer-bar input[type='text'] {
+  width: 220px;
+}
+
+.art-viewer-iframe {
+  display: block;
+  width: 100%;
+  max-width: 960px;
+  aspect-ratio: 1280 / 900;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #12151c;
+}
+
+.art-btn.view {
+  flex: 1 1 100%;
+}
+
+.art-actions {
+  flex-wrap: wrap;
+}
+
+/* 구조 보기: 슬롯별 켜고 끄는 칩 */
+.art-group-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.art-chip {
+  padding: 3px 9px;
+  border: 2px solid var(--chip, #ffd166);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--chip, #ffd166) 22%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.art-chip.off {
+  background: transparent;
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+/* 분류(위 줄)와 탭(아래 줄) */
+.categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tab.cat {
+  font-weight: 600;
+}

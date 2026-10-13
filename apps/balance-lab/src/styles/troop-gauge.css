@@ -1,0 +1,102 @@
+/* 병력 보정 게이지 */
+.troop-gauge {
+  max-width: 720px;
+}
+
+.gauge-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0;
+}
+
+.gauge-label {
+  flex: 0 0 210px;
+  font-size: 13px;
+}
+
+.gauge-row input[type='range'] {
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+
+.gauge-readout {
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+.gauge-readout .num.big {
+  font-size: 20px;
+  color: #ffd166;
+  margin: 0 4px;
+}
+
+.gauge-readout .arrow {
+  margin: 0 8px;
+  color: var(--muted);
+}
+
+.gauge-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin: 4px 0 10px;
+}
+
+.gauge-chart .grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.gauge-chart .tick,
+.gauge-chart .mark-label {
+  fill: var(--muted);
+  font-size: 10px;
+}
+
+.gauge-chart .mark {
+  stroke: var(--muted);
+  stroke-dasharray: 3 3;
+  stroke-width: 1;
+}
+
+.gauge-chart .curve {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.gauge-chart .now {
+  stroke: #ffd166;
+  stroke-width: 1.5;
+}
+
+.gauge-chart .now-dot {
+  fill: #ffd166;
+}
+
+.hp-bar {
+  display: flex;
+  height: 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.hp-left {
+  background: var(--ok);
+}
+
+.hp-lost {
+  background: var(--err);
+}
+
+details.formula-panel > summary {
+  cursor: pointer;
+}
+
+details.formula-panel > summary h3 {
+  display: inline;
+}
+

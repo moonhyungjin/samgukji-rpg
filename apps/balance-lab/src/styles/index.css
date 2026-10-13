@@ -1,0 +1,15 @@
+/* Lab 스타일. 원래 한 파일이던 것을 구역별로 나눴다. 순서가 곧 우선순위이니 순서를 바꾸지 않는다. */
+@import './base.css';
+@import './editor.css';
+@import './savebar.css';
+@import './unit-tree.css';
+@import './matchup.css';
+@import './compare.css';
+@import './balance.css';
+@import './calc.css';
+@import './formula.css';
+@import './troop-gauge.css';
+@import './battle-log.css';
+@import './campaign.css';
+@import './map.css';
+@import './art.css';

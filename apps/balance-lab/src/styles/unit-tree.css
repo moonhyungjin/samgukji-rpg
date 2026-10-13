@@ -1,0 +1,205 @@
+/* ---- 병종: 계열 탭 + 승급 트리 ---- */
+.unit-tree {
+  margin: 8px 0 14px;
+}
+
+.family-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.family-tab {
+  position: relative;
+}
+
+.family-tab.active {
+  background: var(--accent, #3b6fd8);
+  border-color: var(--accent, #3b6fd8);
+  color: #fff;
+}
+
+.family-tab .dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #ffd166;
+}
+
+.tree-root,
+.tree-root ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 26px;
+  position: relative;
+}
+
+.tree-root {
+  padding-left: 0;
+}
+
+.tree-root ul::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 0;
+  bottom: 14px;
+  border-left: 1px solid var(--border);
+}
+
+.tree-root li {
+  position: relative;
+  padding: 4px 0;
+}
+
+.tree-root ul > li::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 17px;
+  width: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.tree-node {
+  min-width: 150px;
+  text-align: left;
+}
+
+.tree-node .tier {
+  display: inline-block;
+  min-width: 30px;
+  margin-right: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.tree-node.active {
+  border-color: var(--accent, #3b6fd8);
+  box-shadow: 0 0 0 2px rgba(59, 111, 216, 0.5);
+  font-weight: 700;
+}
+
+.tree-node.changed {
+  border-color: #ffd166;
+}
+
+.tree-node.added {
+  border-color: #59e08a;
+}
+
+.tree-node.invalid {
+  border-color: #ff5a5a;
+}
+
+.skill-scroll {
+  overflow-x: auto;
+}
+
+.skill-table th,
+.skill-table td {
+  white-space: normal;
+  vertical-align: top;
+  padding: 5px 6px;
+}
+
+.skill-table td:first-child {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.skill-table .check {
+  white-space: nowrap;
+  margin-right: 0;
+}
+
+.skill-table select {
+  max-width: 124px;
+}
+
+.skill-table .field {
+  margin-bottom: 0;
+}
+
+/* 버프 · 부활 칸: 라벨 위, 입력 아래의 같은 크기 칸을 2열 격자로 놓는다 */
+.skill-table .param-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 84px);
+  gap: 4px 8px;
+}
+
+.skill-table .param-grid .field > span {
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.skill-table .param-grid input[type='number'] {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.skill-table .field input[type='number'] {
+  min-width: 0;
+}
+
+.all-skills h3 {
+  margin: 0 0 4px;
+}
+
+.counter-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-2);
+}
+
+.skill-chip button {
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.sort-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sort-head:hover {
+  color: var(--text);
+}
+
+.sort-mark {
+  display: inline-block;
+  min-width: 10px;
+  font-size: 9px;
+}
+
+.unit-picker {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+

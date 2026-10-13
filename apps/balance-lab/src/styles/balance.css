@@ -1,0 +1,37 @@
+/* 밸런스 탭: 패널마다 한 줄, 칸은 고른 폭으로 */
+.fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px 16px;
+  margin: 8px 0;
+  align-items: start;
+}
+
+.fields-grid .field {
+  margin-bottom: 0;
+}
+
+.fields-grid input,
+.fields-grid select {
+  width: 100%;
+}
+
+.balance-page .panel {
+  margin-bottom: 0;
+}
+
+/* 하위 탭 (시뮬레이션 안) */
+.sub-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+button.tab.sub {
+  font-size: 13px;
+  padding: 4px 12px;
+}
+

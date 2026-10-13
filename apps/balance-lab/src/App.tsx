@@ -1,64 +1,40 @@
 import { useEffect, useState } from 'react';
 import type { SimulationReport } from '@samgukji/battle-engine';
-import { BalanceTab } from './components/BalanceTab';
-import { BattleTab } from './components/BattleTab';
-import { CampaignTab } from './components/CampaignTab';
-import { CharactersTab } from './components/CharactersTab';
-import { CompareTab } from './components/CompareTab';
-import { DamageCalculatorPanel } from './components/DamageCalculatorPanel';
-import { DataTab } from './components/DataTab';
-import { MapTab } from './components/MapTab';
-import { MatchupTab } from './components/MatchupTab';
-import { PresetsTab } from './components/PresetsTab';
-import { SaveBar } from './components/SaveBar';
-import { SettingsTab } from './components/SettingsTab';
-import { SimulationTab } from './components/SimulationTab';
-import { ArtReviewTab } from './components/ArtReviewTab';
+import { BalanceTab } from './features/balance/BalanceTab';
+import { BattleTab } from './features/sim/BattleTab';
+import { CampaignTab } from './features/campaign/CampaignTab';
+import { CharactersTab } from './features/data/CharactersTab';
+import { CompareTab } from './features/sim/CompareTab';
+import { DamageCalculatorPanel } from './features/sim/DamageCalculatorPanel';
+import { DataTab } from './features/data/DataTab';
+import { MapTab } from './features/campaign/MapTab';
+import { MatchupTab } from './features/sim/MatchupTab';
+import { PresetsTab } from './features/data/PresetsTab';
+import { SaveBar } from './shared/SaveBar';
+import { SettingsTab } from './features/settings/SettingsTab';
+import { SimulationTab } from './features/sim/SimulationTab';
+import { ArtReviewTab } from './features/art/ArtReviewTab';
 import { LabProvider, useLab } from './lab/LabContext';
 import { NavContext } from './lab/NavContext';
 import type { LabTab } from './lab/NavContext';
 import { useSimulation } from './lab/useSimulation';
-
-/** 시뮬레이션 탭 안의 하위 탭 (결과를 확인하는 도구들) */
-const SIM_TABS = [
-  { id: 'sim', label: '시뮬레이션' },
-  { id: 'compare', label: '설정 비교' },
-  { id: 'battle', label: '전투 1회' },
-  { id: 'calc', label: '피해 계산기' },
-] as const;
-
-type SimTabId = (typeof SIM_TABS)[number]['id'];
-const isSimTab = (tab: LabTab): tab is SimTabId => SIM_TABS.some((t) => t.id === tab);
-
-const TABS = [
-  { id: 'sim', label: '시뮬레이션' },
-  { id: 'matchup', label: '병종 상성표' },
-  { id: 'balance', label: '밸런스' },
-  { id: 'data', label: '병종 · 스킬' },
-  { id: 'characters', label: '장수' },
-  { id: 'presets', label: '기본 편성' },
-  { id: 'campaign', label: '캠페인' },
-  { id: 'map', label: '지도' },
-  { id: 'art', label: '에셋 검수' },
-  { id: 'settings', label: '경고 기준 · 가져오기' },
-] as const;
-
-type TabId = (typeof TABS)[number]['id'] | SimTabId;
+import { CATEGORIES, categoryOf } from './nav';
 
 function Shell() {
   const { state } = useLab();
   const sim = useSimulation(state);
-  const [tab, setTab] = useState<TabId>('sim');
-  // 시뮬레이션 탭으로 돌아오면 마지막에 보던 하위 탭을 연다
-  const [lastSimTab, setLastSimTab] = useState<SimTabId>('sim');
+  const [tab, setTab] = useState<LabTab>('sim');
+  // 분류로 돌아오면 그 분류에서 마지막에 보던 탭을 연다
+  const [lastTab, setLastTab] = useState<Record<string, LabTab>>({});
+  const category = categoryOf(tab);
   const [compareOpened, setCompareOpened] = useState(false);
   useEffect(() => {
-    if (isSimTab(tab)) setLastSimTab(tab);
+    setLastTab((cur) => (cur[category.id] === tab ? cur : { ...cur, [category.id]: tab }));
     if (tab === 'compare') setCompareOpened(true);
-  }, [tab]);
+  }, [tab, category.id]);
   const [pinned, setPinned] = useState<SimulationReport | null>(null);
   const [anchor, setAnchor] = useState<string | null>(null);
-  const nav = { anchor, go: (next: LabTab, target?: string) => { setTab(next as TabId); setAnchor(target ?? null); } };
+  const nav = { anchor, go: (next: LabTab, target?: string) => { setTab(next); setAnchor(target ?? null); } };
 
   // 다른 탭의 값을 고치러 이동하면 그 카드/행으로 스크롤하고 잠깐 강조한다.
   // 이동한 화면이 선택 상태(예: 병종 트리에서 어느 병종)를 맞추고 나서야 요소가 생기므로 몇 프레임 기다리며 찾는다.
@@ -102,19 +78,19 @@ function Shell() {
     <div className="app">
       <header className="top">
         <h1>Balance Lab</h1>
-        <nav>
-          {TABS.map((t) => (
-            <button key={t.id} type="button" className={t.id === tab || (t.id === 'sim' && isSimTab(tab)) ? 'tab active' : 'tab'} onClick={() => setTab(t.id === 'sim' ? lastSimTab : t.id)}>
-              {t.label}
+        <nav className="categories" aria-label="분류">
+          {CATEGORIES.map((c) => (
+            <button key={c.id} type="button" title={c.hint} data-category={c.id} className={c.id === category.id ? 'tab cat active' : 'tab cat'} onClick={() => setTab(lastTab[c.id] ?? c.tabs[0].id)}>
+              {c.label}
             </button>
           ))}
         </nav>
       </header>
       <SaveBar />
       <main>
-        {isSimTab(tab) && (
-          <nav className="sub-tabs">
-            {SIM_TABS.map((t) => (
+        {(
+          <nav className="sub-tabs" aria-label={`${category.label} 탭`}>
+            {category.tabs.map((t) => (
               <button key={t.id} type="button" className={t.id === tab ? 'tab sub active' : 'tab sub'} onClick={() => setTab(t.id)}>
                 {t.label}
               </button>

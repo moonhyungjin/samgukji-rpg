@@ -1,0 +1,32 @@
+/* 병종을 넣어 계산 */
+.pair-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: flex-end;
+  margin: 8px 0;
+}
+
+.pair-table,
+.troop-table {
+  margin-top: 8px;
+}
+
+.troop-table th {
+  text-align: right;
+  font-weight: normal;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.troop-table th:first-child {
+  text-align: left;
+}
+
+.troop-preview {
+  margin-top: 16px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--border);
+}
+

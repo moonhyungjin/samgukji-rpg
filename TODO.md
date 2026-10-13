@@ -3,7 +3,9 @@
 끝난 일은 지운다. 규칙의 확정 이력은 `docs/design/*.md`의 변경 이력에, 구현 현황은 `docs/HANDOFF.md`에 있다.
 표기: **결정** = 사용자가 정해야 함, **구현** = 정해졌고 할 일, **보류** = 나중에.
 
-## 담당 간 요청
+## 이어서 할 일 (예전 "담당 간 요청")
+
+2026-10-13부터 Claude가 전체를 총괄한다 (`CLAUDE.md` 1장). 아래는 디자인 담당에게 넘겨 두었던 일이고, 이제 Claude가 이어서 한다.
 
 - 개발 → 디자인: **전략 규칙 1차 (선전포고와 성 공격)** (2026-10-11, 설계 문서 04 v0.4, `packages/battle-engine/src/strategy/`). 전략 지도 시안에 연결해 달라. 초기 상태 `startStrategy(strategyMap, campaign, gameData, balance)`. 상태: `turn`, `actionsLeft`, `castleOwner`(성 id → 세력 id), `wars`, `army`(캠페인 상태: 돈 `army.gold`, 군단, 편성), `cleared`. 지역 주인 `regionOwner`, 수입 `turnIncome`, 국력 `playerPower`. 행동: 선전포고 `declareWarIssue`(불가 사유 문장 또는 null) → `declareWar`, 출진 `attackIssue(state, map, castleId, data)` → `strategyBattleInput`으로 전투(관전/수동 세션) → `applyCastleBattle`(결과 `outcome`: 승패, 경험치·포획, `castleTaken`, `regionTaken`, `cleared`), 턴 종료 `endTurn`(수입). 비용은 `DECLARE_WAR_COST`, `ATTACK_COST` (각 1), 턴당 행동 수는 `strategyMap.actionsPerTurn`. 보충·증원·해고·승급·편성은 `state.army`에 캠페인 함수를 쓰고 `withArmy`로 넣는다 (행동을 쓰지 않는다). 개발·임시 징수·전군 휴식·포로·민심은 아직 없으니 버튼은 비활성 그대로 둔다. 저장(브라우저)은 캠페인 화면처럼 해 달라.
 
@@ -11,7 +13,7 @@
 
 - 사용자 결정 → 디자인: **전투 UI 폰트** (2026-10-11, `docs/art/WORKFLOW.md` 그래픽 방향). 제목 글씨(군 이름 현판, 장수 이름, 라운드, 스킬 이름)는 배민 을지로체, 작은 글씨(버프, 상세, 로그)는 다른 폰트. 할 일: 을지로체 계열 중 어느 것인지 사용자에게 확인(을지로체/10년후체/오래오래체), 작은 글씨 폰트 후보 제시, 배포 시 라이선스(폰트 파일 재배포) 확인, woff2 + 완성형 2,350자·숫자·기호 서브셋, PixiJS는 `document.fonts.load()` 뒤에 그리기, 6vs6 카드에서 가장 긴 이름과 1000/1000이 잘리지 않는지 스크린샷 확인.
 
-개발(Claude)과 디자인(Codex) 사이에 넘기는 일. 형식: `- 보낸 담당 → 받는 담당: 무엇이 왜 필요한지 (관련 파일)`. 처리한 쪽이 지운다. 규칙은 `CLAUDE.md` 1장 "담당 영역".
+끝낸 것은 지운다.
 
 
 ## 사용자가 정해야 할 것 (결정)

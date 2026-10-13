@@ -1,9 +1,9 @@
 import type { BalanceConfig, CharacterData, GameData } from '@samgukji/battle-engine';
 import { campaignFile, defaultBalance, gameData, mapFile, presetList } from '@samgukji/game-data';
 import type { CampaignFile, MapFile, PresetDef } from '@samgukji/game-data';
-import { serialize as serializeCharacters } from '../editor/lib/editor';
-import { serializePresets } from '../editor/lib/presets';
-import { serializeUnitTypes } from '../editor/lib/unitTypes';
+import { serialize as serializeCharacters } from '../features/data/editor/lib/editor';
+import { serializePresets } from '../features/data/editor/lib/presets';
+import { serializeUnitTypes } from '../features/data/editor/lib/unitTypes';
 import type { LabState, Slots } from '../lab/types';
 
 /** 프로젝트 데이터 파일 한 벌 (packages/game-data/data/*.json). Lab은 이것을 고치고 "파일에 저장"한다. */

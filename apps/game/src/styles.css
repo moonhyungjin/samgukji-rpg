@@ -456,10 +456,11 @@ strong.defender {
 }
 
 .art-viewer-highlight {
+  --hl: #ffd166;
   position: absolute;
   box-sizing: border-box;
-  border: 2px dashed #ffd166;
-  background: rgba(255, 209, 102, 0.12);
+  border: 2px dashed var(--hl);
+  background: color-mix(in srgb, var(--hl) 14%, transparent);
   pointer-events: none;
   z-index: 5;
 }
@@ -468,9 +469,10 @@ strong.defender {
   position: absolute;
   top: -1px;
   left: -1px;
-  padding: 1px 6px;
-  background: #ffd166;
+  padding: 1px 5px;
+  background: var(--hl);
   color: #1a1305;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
+  white-space: nowrap;
 }

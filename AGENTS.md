@@ -8,8 +8,7 @@
 - 작게 만들고 실행해서 확인한다. 요청과 무관한 파일과 리팩터링은 건드리지 않는다.
 - `packages/battle-engine`은 순수 TypeScript다 (React/PixiJS/DOM 금지). 화면은 엔진의 이벤트를 재생만 한다. 애니메이션이 결과를 정하지 않는다.
 - 게임 데이터는 `packages/game-data/data/*.json`이고 Balance Lab(`npm run lab`)에서 고치고 저장한다. 손으로 고치지 않는다.
-- 확인: `npm run typecheck`, `npm test`. 화면 변경은 `npm run e2e`(게임), `npm run e2e:lab`(Lab).
+- 확인: `npm run qa` (바뀐 파일에 맞는 검사만 자동으로. 규칙표 `docs/QA.md`). 커밋 직전에는 `npm run qa -- --all`.
 - 커밋과 푸시는 사용자가 요청했을 때만 한다. 내가 만들지 않은 변경을 커밋에 섞지 않는다.
 - 아트 에셋은 `apps/game/public/art/battle/`(실행용)과 `docs/art/`(원본, 프롬프트, 검토 자료)에 둔다. 연결 방식은 `docs/art/battle-integration.md`.
-- **디자인 담당은 `docs/art/WORKFLOW.md`의 분업 규칙을 따른다.** 기존 데이터를 사용해 에셋·게임 UI를 맡고, 엔진·데이터·Lab은 수정/검사하지 않는다. 공통 검증을 일괄 실행하지 않고 변경한 게임 화면만 필요한 만큼 확인한다. 전투 애니메이션은 추후 요청 시 맡는다.
-- **엔진·데이터·Lab의 변경이나 검토가 필요하면 직접 하지 않고 개발 담당에게 넘긴다:** `TODO.md`의 "담당 간 요청"에 한 줄로 남기고 사용자에게 알린다. 담당 영역 표는 `CLAUDE.md` 1장.
+- 담당: Claude가 전체를 총괄한다. Codex, Gemini는 그림 생성만 한다 (코드, 데이터, 문서는 고치지 않는다). 자세한 것은 `CLAUDE.md` 1장.

@@ -1,8 +1,8 @@
 import type { CharacterData, UnitTypeData } from '@samgukji/battle-engine';
-import { validate } from '../editor/lib/editor';
-import type { Issue } from '../editor/lib/editor';
-import { validatePresets } from '../editor/lib/presets';
-import { validateUnitTypes } from '../editor/lib/unitTypes';
+import { validate } from '../features/data/editor/lib/editor';
+import type { Issue } from '../features/data/editor/lib/editor';
+import { validatePresets } from '../features/data/editor/lib/presets';
+import { validateUnitTypes } from '../features/data/editor/lib/unitTypes';
 import { findNonFinite } from './fileSync';
 import type { DataFiles } from './fileSync';
 

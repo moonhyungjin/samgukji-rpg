@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync,
 import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
-import type { ArtImage, ReviewMap } from './src/lib/artReview';
+import type { ArtImage, ReviewMap } from './src/features/art/artReview';
 
 /**
  * 개발 서버에서만 동작하는 에셋 검수 API (Lab의 "에셋 검수" 탭이 쓴다).

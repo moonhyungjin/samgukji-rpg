@@ -13,6 +13,10 @@ export interface ViewerRect {
   y: number;
   w: number;
   h: number;
+  /** 이 상자의 이름표 (없으면 전체 label의 첫 상자에만 붙는다) */
+  label?: string;
+  /** 상자와 이름표 색 (CSS 색) */
+  color?: string;
 }
 
 /** Lab(에셋 검수 탭)이 보내는 메시지 */
@@ -97,13 +101,15 @@ export function ArtViewer() {
   }, [overrides]);
 
   const pct = (value: number, total: number) => `${(value / total) * 100}%`;
+  // 색은 Lab이 정해 보낸다. 없으면 상자가 여럿일 때만 돌려 쓰고, 하나면 금색이다
+  const colorOf = (r: ViewerRect, i: number) => r.color ?? (rects.length > 1 ? `hsl(${(i * 47 + 40) % 360} 95% 60%)` : 'hsl(42 95% 60%)');
   return (
     <div className="art-viewer" data-viewer-ready="true">
       <div className="art-viewer-frame">
         <div ref={hostRef} className="stage" data-art-viewer-stage />
         {rects.map((r, i) => (
-          <div key={i} className="art-viewer-highlight" style={{ left: pct(r.x, WORLD_W), top: pct(r.y, WORLD_H), width: pct(r.w, WORLD_W), height: pct(r.h, WORLD_H) }}>
-            {i === 0 && label ? <span>{label}</span> : null}
+          <div key={i} className="art-viewer-highlight" style={{ left: pct(r.x, WORLD_W), top: pct(r.y, WORLD_H), width: pct(r.w, WORLD_W), height: pct(r.h, WORLD_H), ['--hl' as string]: colorOf(r, i) }}>
+            {r.label ?? (i === 0 && label ? label : null) ? <span>{r.label ?? label}</span> : null}
           </div>
         ))}
       </div>

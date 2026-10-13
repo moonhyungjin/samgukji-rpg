@@ -1,0 +1,320 @@
+/* ---- 파일 저장 줄 (모든 탭 위) ---- */
+.savebar {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.savebar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.savebar .badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.savebar-hint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.savemsg {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.savemsg.ok {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.savemsg.error {
+  border-color: var(--err);
+  color: var(--err);
+}
+
+.saveissues {
+  margin: 8px 0 0;
+  padding: 6px 12px 6px 28px;
+  font-size: 13px;
+  background: var(--panel-2);
+  border-radius: 6px;
+}
+
+.saveissues .error {
+  color: var(--err);
+}
+
+.saveissues .warning {
+  color: var(--warn);
+}
+
+.savebar-memo {
+  flex: 1 1 260px;
+  min-width: 200px;
+  max-width: 460px;
+}
+
+.formula-panel {
+  grid-column: 1 / -1;
+}
+
+.formula-group {
+  margin: 10px 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--border, #2d3550);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.formula-line {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin: 3px 0;
+  line-height: 1.6;
+}
+
+.formula-label {
+  flex: 0 0 92px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.formula-line .num {
+  color: #ffd166;
+}
+
+.balance-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.balance-page .formula-panel {
+  grid-column: auto;
+}
+
+.balance-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .balance-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.balance-cols .col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.balance-cols .panel {
+  margin-bottom: 0;
+}
+
+.fields-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 14px;
+  margin-bottom: 8px;
+}
+
+.fields-2 .field {
+  margin-bottom: 0;
+}
+
+.fields-2 input {
+  width: 100%;
+}
+
+h4.sub {
+  margin: 18px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text, #e6eaf2);
+  font-size: 13px;
+}
+
+.calc-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px 14px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+
+.calc-controls .field {
+  margin-bottom: 0;
+}
+
+.calc-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 6px 0 10px;
+  font-size: 15px;
+}
+
+.calc-summary .num,
+.calc-table .calc-value {
+  color: #ffd166;
+  font-weight: 700;
+}
+
+.calc-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.calc-table td,
+.calc-table th {
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.calc-table .calc-group th {
+  padding-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.calc-label {
+  width: 150px;
+  white-space: nowrap;
+}
+
+.calc-formula {
+  color: var(--muted);
+}
+
+.calc-value {
+  width: 190px;
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.slot-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.slot-extra {
+  display: flex;
+  gap: 4px;
+}
+
+.slot-extra select {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.promo-note {
+  margin-top: 4px;
+}
+
+.calc-sides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 1000px) {
+  .calc-sides {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.calc-side .sub {
+  margin-top: 4px;
+}
+
+.sources-table thead th {
+  color: var(--muted);
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sources-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sources-table .calc-value {
+  width: auto;
+  text-align: left !important;
+  white-space: normal;
+}
+
+.sources-table .src-unused {
+  opacity: 0.45;
+}
+
+button.goto {
+  font-size: 12px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.flash {
+  animation: flash-bg 1.8s ease-out;
+}
+
+@keyframes flash-bg {
+  0% {
+    box-shadow: 0 0 0 3px #ffd166;
+    background: rgba(255, 209, 102, 0.12);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.sources-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 1000px;
+}
+
+.sources-table td,
+.sources-table th {
+  overflow-wrap: anywhere;
+  white-space: normal; /* 전역 td 규칙의 nowrap을 끈다 */
+}
+
+.sources-table .calc-label {
+  white-space: normal;
+}
+
+.sources-table .calc-value {
+  white-space: normal;
+}
+
+.sources-table td:last-child {
+  white-space: nowrap;
+}
+

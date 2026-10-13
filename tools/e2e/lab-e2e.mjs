@@ -34,6 +34,10 @@ mkdirSync(profile, { recursive: true });
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const results = [];
+// 구간 선택: LAB_E2E_SECTION=screens,art 처럼 쉼표로 고른다. 없으면 전부. 구간은 tools/qa/rules.mjs의 표와 같다.
+//   screens(탭 훑기 + 스킬 저장) · art(에셋 검수 + Viewer) · characters(장수) · unittypes(병종 카드) · presets(기본 편성) · external(외부 변경)
+const ONLY = (process.env.LAB_E2E_SECTION ?? '').split(',').filter(Boolean);
+const on = (name) => ONLY.length === 0 || ONLY.includes(name);
 const errors = [];
 const check = (name, ok, detail = '') => {
   results.push({ name, ok, detail });
@@ -77,7 +81,8 @@ const waitFor = async (expression, timeout = 15000, label = expression) => {
 };
 const shot = async (name, full = false) => {
   const r = await send('Page.captureScreenshot', { format: 'png', ...(full ? { captureBeyondViewport: true } : {}) });
-  writeFileSync(join(OUT, `${name}.png`), Buffer.from(r.data, 'base64'));
+  // 파일은 남기지 않아도(E2E_NO_SHOTS) 캡처는 한다: 화면을 그리는 일이 포커스/호버 같은 상태를 만들어, 일부 검사가 그 상태에 기댄다
+  if (!process.env.E2E_NO_SHOTS) writeFileSync(join(OUT, `${name}.png`), Buffer.from(r.data, 'base64'));
 };
 const mouse = async (x, y) => {
   await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' });
@@ -99,9 +104,14 @@ const clickTab = (label) => evalJs(`(() => { const b = [...document.querySelecto
 // 설정 비교, 전투 1회, 피해 계산기는 시뮬레이션 탭 안의 하위 탭이다. 보이지 않으면 시뮬레이션 탭을 먼저 연다
 const tabs = async (label) => {
   if (await clickTab(label)) return true;
-  await clickTab('시뮬레이션');
-  await sleep(150);
-  return clickTab(label);
+  // 탭은 분류 안에 있다: 보이지 않으면 분류를 하나씩 열어 찾는다
+  const categories = await evalJs(`[...document.querySelectorAll('button.tab.cat')].map(b => b.textContent.trim())`);
+  for (const category of categories) {
+    await clickTab(category);
+    await sleep(150);
+    if (await clickTab(label)) return true;
+  }
+  return false;
 };
 /** 라벨 글자로 찾은 입력칸/선택칸의 값을 바꾼다 (Lab의 NumberField/SelectField에는 aria-label이 없다) */
 const setByLabel = (label, value) =>
@@ -164,6 +174,7 @@ try {
   await load();
 
   // ---- 1. 기존 화면 ----
+  if (on('screens')) {
   await tabs('밸런스');
   await sleep(300);
   const bal = await text('main');
@@ -332,7 +343,7 @@ try {
   // "수정하러 가기"를 누르면 병종 · 스킬 탭으로 이동한다
   await evalJs(`[...document.querySelectorAll('button.goto')].find((b) => b.closest('tr').textContent.includes('병종 보정')).click()`);
   await sleep(500);
-  check('수정하러 가기: 병종 · 스킬 탭의 해당 병종 카드로 이동한다', (await evalJs(`document.querySelector('button.tab.active').textContent`)) === '병종 · 스킬' && !!(await evalJs(`document.querySelector('[data-unittype].flash') ? true : false`)));
+  check('수정하러 가기: 병종 · 스킬 탭의 해당 병종 카드로 이동한다', (await evalJs(`document.querySelector('button.tab.sub.active').textContent`)) === '병종 · 스킬' && !!(await evalJs(`document.querySelector('[data-unittype].flash') ? true : false`)));
 
   await tabs('병종 · 스킬');
   await sleep(300);
@@ -390,8 +401,10 @@ try {
   await sleep(1500);
   await load();
 
+  }
+
   // ---- 2b. 에셋 검수 탭: 슬롯 목록, 그림 표시, OK/NO 저장, NO 정리 ----
-  {
+  if (on('art')) {
     const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
     mkdirSync(ART_TMP, { recursive: true });
     writeFileSync(join(ART_TMP, 'e2e-keep.png'), PNG);
@@ -427,7 +440,7 @@ try {
   }
 
   // ---- 2c. 에셋 검수 Viewer: Lab 안의 게임 화면 (게임 서버 주소 GAME_URL이 있을 때만) ----
-  if (process.env.GAME_URL) {
+  if (on('art') && process.env.GAME_URL) {
     await evalJs(`localStorage.setItem('art-viewer-game-url', ${JSON.stringify(process.env.GAME_URL)})`);
     await load();
     await tabs('에셋 검수');
@@ -447,12 +460,29 @@ try {
     await evalJs(`window.__ready.length = 0; document.querySelector('[data-action="viewer-reset"]').click()`);
     await waitFor(`window.__ready.length > 0 && window.__ready[window.__ready.length - 1].overrides.length === 0`, 40000, '원래대로');
     check('에셋 검수: 원래대로를 누르면 끼운 그림이 없어진다', (await evalJs(`document.querySelector('[data-action="viewer-reset"]').disabled`)) === true);
+    // 구조 보기: 헤더를 쪼갠 슬롯을 칩으로 하나씩 켜고 끈다
+    await evalJs(`document.querySelector('[data-slot="A2"]').click()`);
+    await sleep(500);
+    await evalJs(`document.querySelector('[data-action="viewer-group"]').click()`);
+    await sleep(500);
+    check('에셋 검수: 구조 보기를 켜면 같은 그룹(헤더)의 슬롯이 칩으로 나온다', (await evalJs(`['A1','A2','A3','A4','A5','A6','A7','A8','A9'].every(id => !!document.querySelector('[data-chip="' + id + '"]'))`)) === true);
+    await evalJs(`document.querySelector('[data-action="chips-only"]').click()`);
+    await sleep(300);
+    check('에셋 검수: "지금 슬롯만"을 누르면 고른 슬롯만 켜진다 (겹치지 않게 하나씩 본다)', (await evalJs(`[...document.querySelectorAll('[data-chip]')].every(b => (b.dataset.chip === 'A2') === (b.getAttribute('aria-pressed') === 'true'))`)) === true);
+    await evalJs(`document.querySelector('[data-chip="A3"]').click()`);
+    await sleep(200);
+    const a3On = (await evalJs(`document.querySelector('[data-chip="A3"]').getAttribute('aria-pressed') === 'true'`)) === true;
+    await evalJs(`document.querySelector('[data-action="chips-all"]').click()`);
+    await sleep(300);
+    check('에셋 검수: 칩을 눌러 슬롯을 더 켜고, "모두 켜기"로 되돌린다', a3On && (await evalJs(`[...document.querySelectorAll('[data-chip]')].every(b => b.getAttribute('aria-pressed') === 'true')`)) === true);
+    await evalJs(`document.querySelector('[data-action="viewer-group"]').click()`);
     await evalJs(`document.querySelector('[data-slot="D5"]').click()`);
     await sleep(600);
     check('에셋 검수: 이 슬롯은 지금 코드가 그림을 쓰지 않아 끼워 볼 수 없다고 안내한다', (await evalJs(`!document.querySelector('.art-card [data-act="view"]') && document.querySelector('.art-viewer-bar').textContent.includes('끼워 볼 수 없습니다')`)) === true);
     await evalJs(`localStorage.removeItem('art-viewer-game-url')`);
   }
 
+  if (on('characters')) {
   // ---- 3. 장수 탭: 계산값, 수정, 저장 ----
   await tabs('장수');
   await sleep(300);
@@ -514,6 +544,9 @@ try {
   await sleep(1500);
   await load();
 
+  }
+
+  if (on('unittypes')) {
   // ---- 4. 병종 카드: 수정 → 저장 → 장수 탭의 계산값이 따라 바뀐다 ----
   await tabs('병종 · 스킬');
   await sleep(300);
@@ -547,6 +580,9 @@ try {
   await sleep(1500);
   await load();
 
+  }
+
+  if (on('presets')) {
   // ---- 5. 기본 편성 탭 ----
   await tabs('기본 편성');
   await sleep(300);
@@ -584,6 +620,9 @@ try {
   await sleep(1500);
   await load();
 
+  }
+
+  if (on('external')) {
   // ---- 6. 외부에서 파일이 바뀌면 Lab 초안은 버려지고 파일 값으로 시작한다 ----
   await tabs('장수');
   await sleep(200);
@@ -600,6 +639,7 @@ try {
   check('바뀐 파일의 값이 화면에 반영된다', (await evalJs(`document.querySelector('input[aria-label="guanYu 공격"]').value`)) === String(edited.find((c) => c.id === 'guanYu').stats.attack));
   restoreAll();
   await sleep(1500);
+  }
 
   check('브라우저 콘솔에 오류가 없다', errors.length === 0, errors.join(' | '));
 } catch (e) {

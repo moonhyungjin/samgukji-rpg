@@ -79,7 +79,8 @@ const waitFor = async (expression, timeout = 15000, label = expression) => {
 };
 const shot = async (name) => {
   const r = await send('Page.captureScreenshot', { format: 'png' });
-  writeFileSync(join(OUT, `${name}.png`), Buffer.from(r.data, 'base64'));
+  // 파일은 남기지 않아도(E2E_NO_SHOTS) 캡처는 한다: 화면을 그리는 일이 포커스/호버 같은 상태를 만들어, 일부 검사가 그 상태에 기댄다
+  if (!process.env.E2E_NO_SHOTS) writeFileSync(join(OUT, `${name}.png`), Buffer.from(r.data, 'base64'));
 };
 const mouse = async (x, y) => {
   await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, button: 'none' });
@@ -558,7 +559,7 @@ try {
     check('승급 선택을 엔진에 요청하고 새 병종을 저장한다', (await saved()).state.roster[promotableIndex].unitType !== initialCampaign.state.roster[promotableIndex].unitType);
   }
   // 에셋 검수 Viewer (?viewer=1): 슬롯 영역 표시와 후보 그림 끼우기 (Lab의 에셋 검수 탭이 iframe으로 쓴다)
-  if (!process.env.GAME_E2E_SECTION) {
+  if (!process.env.GAME_E2E_SECTION || process.env.GAME_E2E_SECTION === 'viewer') {
     await goto('?viewer=1');
     await waitFor(`!!document.querySelector('[data-art-viewer-stage] canvas') && document.querySelector('[data-art-viewer-stage]').dataset.artLoaded !== undefined`, 30000, 'Viewer 화면');
     check('Viewer: 실제 전투 화면(전장 배경 포함)을 그린다', (await evalJs(`document.querySelector('[data-art-viewer-stage]').dataset.artLoaded.split(',').includes('field')`)) === true);

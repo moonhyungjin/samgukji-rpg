@@ -1,0 +1,69 @@
+/* 설정 비교 */
+.compare-pick td,
+.compare-pick th {
+  padding: 4px 8px;
+}
+
+.pick-order {
+  margin-left: 4px;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.row-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.compare-table {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.compare-table th,
+.compare-table td {
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.compare-table thead th small {
+  display: block;
+  color: var(--muted);
+  font-weight: normal;
+  font-size: 11px;
+}
+
+.compare-table thead th small.err {
+  color: var(--err);
+  white-space: normal;
+  max-width: 220px;
+}
+
+.compare-table td.num {
+  text-align: right;
+}
+
+.compare-table td.num .delta {
+  margin-left: 6px;
+}
+
+.compare-group th {
+  text-align: left;
+  background: var(--panel-2);
+}
+
+.compare-label {
+  color: var(--muted);
+}
+
+.compare-diff {
+  margin: 4px 0;
+}
+
+.compare-diff ul {
+  margin: 4px 0;
+  font-size: 12px;
+  font-family: Consolas, monospace;
+}
+

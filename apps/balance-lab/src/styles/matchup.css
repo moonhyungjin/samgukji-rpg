@@ -1,0 +1,87 @@
+/* 병종 상성표 */
+.matchup-table {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.matchup-table th,
+.matchup-table td {
+  border: 1px solid var(--border);
+  padding: 4px 6px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.matchup-table th small {
+  display: block;
+  color: var(--muted);
+  font-weight: normal;
+  font-size: 11px;
+}
+
+.matchup-table tbody th {
+  text-align: left;
+  background: var(--panel-2);
+}
+
+.matchup-table .mu-corner {
+  color: var(--muted);
+  font-weight: normal;
+}
+
+.matchup-table td {
+  min-width: 72px;
+}
+
+.matchup-table td .num {
+  display: block;
+  font-size: 15px;
+}
+
+.mu-hits,
+.mu-counter {
+  display: block;
+  font-size: 11px;
+}
+
+.mu-counter {
+  color: var(--muted);
+}
+
+.mu-h1 {
+  background: rgba(239, 91, 91, 0.45);
+}
+
+.mu-h2 {
+  background: rgba(239, 91, 91, 0.25);
+}
+
+.mu-h3 {
+  background: rgba(240, 169, 59, 0.2);
+}
+
+.mu-h4 {
+  background: rgba(91, 140, 255, 0.15);
+}
+
+.mu-h5 {
+  background: rgba(91, 140, 255, 0.3);
+}
+
+.mu-none {
+  color: var(--muted);
+}
+
+.mu-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.mu-legend span {
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
