@@ -40,6 +40,7 @@ const errors = [];
 const check = (name, ok, detail = '') => {
   results.push({ name, ok, detail });
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ' — ' + detail : ''}`);
+  if (!ok && process.env.E2E_FAIL_FAST) throw new Error(`첫 실패에서 멈춤: ${name}`);
 };
 
 const proc = spawn(
@@ -211,7 +212,7 @@ try {
   await sleep(1200);
   check('재생 중에 건너뛰기 버튼이 보인다', !!(await clickButton('건너뛰기')));
   const s0 = Date.now();
-  await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('전투 종료')`, 10000, '건너뛰기 종료');
+  await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('전투 종료')`, 30000, '건너뛰기 종료');
   check('건너뛰기를 누르면 즉시 끝난다', Date.now() - s0 < 8000, `${Date.now() - s0}ms`);
   await shot('skip-finished');
 

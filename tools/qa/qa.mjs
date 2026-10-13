@@ -2,16 +2,22 @@
 //
 //   npm run qa                 바뀐 파일(작업 트리)에 맞는 검사를 계획대로 돌린다
 //   npm run qa -- --plan       무엇을 왜 돌릴지 보여 주기만 한다
-//   npm run qa -- --all        전부 돌린다 (커밋/푸시 전, 큰 변경 뒤)
+//   npm run qa -- --commit     커밋 직전: 이미 통과한 파일은 건너뛰고(몇 초), 아직 확인 안 된 것만 돌린다
+//   npm run qa -- --all        전부 돌린다 (큰 변경 뒤, 가끔). 통과 기록은 무시한다
 //   npm run qa -- --since REF  REF부터 HEAD까지 바뀐 파일 기준 (커밋한 뒤)
 //   npm run qa -- --rules      규칙표 보기 (--write 를 붙이면 docs/QA.md의 표를 갱신)
 //   npm run qa -- --shots      브라우저 검사의 스크린샷을 out/qa에 남긴다 (기본은 남기지 않는다)
+//   npm run qa -- --keep-going 브라우저 검사가 실패해도 끝까지 돈다 (기본은 첫 실패에서 멈춘다)
+//
+// 통과 기록: 검사가 모두 통과하면 그때의 파일 내용(해시)을 out/qa-green.json에 적는다. 다음에는 내용이 바뀐 파일만 계획에 넣는다.
+// 그래서 작업하며 그때그때 돌려 두면 커밋 직전의 `--commit`은 거의 즉시 끝난다.
 //   npm run qa -- --files a,b  파일 목록을 직접 준다 (계획 시험용)
 //
 // 출력은 짧게: 계획, 단계별 통과/실패, 실패한 줄만. 브라우저 검사는 자기 서버(5183, 5185)를 띄웠다 끄고,
 // 사용자의 개발 서버(5173, 5174)는 건드리지 않는다. 데이터 파일은 검사 전 상태로 되돌린다.
 
 import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { GAME_SECTIONS, LAB_SECTIONS, RULES, plan, rulesTable } from './rules.mjs';
@@ -56,13 +62,37 @@ function changedFiles() {
 
 const files = changedFiles();
 const everything = flag('all');
+
+// ---------- 통과 기록 ----------
+const GREEN = 'out/qa-green.json';
+const hashOf = (f) => (existsSync(f) ? createHash('sha1').update(readFileSync(f)).digest('hex') : 'deleted');
+const readGreen = () => {
+  try {
+    return JSON.parse(readFileSync(GREEN, 'utf-8'));
+  } catch {
+    return {};
+  }
+};
+const green = everything || flag('files-fresh') || opt('files') ? {} : readGreen();
+const hashes = Object.fromEntries(files.map((f) => [f, hashOf(f)]));
+const pending = files.filter((f) => green[f] !== hashes[f]);
+const skipped = files.length - pending.length;
+
 const p = everything
   ? { typecheck: true, vitestAll: true, vitest: new Set(), lab: new Set(LAB_SECTIONS), game: new Set(GAME_SECTIONS), sim: new Set(), notes: new Set(), matched: new Map(), unmatched: [] }
-  : plan(files);
+  : plan(pending);
+if (flag('commit') && !everything) {
+  // 커밋 직전에는 싼 검사(typecheck, vitest 전체, 약 12초)는 코드가 바뀌었다면 항상 돌린다
+  const codeChanged = files.some((f) => !/\.md$|^docs\/(?!art\/(battle-slots|review)\.json)/.test(f));
+  if (codeChanged) {
+    p.typecheck = true;
+    p.vitestAll = true;
+  }
+}
 
 // ---------- 계획 출력 ----------
 const list = (s) => [...s].join(', ');
-console.log(everything ? 'QA 계획: 전부 (--all)' : `QA 계획: 바뀐 파일 ${files.length}개`);
+console.log(everything ? 'QA 계획: 전부 (--all)' : `QA 계획: 바뀐 파일 ${files.length}개${skipped > 0 ? ` (이미 통과한 ${skipped}개는 건너뜀, 새로 볼 것 ${pending.length}개)` : ''}`);
 if (!everything) {
   const byRule = new Map();
   for (const [file, ids] of p.matched) byRule.set(ids.join('+'), [...(byRule.get(ids.join('+')) ?? []), file]);
@@ -82,7 +112,9 @@ if (flag('plan')) process.exit(0);
 if (steps.length === 0) process.exit(0);
 
 // ---------- 실행 ----------
-const STEP_TIMEOUT_MS = 8 * 60 * 1000;
+// 단계별 시간 제한: 정상일 때 typecheck 4초, vitest 15초, 브라우저 검사 2분 안팎이다. 멈춘 것을 오래 기다리지 않는다
+const TIMEOUT_MS = { typecheck: 2 * 60 * 1000, vitest: 3 * 60 * 1000, browser: 4 * 60 * 1000 };
+let STEP_TIMEOUT_MS = TIMEOUT_MS.vitest;
 const failures = [];
 
 /** 이전 검사가 남긴 시험용 브라우저(이 저장소의 out/ 폴더 프로필을 쓰는 것)만 닫는다. 사용자의 브라우저는 건드리지 않는다 */
@@ -91,6 +123,7 @@ function killTestBrowsers() {
   spawnSync('powershell', ['-NoProfile', '-Command', script], { stdio: 'ignore' });
 }
 const run = (label, cmd, cmdArgs, env = {}, pick) => {
+  STEP_TIMEOUT_MS = /브라우저/.test(label) ? TIMEOUT_MS.browser : /typecheck/.test(label) ? TIMEOUT_MS.typecheck : TIMEOUT_MS.vitest;
   const t0 = performance.now();
   const r = spawnSync(cmd, cmdArgs, { encoding: 'utf-8', shell: true, env: { ...process.env, ...env }, maxBuffer: 64 * 1024 * 1024, timeout: STEP_TIMEOUT_MS, killSignal: 'SIGKILL' });
   const out = `${r.stdout ?? ''}${r.stderr ?? ''}`;
@@ -143,7 +176,7 @@ if (p.lab.size || p.game.size) {
   };
   const stopAll = () => servers.forEach((s) => spawnSync('taskkill', ['/F', '/T', '/PID', String(s.pid)], { stdio: 'ignore' }));
   const outDir = flag('shots') ? 'out/qa' : 'out/qa-tmp';
-  const env = { E2E_OUT: outDir, ...(flag('shots') ? {} : { E2E_NO_SHOTS: '1' }) };
+  const env = { E2E_OUT: outDir, ...(flag('shots') ? {} : { E2E_NO_SHOTS: '1' }), ...(flag('keep-going') ? {} : { E2E_FAIL_FAST: '1' }) };
   try {
     // Lab의 에셋 검수는 게임 화면(Viewer)도 필요하다
     const needGame = p.game.size > 0 || p.lab.has('art');
@@ -151,11 +184,11 @@ if (p.lab.size || p.game.size) {
     if (needGame) await start('게임', 'apps/game', 5185);
     if (p.lab.size) {
       const all = p.lab.size === LAB_SECTIONS.length;
-      run(`Lab 브라우저 [${all ? '전부' : list(p.lab)}]`, 'node', ['tools/e2e/lab-e2e.mjs'], { ...env, LAB_URL: 'http://localhost:5183', GAME_URL: 'http://localhost:5185', ...(all ? {} : { LAB_E2E_SECTION: [...p.lab].join(',') }) }, pickE2e);
+      run(`Lab 브라우저 [${all ? '전부' : list(p.lab)}]`, 'node', ['tools/e2e/lab-e2e.mjs'], { ...env, E2E_OUT: `${outDir}/lab`, LAB_URL: 'http://localhost:5183', GAME_URL: 'http://localhost:5185', ...(all ? {} : { LAB_E2E_SECTION: [...p.lab].join(',') }) }, pickE2e);
     }
     if (p.game.size) {
       const all = p.game.size === GAME_SECTIONS.length;
-      for (const section of all ? [null] : [...p.game]) run(`게임 브라우저 [${section ?? '전부'}]`, 'node', ['tools/e2e/game-e2e.mjs'], { ...env, GAME_URL: 'http://localhost:5185', ...(section ? { GAME_E2E_SECTION: section } : {}) }, pickE2e);
+      for (const section of all ? [null] : [...p.game]) run(`게임 브라우저 [${section ?? '전부'}]`, 'node', ['tools/e2e/game-e2e.mjs'], { ...env, E2E_OUT: `${outDir}/game`, GAME_URL: 'http://localhost:5185', ...(section ? { GAME_E2E_SECTION: section } : {}) }, pickE2e);
     }
   } catch (e) {
     console.log(`✘ 브라우저 검사를 시작하지 못했습니다: ${e.message}`);
@@ -184,5 +217,10 @@ if (p.lab.size || p.game.size) {
   }
 }
 
-console.log(failures.length ? `\n실패 ${failures.length}개: ${failures.join(', ')}` : '\n모두 통과');
+if (failures.length === 0 && !flag('plan') && !opt('files')) {
+  // 이번에 본 파일들의 내용을 통과 기록에 적는다 (--all이면 바뀐 파일 전부)
+  mkdirSync('out', { recursive: true });
+  writeFileSync(GREEN, JSON.stringify({ ...readGreen(), ...hashes }, null, 1));
+}
+console.log(failures.length ? `\n실패 ${failures.length}개: ${failures.join(', ')}` : pending.length === 0 && steps.length === 0 ? '\n새로 확인할 것이 없습니다' : '\n모두 통과');
 process.exit(failures.length ? 1 : 0);

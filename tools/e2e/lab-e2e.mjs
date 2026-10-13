@@ -42,6 +42,7 @@ const errors = [];
 const check = (name, ok, detail = '') => {
   results.push({ name, ok, detail });
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ' — ' + detail : ''}`);
+  if (!ok && process.env.E2E_FAIL_FAST) throw new Error(`첫 실패에서 멈춤: ${name}`);
 };
 
 const proc = spawn(
