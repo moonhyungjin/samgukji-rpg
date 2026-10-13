@@ -105,7 +105,7 @@ export const RULES = [
   {
     id: 'lab-unittypes',
     when: 'Lab 병종/스킬 (UnitType*, SkillTable, DataTab, 스킬 소유)',
-    test: /^apps\/balance-lab\/src\/features\/data\/(UnitType|SkillTable|DataTab|skillOwnership|editor\/components\/UnitTypeEditor|editor\/lib\/unitTypes)/,
+    test: /^apps\/balance-lab\/src\/features\/data\/(UnitType|SkillTable|DataTab|skillOwnership|editor\/components\/(UnitTypeEditor|unittype\/)|editor\/lib\/unitTypes)/,
     typecheck: true,
     vitest: ['apps/balance-lab'],
     lab: ['unittypes'],

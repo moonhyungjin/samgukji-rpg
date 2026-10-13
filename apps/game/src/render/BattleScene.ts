@@ -1,12 +1,15 @@
-import { Application, Container, Graphics, Sprite, Text } from 'pixi.js';
+import { Application, Container, Graphics, NineSliceSprite, Sprite, Text } from 'pixi.js';
 import { loadBattleArt } from './battleArt';
 import type { BattleTextures } from './battleArt';
+import type { Texture } from 'pixi.js';
 import type { BattleEvent, GameData } from '@samgukji/battle-engine';
 import type { SceneLike } from '../battle/controller';
 import type { BattleOutcome, ViewState, ViewUnit } from '../battle/viewState';
 import { DECIDED_BY_LABEL, END_CAUSE_LABEL, SIDE_LABEL, STAT_SHORT } from '../lib/labels';
 import { UnitSprite } from './UnitSprite';
 import { CARD_H, FONT, SIDE_COLOR, WORLD_H, WORLD_W, cardLayout } from './theme';
+import { FONT_TITLE, loadTitleFont } from './fonts';
+import { HEADER, centerOf } from './headerLayout';
 import { delay, easeOut, tween } from './tween';
 import type { Clock } from './tween';
 import { playRangedEffect, rangedEffectFor, rangedImpact } from './rangedEffects';
@@ -17,7 +20,12 @@ export interface SceneOptions {
   artUnits?: readonly Pick<ViewUnit, 'characterId' | 'family'>[];
 }
 
-const MORALE_BAR = { x: 420, y: 44, w: 440, h: 14 };
+const MORALE_BAR = HEADER.moraleBar;
+/** 진영 이름 글자 크기: 영역을 넘치면 이 크기에서 줄인다 */
+const NAME_FONT_SIZE = 22;
+const NAME_MIN_FONT_SIZE = 12;
+/** 진영 표지 테두리를 늘릴 때 양 끝의 장식(용)은 그대로 두고 가운데만 늘이는 폭 */
+const BADGE_SLICE = 90;
 
 function inferFactionName(units: readonly ViewUnit[], side: 'attacker' | 'defender'): string {
   const sideUnits = units.filter(u => u.side === side);
@@ -62,6 +70,7 @@ export class BattleScene implements SceneLike {
   private readonly clock: Clock = { scale: () => (this.instant || this.speed <= 0 ? Infinity : this.speed) };
 
   static async create(host: HTMLElement, options: SceneOptions): Promise<BattleScene> {
+    await loadTitleFont();
     const textures = await loadBattleArt(options.artUnits);
     host.dataset.artLoaded = Object.entries(textures).filter(([, texture]) => !!texture).map(([key]) => key).join(',');
     const app = new Application();
@@ -83,31 +92,32 @@ export class BattleScene implements SceneLike {
   ) {
     this.app.stage.addChild(this.world);
 
-    this.roundText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 15, fill: 0xf5eedb, fontWeight: 'bold' } });
+    this.roundText = new Text({ text: '', style: { fontFamily: FONT_TITLE, fontSize: 15, fill: 0xf5eedb, fontWeight: 'bold', stroke: { color: 0x000000, width: 3 } } });
     this.roundText.anchor.set(.5, 0.5);
-    this.roundText.position.set(640, 22);
+    this.roundText.position.set(centerOf(HEADER.round).x, centerOf(HEADER.round).y);
 
-    const leftTitleX = this.textures.factionFrame ? 155 : 220;
-    const rightTitleX = this.textures.factionFrame ? WORLD_W - 155 : 1060;
-    this.attackerTitle = new Text({ text: '공격군', style: { fontFamily: FONT, fontSize: 18, fill: 0xf5eedb, fontWeight: 'bold' } });
+    // 진영 이름: 테두리 안쪽(HEADER.name) 가운데에 글자로 쓴다. 영역을 넘치면 글자를 줄인다 (fitTitle)
+    const leftName = centerOf(HEADER.name.left);
+    const rightName = centerOf(HEADER.name.right);
+    this.attackerTitle = new Text({ text: '공격군', style: { fontFamily: FONT_TITLE, fontSize: NAME_FONT_SIZE, fill: 0xf5eedb, fontWeight: 'bold' } });
     this.attackerTitle.anchor.set(0.5, 0.5);
-    this.attackerTitle.position.set(leftTitleX, 35);
+    this.attackerTitle.position.set(leftName.x, leftName.y);
 
-    this.defenderTitle = new Text({ text: '방어군', style: { fontFamily: FONT, fontSize: 18, fill: 0xf5eedb, fontWeight: 'bold' } });
+    this.defenderTitle = new Text({ text: '방어군', style: { fontFamily: FONT_TITLE, fontSize: NAME_FONT_SIZE, fill: 0xf5eedb, fontWeight: 'bold' } });
     this.defenderTitle.anchor.set(0.5, 0.5);
-    this.defenderTitle.position.set(rightTitleX, 35);
+    this.defenderTitle.position.set(rightName.x, rightName.y);
 
     this.moraleCenterLabel = new Text({ text: '사기', style: { fontFamily: FONT, fontSize: 10, fill: 0xe5d8b8, fontWeight: 'bold' } });
     this.moraleCenterLabel.anchor.set(0.5, 0.5);
-    this.moraleCenterLabel.position.set(640, MORALE_BAR.y + MORALE_BAR.h / 2);
+    this.moraleCenterLabel.position.set(centerOf(HEADER.moraleLabel).x, MORALE_BAR.y + MORALE_BAR.h / 2);
 
     this.attackerMoraleText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 13, fill: 0x60a5fa, fontWeight: 'bold' } });
     this.attackerMoraleText.anchor.set(1, 0.5);
-    this.attackerMoraleText.position.set(MORALE_BAR.x - 10, MORALE_BAR.y + MORALE_BAR.h / 2);
+    this.attackerMoraleText.position.set(HEADER.moraleNumbers.left.x + HEADER.moraleNumbers.left.w, centerOf(HEADER.moraleNumbers.left).y);
 
     this.defenderMoraleText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 13, fill: 0xf87171, fontWeight: 'bold' } });
     this.defenderMoraleText.anchor.set(0, 0.5);
-    this.defenderMoraleText.position.set(MORALE_BAR.x + MORALE_BAR.w + 10, MORALE_BAR.y + MORALE_BAR.h / 2);
+    this.defenderMoraleText.position.set(HEADER.moraleNumbers.right.x, centerOf(HEADER.moraleNumbers.right).y);
 
     if (this.textures.moralePointer) {
       this.moralePointerSprite = new Sprite(this.textures.moralePointer);
@@ -148,7 +158,7 @@ export class BattleScene implements SceneLike {
       this.armyLabels.addChild(sprite.army.annotation);
     }
     const attackerName = inferFactionName(state.units, 'attacker');
-    this.attackerTitle.text = attackerName;
+    this.setTitle(this.attackerTitle, attackerName, HEADER.name.left.w);
     if (this.attackerPlateSprite) {
       if (attackerName.includes('위') && this.textures.factionInnerBlue) {
         this.attackerPlateSprite.texture = this.textures.factionInnerBlue;
@@ -160,7 +170,7 @@ export class BattleScene implements SceneLike {
     }
     this.refreshOccupiedSlots();
     const defenderName = inferFactionName(state.units, 'defender');
-    this.defenderTitle.text = defenderName;
+    this.setTitle(this.defenderTitle, defenderName, HEADER.name.right.w);
     if (this.defenderPlateSprite) {
       if (defenderName.includes('위') && this.textures.factionInnerBlue) {
         this.defenderPlateSprite.texture = this.textures.factionInnerBlue;
@@ -404,38 +414,42 @@ export class BattleScene implements SceneLike {
     // 최상단 헤더 배경 (Y: 0~70)
     if (this.textures.headerBg) {
       const headerBar = new Sprite(this.textures.headerBg);
-      headerBar.position.set(0, 0);
-      headerBar.width = WORLD_W;
-      headerBar.height = 70;
+      headerBar.position.set(HEADER.background.x, HEADER.background.y);
+      headerBar.width = HEADER.background.w;
+      headerBar.height = HEADER.background.h;
       layer.addChild(headerBar);
     } else {
       g.rect(0, 0, WORLD_W, 70).fill(0x0a0e14);
       g.moveTo(0, 70).lineTo(WORLD_W, 70).stroke({ width: 2, color: 0xc8a96e });
     }
 
-    // 진영 현판: 모듈형 외곽 프레임 + 내부 배경 분리 구조
+    // 진영 표지: 아래에서 위로 진영색 판(테두리 안쪽에서 잘림) → 테두리 → (이름 글자는 위 층의 Text)
     if (this.textures.factionFrame) {
-      // 좌측 진영: 배경판 (기본 녹색 칠기) + 공통 프레임
-      if (this.textures.factionInnerGreen) {
-        this.attackerPlateSprite = new Sprite(this.textures.factionInnerGreen);
-        this.attackerPlateSprite.position.set(0, 6);
-        layer.addChild(this.attackerPlateSprite);
-      }
-      const frameL = new Sprite(this.textures.factionFrame);
-      frameL.position.set(0, 6);
-      layer.addChild(frameL);
-
-      // 우측 진영: 배경판 (기본 황토색 칠기, 수평 반전) + 동일 프레임 수평 반전 재사용
-      if (this.textures.factionInnerOchre) {
-        this.defenderPlateSprite = new Sprite(this.textures.factionInnerOchre);
-        this.defenderPlateSprite.scale.x = -1;
-        this.defenderPlateSprite.position.set(WORLD_W, 6);
-        layer.addChild(this.defenderPlateSprite);
-      }
-      const frameR = new Sprite(this.textures.factionFrameFlipped ?? this.textures.factionFrame);
-      if (!this.textures.factionFrameFlipped) frameR.scale.x = -1;
-      frameR.position.set(this.textures.factionFrameFlipped ? WORLD_W - 276 : WORLD_W, 6);
-      layer.addChild(frameR);
+      const plateOf = (side: 'left' | 'right', texture: Texture | undefined): Sprite | undefined => {
+        if (!texture) return undefined;
+        const r = HEADER.plate[side];
+        const plate = new Sprite(texture);
+        plate.position.set(r.x, r.y);
+        plate.width = r.w;
+        plate.height = r.h;
+        // 그림이 영역을 넘치면 잘라 낸다
+        const mask = new Graphics().rect(r.x, r.y, r.w, r.h).fill(0xffffff);
+        layer.addChild(mask);
+        plate.mask = mask;
+        layer.addChild(plate);
+        return plate;
+      };
+      const frameOf = (side: 'left' | 'right', texture: Texture) => {
+        const r = HEADER.badge[side];
+        // 양 끝의 장식은 그대로 두고 가운데만 늘여 고정 폭(350)에 맞춘다
+        const frame = new NineSliceSprite({ texture, leftWidth: BADGE_SLICE, rightWidth: BADGE_SLICE, topHeight: 1, bottomHeight: 1, width: r.w, height: r.h });
+        frame.position.set(r.x, r.y);
+        layer.addChild(frame);
+      };
+      this.attackerPlateSprite = plateOf('left', this.textures.factionInnerGreen);
+      frameOf('left', this.textures.factionFrame);
+      this.defenderPlateSprite = plateOf('right', this.textures.factionInnerOchre);
+      frameOf('right', this.textures.factionFrameFlipped ?? this.textures.factionFrame);
     } else {
       // 레거시 폴백 (단일 현판 또는 절차적 도형)
       if (this.textures.bracketL) {
@@ -532,6 +546,14 @@ export class BattleScene implements SceneLike {
     layer.addChildAt(g, 1);
     layer.addChild(versus);
     return layer;
+  }
+
+  /** 진영 이름 글자를 쓰고, 영역(maxWidth)을 넘치면 글자 크기를 줄인다 */
+  private setTitle(title: Text, value: string, maxWidth: number): void {
+    title.text = value;
+    let size = NAME_FONT_SIZE;
+    title.style.fontSize = size;
+    while (title.width > maxWidth && size > NAME_MIN_FONT_SIZE) title.style.fontSize = --size;
   }
 
   private updateRound(round: number): void {

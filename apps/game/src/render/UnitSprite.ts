@@ -5,6 +5,7 @@ import type { BattleTextures } from './battleArt';
 import type { BuffStat, Row } from '@samgukji/battle-engine';
 import type { ViewUnit } from '../battle/viewState';
 import { FAMILY_LABEL, STAT_SHORT } from '../lib/labels';
+import { CARD_PARTS } from './cardParts';
 import { CARD_H, CARD_W, FAMILY_COLOR, FAMILY_GLYPH, FONT, cardLayout } from './theme';
 import { easeOut, tween } from './tween';
 import type { Clock } from './tween';
@@ -84,24 +85,24 @@ export class UnitSprite {
     bg.moveTo(cb, ch).lineTo(0, ch).lineTo(0, ch - cb).stroke({ width: 1.5, color: 0xc8a96e });
     bg.moveTo(cw - cb, ch).lineTo(cw, ch).lineTo(cw, ch - cb).stroke({ width: 1.5, color: 0xc8a96e });
 
-    const faceSize = 60;
-    const portrait = new Graphics().roundRect(6, 6, faceSize, faceSize, 3).fill(0x182026).stroke({ width: 1.5, color: 0x8a7243 });
-    portrait.rect(6, 6, 3, faceSize).fill(FAMILY_COLOR[unit.family]);
+    const faceSize = CARD_PARTS.face.w;
+    const portrait = new Graphics().roundRect(CARD_PARTS.face.x, CARD_PARTS.face.y, faceSize, faceSize, 3).fill(0x182026).stroke({ width: 1.5, color: 0x8a7243 });
+    portrait.rect(CARD_PARTS.face.x, CARD_PARTS.face.y, 3, faceSize).fill(FAMILY_COLOR[unit.family]);
     const glyph = new Text({ text: FAMILY_GLYPH[unit.family], style: { fontFamily: FONT, fontSize: 30, fill: 0xffffff, fontWeight: 'bold' } });
     glyph.anchor.set(0.5);
-    glyph.position.set(6 + faceSize / 2, 6 + faceSize / 2);
+    glyph.position.set(CARD_PARTS.face.x + faceSize / 2, CARD_PARTS.face.y + faceSize / 2);
 
-    const nameX = 74;
-    const nameY = 7;
+    const nameX = CARD_PARTS.name.x;
+    const nameY = CARD_PARTS.name.y;
     const name = new Text({ text: unit.name, style: { fontFamily: FONT, fontSize: 18, fill: 0xffffff, fontWeight: 'bold' } });
     name.position.set(nameX, nameY);
 
     // 성씨/진영 한자 인장 배지
     const sealText = getCharacterSeal(unit.characterId, unit.name);
     const sealBadge = new Graphics();
-    const sealX = nameX;
-    const sealY = 30;
-    const sealSize = 17;
+    const sealX = CARD_PARTS.seal.x;
+    const sealY = CARD_PARTS.seal.y;
+    const sealSize = CARD_PARTS.seal.w;
     const sealColor = unit.side === 'attacker' ? 0x133826 : 0x4a1818;
     sealBadge.roundRect(sealX, sealY, sealSize, sealSize, 3).fill(sealColor).stroke({ width: 1, color: 0xc8a96e });
     const sealLabel = new Text({
@@ -118,7 +119,7 @@ export class UnitSprite {
     subtitle.position.set(sealX + sealSize + 6, sealY + 1);
 
     this.troopsText = new Text({ text: '', style: { fontFamily: FONT, fontSize: 18, fill: 0xf1f5f9, fontWeight: 'bold' } });
-    this.troopsText.position.set(this.cardWidth - 10, 57);
+    this.troopsText.position.set(CARD_PARTS.troops.x + CARD_PARTS.troops.w, CARD_PARTS.troops.y);
     this.troopsText.anchor.set(1, 0);
 
     // 전멸하면 병력 글자와 바를 숨기고 그 자리에 "전멸"을 보여 준다 (이름과 겹치지 않게)
@@ -172,7 +173,7 @@ export class UnitSprite {
   }
 
   private get cardWidth() { return CARD_W; }
-  private get infoLeft() { return 10; }
+  private get infoLeft() { return CARD_PARTS.ap.x; }
 
   private cardPosition(row: Row, slot: number) {
     return cardLayout(this.side, row, slot);
@@ -199,7 +200,7 @@ export class UnitSprite {
     if (rate > 0) {
       this.guardText.text = `가드 ${Math.round(rate)}%`;
       const w = this.guardText.width + 14;
-      this.guardBadge.roundRect(this.infoLeft, 94, w, 16, 3).fill(0x182422).stroke({ width: 1, color: 0xc8a96e });
+      this.guardBadge.roundRect(this.infoLeft, CARD_PARTS.status.y, w, CARD_PARTS.status.h, 3).fill(0x182422).stroke({ width: 1, color: 0xc8a96e });
     }
     this.drawBuffs();
     this.updateGuardVisibility();
@@ -371,7 +372,7 @@ export class UnitSprite {
     this.apText.style.fontSize = 10;
     this.apText.style.fill = 0xd1d5db;
     this.apText.style.fontWeight = 'bold';
-    const py = 81;
+    const py = CARD_PARTS.ap.y;
     this.apText.position.set(this.infoLeft, py + 1);
     const start = this.infoLeft + this.apText.width + 8;
     const step = Math.min(18, (this.cardWidth - 10 - start) / Math.max(1, this.maxAp));

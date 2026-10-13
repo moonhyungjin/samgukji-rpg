@@ -124,7 +124,7 @@ try {
   await send('Page.enable');
 
   // Target first: hover reveals options, clicking an option submits exactly once.
-  if (!['campaign', 'strategy'].includes(process.env.GAME_E2E_SECTION)) {
+  if (!['campaign', 'strategy', 'viewer'].includes(process.env.GAME_E2E_SECTION)) {
   await goto('?control=attacker&autostart=1&speed=0&seed=1');
   await waitFor(`!!document.querySelector('.card-action-trigger')`, 20000);
   check('중앙 패널에는 공격/대기 선택 버튼이 없다', await evalJs(`!document.querySelector('.command [aria-pressed]') && ![...document.querySelectorAll('.command button')].some(b => b.textContent.includes('대기'))`));
@@ -148,7 +148,12 @@ try {
   await waitFor(`document.querySelector('.log').textContent !== ${JSON.stringify(beforeHover)}`, 8000);
   check('카드 메뉴의 공격 버튼으로 행동을 실행한다', true);
   await waitFor(`!!document.querySelector('.card-action-trigger[data-self="true"]')`, 8000);
-  await evalJs(`document.querySelector('.card-action-trigger[data-self="true"]').click()`);
+  // 이전 행동의 메뉴가 아직 열려 있으면 한 번 누르는 것이 메뉴를 닫아 버린다. 메뉴가 열릴 때까지 최대 두 번 누른다
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await evalJs(`document.querySelector('.card-action-trigger[data-self="true"]').click()`);
+    const opened = await waitFor(`!!document.querySelector('.card-action-option[data-kind="wait"]')`, 2500).then(() => true, () => false);
+    if (opened) break;
+  }
   check('행동 중인 아군 카드에는 대기가 있고 공격은 없다', await evalJs(`!!document.querySelector('.card-action-option[data-kind="wait"]') && ![...document.querySelectorAll('.card-action-option span')].some(e => /^피해 /.test(e.textContent))`));
   await shot('card-self-actions');
   await evalJs(`document.querySelector('.card-action-trigger[data-self="true"]').dispatchEvent(new KeyboardEvent('keydown', { key:'Escape', bubbles:true }))`);
@@ -464,12 +469,12 @@ try {
   await waitFor(`!!document.querySelector('.command h3')?.textContent.includes('의 차례')`, 20000, '유관장 대 황건적');
   await shot('shu-start-shield-labels');
   }
-  if (!['battle', 'strategy'].includes(process.env.GAME_E2E_SECTION)) {
+  if (!['battle', 'strategy', 'viewer'].includes(process.env.GAME_E2E_SECTION)) {
     await goto('?campaign=1');
     await waitFor(`!!document.querySelector('.campaign')`);
     await evalJs(`localStorage.removeItem('samgukji-campaign-v1')`);
     await goto('?campaign=1');
-    await clickButton('새 캠페인 시작');
+    await clickWhenReady('새 캠페인 시작');
     await waitFor(`document.querySelectorAll('[data-roster]').length > 0`);
     const saved = () => evalJs(`JSON.parse(localStorage.getItem('samgukji-campaign-v1'))`);
     const initialCampaign = await saved();

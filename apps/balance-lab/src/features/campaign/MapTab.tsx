@@ -4,10 +4,10 @@ import type { Terrain } from '@samgukji/battle-engine';
 import type { MapCastleFile, MapFile, MapRegionFile } from '@samgukji/game-data';
 import { useLab } from '../../lab/LabContext';
 import { mapIssues } from '../../lib/dataIssues';
+import { TERRAIN_LABEL } from './mapLabels';
+import { MapFactionsPanel } from './MapFactionsPanel';
+import { MapPreviewPanel } from './MapPreviewPanel';
 
-const TERRAIN_LABEL: Record<Terrain, string> = { plain: '평원', mountain: '산악', river: '강', forest: '숲' };
-const W = 640;
-const H = 420;
 
 /**
  * 지도 탭 (설계 문서 04). map.json의 세력, 지역(이름, 세력, 지형, 수입, 국력, 위치, 맞닿은 지역), 성(이름, 지형, 수비 부대)을 고친다.
@@ -21,7 +21,6 @@ export function MapTab() {
 
   const setMap = (fn: (m: MapFile) => MapFile) => update((s) => ({ ...s, map: fn(s.map) }));
   const setRegion = (id: string, fn: (r: MapRegionFile) => MapRegionFile) => setMap((m) => ({ ...m, regions: m.regions.map((r) => (r.id === id ? fn(r) : r)) }));
-  const factionOf = (id: string) => map.factions.find((f) => f.id === id);
   const region = map.regions.find((r) => r.id === selected) ?? map.regions[0];
   const presetOptions = state.presets.map((p) => ({ value: p.id, label: p.label }));
 
@@ -58,107 +57,11 @@ export function MapTab() {
 
   const setCastle = (rid: string, cid: string, fn: (c: MapCastleFile) => MapCastleFile) => setRegion(rid, (r) => ({ ...r, castles: r.castles.map((c) => (c.id === cid ? fn(c) : c)) }));
 
-  const sx = (x: number) => 30 + (x / 100) * (W - 60);
-  const sy = (y: number) => 30 + (y / 100) * (H - 60);
-
   return (
     <div className="balance-page">
-      <section className="panel" data-panel="map-preview">
-        <h3>지도: {map.name}</h3>
-        <p className="note">지역을 누르면 아래에서 고칩니다. 선은 맞닿은 지역, 색은 처음 지배 세력, 원 안의 숫자는 성 개수입니다. ★은 목표 지역(차지하면 클리어). 지형은 아직 표시용입니다 (설계 문서 04).</p>
-        <svg className="map-preview" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="지도 미리보기">
-          {map.regions.flatMap((r) =>
-            r.neighbors
-              .filter((n) => n > r.id)
-              .map((n) => {
-                const o = map.regions.find((x) => x.id === n);
-                return o ? <line key={`${r.id}-${n}`} x1={sx(r.x)} y1={sy(r.y)} x2={sx(o.x)} y2={sy(o.y)} className="map-link" /> : null;
-              }),
-          )}
-          {map.regions.map((r) => (
-            <g key={r.id} className={r.id === region?.id ? 'map-node selected' : 'map-node'} onClick={() => setSelected(r.id)} data-region={r.id}>
-              <circle cx={sx(r.x)} cy={sy(r.y)} r={22} fill={factionOf(r.faction)?.color ?? '#666'} />
-              <text x={sx(r.x)} y={sy(r.y) + 4} textAnchor="middle" className="map-count">
-                {r.castles.length}
-              </text>
-              <text x={sx(r.x)} y={sy(r.y) + 38} textAnchor="middle" className="map-name">
-                {r.id === map.goalRegion ? '★ ' : ''}
-                {r.name} · {TERRAIN_LABEL[r.terrain]}
-              </text>
-            </g>
-          ))}
-        </svg>
-        <div className="map-legend">
-          {map.factions.map((f) => (
-            <span key={f.id}>
-              <i style={{ background: f.color }} /> {f.name}
-              {f.player ? ' (플레이어)' : f.neutral ? ' (중립)' : ''}
-            </span>
-          ))}
-        </div>
-        {issues.length > 0 && (
-          <ul className="findings">
-            {issues.map((i) => (
-              <li key={i.message} className="warn">
-                <span className="mark">!</span>
-                {i.message}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <MapPreviewPanel map={map} region={region} setSelected={setSelected} issues={issues} />
 
-      <section className="panel" data-panel="map-factions">
-        <h3>세력</h3>
-        <table className="campaign-table">
-          <thead>
-            <tr>
-              <th>id</th>
-              <th>이름</th>
-              <th>색</th>
-              <th>플레이어</th>
-              <th>중립</th>
-              <th>지역 수</th>
-            </tr>
-          </thead>
-          <tbody>
-            {map.factions.map((f, i) => (
-              <tr key={f.id}>
-                <td>
-                  <code>{f.id}</code>
-                </td>
-                <td>
-                  <input type="text" aria-label={`세력 ${f.id} 이름`} value={f.name} onChange={(e) => setMap((m) => ({ ...m, factions: m.factions.map((x, n) => (n === i ? { ...x, name: e.target.value } : x)) }))} />
-                </td>
-                <td>
-                  <input type="color" aria-label={`세력 ${f.id} 색`} value={f.color} onChange={(e) => setMap((m) => ({ ...m, factions: m.factions.map((x, n) => (n === i ? { ...x, color: e.target.value } : x)) }))} />
-                </td>
-                <td>
-                  <input type="radio" name="player-faction" aria-label={`세력 ${f.id} 플레이어`} checked={f.player === true} onChange={() => setMap((m) => ({ ...m, factions: m.factions.map((x, n) => withFlag(x, 'player', n === i)) }))} />
-                </td>
-                <td>
-                  <input type="checkbox" aria-label={`세력 ${f.id} 중립`} checked={f.neutral === true} disabled={f.player === true} onChange={(e) => setMap((m) => ({ ...m, factions: m.factions.map((x, n) => (n === i ? withFlag(x, 'neutral', e.target.checked) : x)) }))} />
-                </td>
-                <td>{map.regions.filter((r) => r.faction === f.id).length}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <label className="field">
-          <span>목표 지역 (차지하면 클리어)</span>
-          <select aria-label="목표 지역" value={map.goalRegion} onChange={(e) => setMap((m) => ({ ...m, goalRegion: e.target.value }))}>
-            {map.regions.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span>턴당 행동 수</span>
-          <input type="number" min={1} step={1} aria-label="턴당 행동 수" value={map.actionsPerTurn} onChange={(e) => setMap((m) => ({ ...m, actionsPerTurn: Number(e.target.value) }))} />
-        </label>
-      </section>
+      <MapFactionsPanel map={map} setMap={setMap} />
 
       {region && (
         <section className="panel" data-panel="map-region" data-region-editor={region.id}>
@@ -317,10 +220,4 @@ function numberInput(label: string, value: number, step: number, min: number, on
       <input type="number" aria-label={label} value={value} step={step} min={min} onChange={(e) => onChange(Math.max(min, Number(e.target.value) || 0))} />
     </label>
   );
-}
-
-/** 선택 깃발(player/neutral)을 켜거나 끈다. 끄면 키를 지운다 (저장 형식을 깔끔하게) */
-function withFlag<T extends { player?: boolean; neutral?: boolean }>(x: T, key: 'player' | 'neutral', on: boolean): T {
-  const { [key]: _old, ...rest } = x;
-  return (on ? { ...rest, [key]: true } : rest) as T;
 }
