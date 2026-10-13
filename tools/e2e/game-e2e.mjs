@@ -574,6 +574,28 @@ try {
     check('Viewer: 슬롯 영역이 점선 상자로 표시된다 (논리 좌표 → 백분율)', (await evalJs(`(() => { const [a, b] = [...document.querySelectorAll('.art-viewer-highlight')]; return a.style.left === '0%' && a.style.width === '100%' && Math.abs(parseFloat(a.style.height) - 70 / 9) < 0.01 && a.textContent === 'A1 시험' && Math.abs(parseFloat(b.style.left) - 40 / 12.8) < 0.01; })()`)) === true);
     await evalJs(`window.postMessage({ type: 'art-viewer:highlight', rects: [], label: '' }, '*')`);
     await waitFor(`document.querySelectorAll('.art-viewer-highlight').length === 0`, 5000, '점선 지우기');
+    // 끌어서 고치기: 편집 가능한 상자를 옮기고 모서리로 크기를 바꾸면 Lab으로 새 영역을 되돌려 보낸다 (여기서는 같은 창이 받는다)
+    await evalJs(`window.__changes = []; window.addEventListener('message', (e) => { if (e.data && e.data.type === 'art-viewer:rect-change') window.__changes.push(e.data); }); window.postMessage({ type: 'art-viewer:highlight', rects: [{ x: 200, y: 100, w: 300, h: 100, label: 'A5', slotId: 'A5', region: 0, editable: true }, { x: 700, y: 100, w: 100, h: 100, label: 'B', slotId: 'B1', region: 0 }], label: '' }, '*')`);
+    await waitFor(`document.querySelectorAll('.art-viewer-highlight.editable').length === 1 && document.querySelectorAll('.art-handle').length === 4`, 5000, '편집 상자');
+    check('Viewer: 편집 가능한 상자에만 모서리 손잡이가 있다', (await evalJs(`document.querySelectorAll('.art-viewer-highlight').length === 2 && document.querySelectorAll('.art-viewer-highlight.editable').length === 1`)) === true);
+    const dragBox = await evalJs(`(() => { const r = document.querySelector('.art-viewer-highlight.editable').getBoundingClientRect(); const f = document.querySelector('.art-viewer-frame').getBoundingClientRect(); return { cx: r.x + r.width / 2, cy: r.y + r.height / 2, k: 1280 / f.width, right: r.right, bottom: r.bottom }; })()`);
+    const drag = async (x0, y0, x1, y1) => {
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x0, y: y0, button: 'none' });
+      await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: x0, y: y0, button: 'left', buttons: 1, clickCount: 1 });
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: (x0 + x1) / 2, y: (y0 + y1) / 2, button: 'left', buttons: 1 });
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x1, y: y1, button: 'left', buttons: 1 });
+      await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: x1, y: y1, button: 'left', buttons: 0, clickCount: 1 });
+    };
+    const px = 50 / dragBox.k; // 논리 50만큼
+    await drag(dragBox.cx, dragBox.cy, dragBox.cx + px, dragBox.cy + px);
+    await sleep(300);
+    const moved = await evalJs(`window.__changes[window.__changes.length - 1]`);
+    check('Viewer: 상자를 끌면 새 위치(x, y)를 슬롯 번호와 함께 보낸다', !!moved && moved.slotId === 'A5' && moved.region === 0 && Math.abs(moved.x - 250) <= 2 && Math.abs(moved.y - 150) <= 2 && moved.w === 300 && moved.h === 100, JSON.stringify(moved));
+    const corner = await evalJs(`(() => { const r = document.querySelector('.art-handle.se').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+    await drag(corner.x, corner.y, corner.x + px, corner.y + px);
+    await sleep(300);
+    const sized = await evalJs(`window.__changes[window.__changes.length - 1]`);
+    check('Viewer: 오른쪽 아래 모서리를 끌면 위치는 두고 크기만 바뀐 값을 보낸다', !!sized && Math.abs(sized.x - moved.x) <= 2 && Math.abs(sized.w - 350) <= 2 && Math.abs(sized.h - 150) <= 2, JSON.stringify(sized));
     check('Viewer: 슬롯이 없으면 표시를 지운다', true);
     // 후보 그림 끼우기: 같은 서버의 다른 그림으로 전장 배경을 바꿔 본다
     await evalJs(`window.postMessage({ type: 'art-viewer:overrides', overrides: { field: location.origin + '/art/battle/plain-v1.png' } }, '*')`);

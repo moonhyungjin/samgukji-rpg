@@ -46,6 +46,7 @@
 | 문서만 (docs/**.md, README, TODO, CLAUDE, 변경 기록) |  |  |  |  | 실행하지 않는다 (문서는 읽어서 확인) |
 | 그림 파일, 미리보기 페이지, 에셋 만드는 스크립트 |  |  |  |  | 실행하지 않는다 (Lab의 에셋 검수 탭 → 게임 화면에서 보기로 눈으로 확인) |
 | 에셋 슬롯 정의/검수 결과 (docs/art/battle-slots.json, review.json) |  | apps/balance-lab/src/lib | art |  |  |
+| 엔진 테스트 파일 (packages/battle-engine/test) | 전체 | 전부 |  |  |  |
 | 전투 엔진 (packages/battle-engine/src) | 전체 | 전부 |  | battle | 규칙/공식을 바꿨다면 `npm run sim` 전후 비교 (같은 시드) |
 | 캠페인 규칙 (packages/battle-engine/src/campaign) | 전체 | 전부 |  | campaign | `npm run sim:campaign` 전후 비교 |
 | 전략 규칙 (packages/battle-engine/src/strategy) | 전체 | 전부 |  | strategy |  |

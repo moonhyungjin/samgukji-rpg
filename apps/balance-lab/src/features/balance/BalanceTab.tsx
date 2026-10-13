@@ -1,61 +1,36 @@
-import { useState } from 'react';
-import { useLab } from '../../lab/LabContext';
-import { groupByPromotion } from '../data/editor/lib/unitTypes';
-import { defaultFormulaInput } from './formulaLab';
-import type { FormulaInput } from './formulaLab';
-import { FormulaExplorer } from './FormulaExplorer';
-import { FormulaPanel } from './FormulaPanel';
-import { DamagePanel } from './DamagePanel';
-import { TroopsPanel } from './TroopsPanel';
+import { useNav } from '../../lab/NavContext';
+import { ApPanel } from './ApPanel';
 import { CounterPanel } from './CounterPanel';
+import { DamagePanel } from './DamagePanel';
 import { DebuffPanel } from './DebuffPanel';
 import { MoralePanel } from './MoralePanel';
-import { ApPanel } from './ApPanel';
 import { StatCurvePanel } from './StatCurvePanel';
+import { TroopsPanel } from './TroopsPanel';
+import { useFormulaLab } from './useFormulaLab';
 
 /**
  * 전투 공식과 규칙 수치. 패널을 한 줄에 하나씩 놓고, 피해 공식과 병력 보정은 지금 고른 방식의 칸만 보여 준다.
- * 고치면 즉시 위의 공식/계산과 시뮬레이션(자동 실행이 켜져 있을 때)에 반영된다.
+ * 고치면 즉시 피해 분석 탭의 공식/계산과 시뮬레이션(자동 실행이 켜져 있을 때)에 반영된다. 패널은 *Panel 파일에 있다.
  */
 export function BalanceTab() {
-  const { state } = useLab();
-
-  // 공식 실험대의 상태. 병력 패널의 게이지와 같이 쓴다 (실험값이라 저장하지 않는다)
-  const [stat, setStat] = useState(6);
-  const [level, setLevel] = useState(() => {
-    const levels = Object.values(state.data.characters).map((c) => c.level);
-    return levels.length ? Math.round(levels.reduce((a, b) => a + b, 0) / levels.length) : 1;
-  });
-  const [input, setInput] = useState<FormulaInput | null>(() => {
-    const roots = groupByPromotion(Object.values(state.data.unitTypes))[0]?.items.map((u) => u.id) ?? [];
-    return defaultFormulaInput(state.data, state.balance, roots[0] ?? '', roots[1] ?? roots[0] ?? '', 6, level);
-  });
-  const pick = (attacker: string, defender: string, nextStat = stat, nextLevel = level) =>
-    setInput((cur) => defaultFormulaInput(state.data, state.balance, attacker, defender, nextStat, nextLevel, cur ?? undefined) ?? cur);
+  // 병력 패널의 게이지가 쓰는 실험 상태 (피해 분석 탭의 실험대와는 따로)
+  const lab = useFormulaLab();
+  const nav = useNav();
 
   return (
     <div className="balance-page">
-      {input && (
-        <FormulaExplorer
-          input={input}
-          setInput={setInput}
-          pick={(a, d) => pick(a, d)}
-          stat={stat}
-          setStat={(s) => {
-            setStat(s);
-            pick(input.attacker, input.defender, s, level);
-          }}
-          level={level}
-          setLevel={(l) => {
-            setLevel(l);
-            pick(input.attacker, input.defender, stat, l);
-          }}
-        />
-      )}
-      <FormulaPanel />
+      <section className="panel" data-panel="formula-pointer">
+        <h3>공식 보기는 "결과 보기 → 피해 분석"에 있습니다</h3>
+        <p className="note">
+          지금 값이 들어간 피해 공식, 실험대(슬라이더), 값의 출처와 계산 과정은 한 곳에 모았습니다. 여기서는 수치를 고치고, 고친 결과는 그 탭에서 바로 확인합니다.{' '}
+          <button type="button" className="goto" data-action="open-analysis" onClick={() => nav.go('calc')}>
+            피해 분석 열기
+          </button>
+        </p>
+      </section>
 
       <DamagePanel />
-      <TroopsPanel input={input} setInput={setInput} level={level} />
+      <TroopsPanel input={lab.input} setInput={lab.setInput} level={lab.level} />
       <CounterPanel />
       <DebuffPanel />
       <MoralePanel />

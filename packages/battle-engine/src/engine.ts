@@ -672,6 +672,8 @@ export class BattleEngine {
     this.report(source).kills++;
     this.emit({ type: 'unitDestroyed', round: this.state.round, unit: target.uid, by: source.uid });
     this.shiftMorale(target.side, this.input.balance.morale.onUnitDestroyed);
+    // 한쪽이 전멸하면 그쪽 사기는 바로 0이 된다 (100%는 이겼을 때만 본다). 양쪽이 동시에 전멸하면 건드리지 않는다
+    if (this.isWiped(target.side) && !this.isWiped(target.side === 'attacker' ? 'defender' : 'attacker')) this.collapseMorale(target.side);
     if (target.row === 'front') this.advanceRows(target.side);
   }
 
@@ -700,6 +702,14 @@ export class BattleEngine {
     const next = losingSide === 'defender' ? this.state.defenderMorale - delta : this.state.defenderMorale + delta;
     this.state.defenderMorale = Math.min(100, Math.max(0, next));
     this.emit({ type: 'morale', round: this.state.round, defenderMorale: this.state.defenderMorale });
+  }
+
+  /** losingSide의 사기를 0으로 만든다 (전멸). 상대편 사기가 100이 된다 */
+  private collapseMorale(losingSide: Side): void {
+    const next = losingSide === 'defender' ? 0 : 100;
+    if (this.state.defenderMorale === next) return;
+    this.state.defenderMorale = next;
+    this.emit({ type: 'morale', round: this.state.round, defenderMorale: next });
   }
 
   // ---------- 보조 ----------

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ART_URLS } from '../../../../game/src/render/battleArt';
-import { DEFAULT_GAME_URL, applicableKeys, groupHighlightMessage, groupSlots, highlightMessage, slotColor, viewerImageUrl, viewerSrc } from './artViewer';
+import { DEFAULT_GAME_URL, applicableKeys, groupHighlightMessage, groupSlots, highlightMessage, parseRectChange, slotColor, viewerImageUrl, viewerSrc } from './artViewer';
 import type { ArtSlot } from './artReview';
 
 const slots = (JSON.parse(readFileSync(fileURLToPath(new URL('../../../../../docs/art/battle-slots.json', import.meta.url)), 'utf-8')) as { slots: ArtSlot[] }).slots;
@@ -10,13 +10,20 @@ const slots = (JSON.parse(readFileSync(fileURLToPath(new URL('../../../../../doc
 describe('에셋 검수 Viewer 도우미', () => {
   it('슬롯을 고르면 그 영역과 이름을 보내고, 슬롯이 없으면 표시를 지운다', () => {
     const a1 = slots.find((s) => s.id === 'A1');
-    expect(highlightMessage(a1)).toEqual({ type: 'art-viewer:highlight', rects: [{ x: 0, y: 0, w: 1280, h: 70, label: 'A1 헤더 배경 띠' }], label: '' });
+    expect(highlightMessage(a1)).toEqual({ type: 'art-viewer:highlight', rects: [{ x: 0, y: 0, w: 1280, h: 70, label: 'A1 헤더 배경 띠', slotId: 'A1', region: 0, layer: 1, editable: true }], label: '' });
     expect(highlightMessage(undefined)).toEqual({ type: 'art-viewer:highlight', rects: [], label: '' });
     // 영역이 둘인 슬롯(좌/우)은 첫 상자에만 이름을, 나머지에는 ID만 붙인다
     const a2 = slots.find((s) => s.id === 'A2')!;
     const m2 = highlightMessage(a2);
     if (m2.type !== 'art-viewer:highlight') throw new Error('highlight expected');
     expect(m2.rects.map((r) => r.label)).toEqual(['A2 진영 표지 테두리', 'A2']);
+    // 좌우 대칭(mirror) 슬롯은 양쪽 모두 끌 수 있다 (대칭 유지가 켜져 있으면 반대쪽이 따라온다)
+    expect(m2.rects.map((r) => r.editable === true)).toEqual([true, true]);
+    expect(m2.rects.every((r) => r.layer === 3)).toBe(true);
+    // 코드가 정하는(locked) 슬롯은 끌 수 없다
+    const d1 = highlightMessage(slots.find((s) => s.id === 'D1'));
+    if (d1.type !== 'art-viewer:highlight') throw new Error('highlight expected');
+    expect(d1.rects.some((r) => r.editable)).toBe(false);
   });
 
   it('게임 서버 주소를 다듬고, 끼워 볼 그림 주소는 Lab 개발 서버를 가리킨다', () => {
@@ -54,6 +61,19 @@ describe('에셋 검수 Viewer 도우미', () => {
     expect(groupHighlightMessage(slots, 'A 헤더', new Set(members.map((m) => m.id)))).toMatchObject({ rects: [] });
   });
 
+  it('구조 보기에서 끌어 고칠 수 있는 것은 고른 슬롯의 상자뿐이다', () => {
+    const message = groupHighlightMessage(slots, 'A 헤더', new Set(), 'A5');
+    if (message.type !== 'art-viewer:highlight') throw new Error('highlight expected');
+    expect(message.rects.filter((r) => r.editable).map((r) => r.slotId)).toEqual(['A5']);
+  });
+
+  it('게임 화면이 보낸 영역 변경 메시지를 걸러 읽는다', () => {
+    expect(parseRectChange({ type: 'art-viewer:rect-change', slotId: 'A5', region: 0, x: 1, y: 2, w: 3, h: 4 })).toMatchObject({ slotId: 'A5', w: 3 });
+    expect(parseRectChange({ type: 'art-viewer:rect-change', slotId: 'A5', region: 0, x: 'a', y: 2, w: 3, h: 4 })).toBeNull();
+    expect(parseRectChange({ type: 'other' })).toBeNull();
+    expect(parseRectChange(null)).toBeNull();
+  });
+
   it('같은 그룹의 슬롯을 한꺼번에 표시한다 (헤더 구조 보기)', () => {
     const message = groupHighlightMessage(slots, 'A 헤더');
     if (message.type !== 'art-viewer:highlight') throw new Error('highlight expected');
@@ -63,44 +83,9 @@ describe('에셋 검수 Viewer 도우미', () => {
   });
 });
 
-// 헤더 고정 배치 (사용자 구상 2026-10-13): 라운드는 화면 정가운데, 진영 표지는 양쪽에 하나씩(좌우 대칭), 사기는 가운데 아래
+// 헤더 영역은 Lab 에셋 검수에서 사용자가 숫자/드래그로 고치므로, 위치 자체(가운데 정렬, 겹침 등)는 테스트로 고정하지 않는다.
+// 고정하는 것: 좌우 대칭 슬롯의 일관성(headerLayout.test.ts)과 이름은 그림이 아니라 글자라는 점.
 describe('헤더 고정 영역', () => {
-  const rectsOf = (id: string) => slots.find((s) => s.id === id)?.regions ?? [];
-  const centerX = (r: { x: number; w: number }) => r.x + r.w / 2;
-
-  it('라운드 표시는 화면 정가운데(x=640)에 있다', () => {
-    const [round] = rectsOf('A5');
-    expect(centerX(round)).toBe(640);
-  });
-
-  it('진영 표지 테두리, 진영색 판, 이름은 좌우 하나씩이고 서로 좌우 대칭이다', () => {
-    for (const id of ['A2', 'A3', 'A4']) {
-      const [left, right] = rectsOf(id);
-      expect(rectsOf(id), id).toHaveLength(2);
-      expect(centerX(left) + centerX(right), `${id} 대칭`).toBe(1280);
-      expect(left.w, id).toBe(right.w);
-    }
-  });
-
-  it('진영색 판은 테두리 안쪽에 들어가고, 이름 글자는 진영색 판 안쪽에 들어간다 (넘치면 잘라 내는 층 순서)', () => {
-    const inside = (inner: { x: number; y: number; w: number; h: number }, outer: { x: number; y: number; w: number; h: number }) =>
-      inner.x >= outer.x && inner.y >= outer.y && inner.x + inner.w <= outer.x + outer.w && inner.y + inner.h <= outer.y + outer.h;
-    for (const i of [0, 1]) {
-      expect(inside(rectsOf('A3')[i], rectsOf('A2')[i]), `진영색 판 ${i}`).toBe(true);
-      expect(inside(rectsOf('A4')[i], rectsOf('A3')[i]), `이름 ${i}`).toBe(true);
-    }
-  });
-
-  it('사기 바는 라운드 아래 가운데에 있고 진영 표지와 겹치지 않는다', () => {
-    const [round] = rectsOf('A5');
-    const [bar] = rectsOf('A6');
-    expect(centerX(bar)).toBe(640);
-    expect(bar.y).toBeGreaterThanOrEqual(round.y + round.h);
-    const overlaps = (a: { x: number; w: number }, b: { x: number; w: number }) => a.x < b.x + b.w && b.x < a.x + a.w;
-    for (const badge of rectsOf('A2')) expect(overlaps(bar, badge)).toBe(false);
-    for (const n of rectsOf('A8')) for (const badge of rectsOf('A2')) expect(overlaps(n, badge), '사기 숫자').toBe(false);
-  });
-
   it('진영 이름은 그림이 아니라 글자다', () => {
     expect(slots.find((s) => s.id === 'A4')?.codeDrawn).toBe(true);
     expect(slots.find((s) => s.id === 'A4')?.artKeys ?? []).toEqual([]);

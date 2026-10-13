@@ -27,6 +27,7 @@ export function DamageCalculatorPanel() {
   const [defenderType, setDefenderType] = useState('');
   const [skillChoice, setSkillChoice] = useState('');
   const [attackerPct, setAttackerPct] = useState(100);
+  const [moralePct, setMoralePct] = useState(50);
   const [defenderPct, setDefenderPct] = useState(100);
   const [defenderRow, setDefenderRow] = useState<Row>('front');
   const [guarding, setGuarding] = useState(false);
@@ -50,6 +51,7 @@ export function DamageCalculatorPanel() {
     defenderPct,
     defenderRow,
     defenderGuarding: guarding,
+    attackerMoraleShare: moralePct,
   });
   const charLabel = (id: string) => `${data.characters[id].name} (${data.unitTypes[data.characters[id].unitType]?.name ?? '?'})`;
 
@@ -73,7 +75,7 @@ export function DamageCalculatorPanel() {
 
   return (
     <section className="panel calc-panel">
-      <h3>피해 계산기</h3>
+      <h3>값의 출처 · 계산 과정</h3>
       <p className="note">
         공격 병종과 방어 병종을 고르면, 그 병종의 어떤 값이 피해 공식에 들어가는지(어느 탭의 어느 칸인지, 지금 공식에서 쓰이는지)와 피해가 한 단계씩 어떻게 계산되는지를 보여 줍니다. 아래 표의 "수정하러 가기"를 누르면 그 칸이 있는 탭으로 이동합니다. 계산은 실제 전투와 같습니다 (반올림만 다름).
       </p>
@@ -105,6 +107,10 @@ export function DamageCalculatorPanel() {
             <label className="field">
               <span>병력 %</span>
               <input type="number" aria-label="계산기 공격자 병력" min={1} max={100} step={5} value={attackerPct} onChange={(e) => setAttackerPct(Number(e.target.value) || 1)} />
+            </label>
+            <label className="field" title="공격하는 쪽의 사기 비율. 50이면 영향 없음, 100이면 이겼을 때(상대 전멸)">
+              <span>사기 %</span>
+              <input type="number" aria-label="계산기 공격자 사기" min={0} max={100} step={5} value={moralePct} onChange={(e) => setMoralePct(Math.min(100, Math.max(0, Number(e.target.value) || 0)))} />
             </label>
           </div>
         </div>

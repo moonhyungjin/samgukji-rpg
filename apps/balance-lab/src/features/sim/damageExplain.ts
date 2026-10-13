@@ -20,6 +20,8 @@ export interface ExplainInput {
   defenderLevel?: number;
   attackerTroops?: number;
   defenderTroops?: number;
+  /** 공격하는 쪽의 사기 비율 (0~100). 생략하면 50 (사기가 피해에 주는 영향이 없는 값) */
+  attackerMoraleShare?: number;
 }
 
 export interface ExplainRow {
@@ -84,7 +86,7 @@ export function explainDamage(data: GameData, balance: BalanceConfig, input: Exp
   const defender = makeUnit(data, balance, 'defender', input.defenderId, dType.id, input.defenderRow, input.defenderPct, input.defenderGuarding, input.defenderLevel, input.defenderTroops);
   const calc = new DamageCalculator(balance, data);
   const physical = skill.scalesWith === 'attack';
-  const share = 50;
+  const share = input.attackerMoraleShare ?? 50;
 
   const rows: ExplainRow[] = [];
   const add = (group: string, label: string, formula: string, value: string) => rows.push({ group, label, formula, value });

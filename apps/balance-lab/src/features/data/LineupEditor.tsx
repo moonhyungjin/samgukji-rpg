@@ -81,11 +81,22 @@ export function LineupEditor({ teamKey, title }: Props) {
         <h3>{title}</h3>
         <span className="presets">
           <span className="presets-label">편성 불러오기</span>
-          {state.presets.map((p) => (
-            <button key={p.id} type="button" title={p.id} onClick={() => set(teamKey, slotsFromLineup(p.lineup))}>
-              {p.label}
-            </button>
-          ))}
+          {/* 편성이 늘어나도 한 줄로 유지되도록 선택 목록으로 둔다. 고르면 바로 불러오고 다시 "고르세요"로 돌아간다 */}
+          <select
+            aria-label="편성 불러오기"
+            value=""
+            onChange={(e) => {
+              const preset = state.presets.find((p) => p.id === e.target.value);
+              if (preset) set(teamKey, slotsFromLineup(preset.lineup));
+            }}
+          >
+            <option value="">편성 고르기…</option>
+            {state.presets.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
           <button type="button" className="clear" onClick={() => set(teamKey, Array.from({ length: SLOT_COUNT }, () => null))}>
             비우기
           </button>

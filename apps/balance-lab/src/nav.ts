@@ -21,7 +21,7 @@ export const CATEGORIES: readonly LabCategory[] = [
       { id: 'sim', label: '시뮬레이션' },
       { id: 'compare', label: '설정 비교' },
       { id: 'battle', label: '전투 1회' },
-      { id: 'calc', label: '피해 계산기' },
+      { id: 'calc', label: '피해 분석' },
       { id: 'matchup', label: '병종 상성표' },
     ],
   },

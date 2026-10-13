@@ -9,6 +9,7 @@ import { CommandPanel } from './CommandPanel';
 import { LogPanel } from './LogPanel';
 import { CardActions } from './CardActions';
 import { TurnOrder } from './TurnOrder';
+import { COMMAND_PARTS, dockStyle, partStyle } from '../render/commandLayout';
 import type { BattleInput, BattleResult } from '@samgukji/battle-engine';
 
 interface Props {
@@ -96,7 +97,7 @@ export function BattleView({ config, onExit, artTrial = false, battleInput, onCo
   return (
     <div className="battle">
       {artTrial && <p className="note">아트 시험 전투 · 유비 대 황건 보병 · 기본 편성 데이터와 별도로 실행</p>}
-      <div className="toolbar">
+      <div className="toolbar" data-slot="E12">
         <span className="speed-label">속도</span>
         {SPEEDS.map((s) => (
           <button key={s.value} type="button" className={s.value === speed ? 'primary' : ''} onClick={() => setSpeed(s.value)}>
@@ -118,10 +119,12 @@ export function BattleView({ config, onExit, artTrial = false, battleInput, onCo
         {snapshot && <CardActions key={`${runId}:${snapshot.waiting?.uid}:${snapshot.log.length}`} snapshot={snapshot}
           onSubmit={command => void controller()?.submit(command)} />}
         {snapshot && (
-          <div className="command-dock">
+          <div className="command-dock" data-slot="E1" style={dockStyle()}>
             {onComplete && snapshot.result ? <section className="panel command">
-              <h3>전투 종료</h3><p>{snapshot.result.winner === 'attacker' ? '승리' : '패배'}</p>
-              <button type="button" className="primary" onClick={() => onComplete(snapshot.result!)}>전투 결과 확인</button>
+              <div className="command-part" data-slot="E7" style={partStyle(COMMAND_PARTS.result)}>
+                <h3>전투 종료</h3><p>{snapshot.result.winner === 'attacker' ? '승리' : '패배'}</p>
+                <button type="button" className="primary" onClick={() => onComplete(snapshot.result!)}>전투 결과 확인</button>
+              </div>
             </section> : <CommandPanel
               snapshot={snapshot}
               onAutoplay={() => void controller()?.autoplayRest()}

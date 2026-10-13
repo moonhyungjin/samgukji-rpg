@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Command } from '@samgukji/battle-engine';
 import type { ControllerSnapshot, WaitingInfo } from '../battle/controller';
+import { menuStyle } from '../render/commandLayout';
 import { cardLayout, WORLD_H, WORLD_W } from '../render/theme';
 
 /** Legal targets come from the engine; the UI does not infer skill rules from sides. */
@@ -52,10 +53,10 @@ export function CardActions({ snapshot, onSubmit }: {
             buttons[(buttons.indexOf(document.activeElement as HTMLButtonElement) + 1) % buttons.length]?.focus();
           }
         }}>
-        <button type="button" className="card-action-trigger" aria-label={`${unit.name} 행동 보기`} aria-expanded={expanded}
+        <button type="button" className="card-action-trigger" data-slot="E8" aria-label={`${unit.name} 행동 보기`} aria-expanded={expanded}
           data-self={self} data-side={unit.side} data-actions={actions.length}
           onFocus={() => { if (!returningFocus.current) setOpen(unit.uid); }} onClick={() => setOpen(unit.uid)} />
-        {expanded && <div className="card-action-menu" role="group" aria-label={`${unit.name}에게 할 행동`}>
+        {expanded && <div className="card-action-menu" data-slot="E9" style={menuStyle(unit.side)} role="group" aria-label={`${unit.name}에게 할 행동`}>
           {actions.map(({ command }) => <button key={command.skillId} type="button" className="card-action-option"
             data-kind={command.kind} onClick={() => submit({ kind: 'skill', skillId: command.skillId, targetUid: unit.uid })}>
             <strong>{command.skillName}</strong>

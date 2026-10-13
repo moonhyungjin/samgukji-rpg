@@ -3,12 +3,14 @@ import { dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 import type { ArtImage, ReviewMap } from './src/features/art/artReview';
+import { applyRegionChanges } from './src/features/art/slotsFile';
 
 /**
  * 개발 서버에서만 동작하는 에셋 검수 API (Lab의 "에셋 검수" 탭이 쓴다).
  *   GET  /api/art            → { slots, images, review }
  *   GET  /api/art/file?path= → 이미지 파일 그대로 (검수 화면의 미리보기)
  *   POST /api/art/review     → { 경로: 'ok' | 'no' | null } 를 review.json에 합친다 (null은 대기로 되돌림)
+ *   POST /api/art/slots      → { 슬롯 id: 영역 목록 } 을 battle-slots.json에 저장한다 (영역 개수는 바꾸지 못한다)
  *   POST /api/art/apply      → NO로 표시한 파일을 지운다. 게임 코드가 쓰는 파일은 지우지 않는다.
  * 건드리는 경로는 `apps/game/public/art`와 `docs/art` 아래의 이미지뿐이다.
  */
@@ -171,6 +173,14 @@ export function artApi(): Plugin {
             }
             writeReview(review);
             send(200, { ok: true, review });
+          });
+        }
+        if (req.method === 'POST' && url.pathname === '/slots') {
+          return readBody((payload) => {
+            const out = applyRegionChanges(readFileSync(SLOTS_FILE, 'utf-8'), payload as Record<string, unknown>);
+            if ('error' in out) return send(400, out);
+            writeFileSync(SLOTS_FILE, out.text, 'utf-8');
+            send(200, { ok: true });
           });
         }
         if (req.method === 'POST' && url.pathname === '/apply') {

@@ -91,7 +91,7 @@
   },
   "morale": {
     "defenderStart": 50,
-    "maxEffect": 0,
+    "maxEffect": 0.1,
     "onUnitDestroyed": 10,
     "onHit": 1,
     "judgement": "tiebreak"

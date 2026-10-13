@@ -176,13 +176,58 @@ try {
 
   // ---- 1. 기존 화면 ----
   if (on('screens')) {
+    // 편성 불러오기는 선택 목록이다 (편성이 늘어나도 한 줄)
+    await tabs('전투 1회');
+    await sleep(300);
+    const loadSelects = await evalJs(`document.querySelectorAll('select[aria-label="편성 불러오기"]').length`);
+    check('전투 1회: 편성 불러오기는 팀마다 선택 목록이다', loadSelects === 2, String(loadSelects));
+    await setValue('select[aria-label="편성 불러오기"]', 'yellowStart');
+    await sleep(300);
+    check('편성을 고르면 그 편성이 팀 A에 채워진다 (조조, 하후돈)', (await evalJs(`document.querySelector('section.lineup').textContent.includes('조조') && document.querySelector('section.lineup').textContent.includes('하후돈')`)) === true);
   await tabs('밸런스');
   await sleep(300);
   const bal = await text('main');
   check('밸런스 탭: 행동력 → AP 설정', bal.includes('행동력 몇 마다 AP 1'));
-  check('밸런스 탭: 지금 값이 들어간 피해 공식이 식으로 나온다', bal.includes('지금 피해 공식') && bal.includes('최종 피해') && bal.includes('병력 보정'));
-  check('밸런스 탭: 공식 실험대(①②③ 단계)와 병력 보정 게이지가 나온다', bal.includes('① 기본값') && bal.includes('③ 최종 피해') && (await evalJs(`document.querySelectorAll('svg.gauge-chart path.curve').length`)) === 2);
-  await shot('lab-balance', true);
+  check('밸런스 탭: 공식 보기는 피해 분석으로 옮겼다는 안내와 열기 버튼이 있다', bal.includes('피해 분석') && (await evalJs(`!!document.querySelector('[data-action="open-analysis"]')`)) === true);
+  // 피해 공식을 고르면 그 공식의 칸만 나온다 (확인 뒤 원래 공식으로 되돌린다)
+  const formulaBefore = await valueByLabel('피해 공식');
+  await setByLabel('피해 공식', 'divide');
+  await sleep(200);
+  const divideText = await text('main');
+  await setByLabel('피해 공식', 'additive');
+  await sleep(200);
+  const additiveText = await text('main');
+  await setByLabel('피해 공식', formulaBefore);
+  await sleep(200);
+  check('밸런스 탭: 피해 공식을 고르면 그 공식의 칸만 나온다', divideText.includes('방어 계수 (defenseScale)') && !divideText.includes('방어 1당 빼기') && additiveText.includes('방어 1당 빼기') && !additiveText.includes('방어 계수 (defenseScale)'), `원래 ${formulaBefore}`);
+  // 병력 칸을 고치면 병력 패널의 게이지가 바로 바뀐다
+  const previewRow = () => evalJs(`document.querySelector('.troop-preview .troop-gauge').textContent`);
+  const rowBefore = await previewRow();
+  const baseBefore = await valueByLabel('Lv1 최대 병력 (모든 병종)');
+  await setByLabel('Lv1 최대 병력 (모든 병종)', Number(baseBefore) * 2);
+  await sleep(200);
+  const rowAfter = await previewRow();
+  await setByLabel('Lv1 최대 병력 (모든 병종)', baseBefore);
+  await sleep(200);
+  check('밸런스 탭: 병력 값을 고치면 병력 패널의 게이지가 바로 바뀐다', rowBefore !== rowAfter && (await previewRow()) === rowBefore, `${rowBefore} → ${rowAfter}`);
+  const debuffPanel = await text('section[data-panel="debuffs"]');
+  const balanceDebuffs = readData('balance').debuffs ?? {};
+  check('밸런스 탭: 디버프 패널에 디버프마다 고정값·비율·지속과 거는 스킬이 나온다', Object.values(balanceDebuffs).every((d) => debuffPanel.includes(d.name)) && debuffPanel.includes('고정값') && debuffPanel.includes('지속 (라운드)') && debuffPanel.includes('이 디버프를 거는 스킬'), Object.keys(balanceDebuffs).join(','));
+  check('밸런스 탭: 되돌리면 "프로젝트 파일과 같음"', (await text('.savebar .badge')).includes('프로젝트 파일과 같음'), (await text('.savebar .badge')).trim());
+
+  await tabs('피해 분석');
+  await sleep(300);
+  const calcText = await text('main');
+  check('피해 분석 탭: 값의 출처 표와 계산 과정이 나온다', ['공식에 들어가는 값과 출처', '병종 보정', '대상 취약', '수정하러 가기', '계산 과정', '최종 피해'].every((k) => calcText.includes(k)));
+  await shot('lab-calc', true);
+  check('피해 분석 탭: 공격하는 쪽의 사기 칸이 있다', (await evalJs(`!!document.querySelector('input[aria-label="계산기 공격자 사기"]')`)) === true);
+  // 실험대로 바꾸면 슬라이더 실험대가 나온다
+  await evalJs(`document.querySelector('[data-calc-mode="lab"]').click()`);
+  await sleep(500);
+  const ana = await text('main');
+  check('피해 분석 탭: 지금 값이 들어간 피해 공식이 식으로 나온다', ana.includes('지금 피해 공식') && ana.includes('최종 피해') && ana.includes('병력 보정'));
+  check('피해 분석 탭: 공식 실험대(①②③ 단계)와 병력 보정 게이지가 나온다', ana.includes('① 기본값') && ana.includes('③ 최종 피해') && (await evalJs(`document.querySelectorAll('svg.gauge-chart path.curve').length`)) === 1);
+  await shot('lab-analysis-lab', true);
   // 실험대: 게이지를 끌면 병력 보정과 피해가 바뀌고, 실험값은 저장 대상이 아니다
   const finalDamage = () => evalJs(`document.querySelector('.formula-explorer .chip.out.big .num').textContent`);
   const gaugeReadout = () => evalJs(`document.querySelector('.formula-explorer .gauge-readout').textContent`);
@@ -213,37 +258,8 @@ try {
   await setValue('.formula-explorer .chip.coef input', coefBefore);
   await sleep(300);
   check('실험대: 노란 칸(공식 계수)을 고치면 피해가 바뀌고 저장 대상이 된다, 되돌리면 같음', damageCoef !== damage0 && coefBadge.includes('저장 안 됨') && (await finalDamage()) === damage0, `${coefBadge}, ${damage0} → ${damageCoef}`);
-  // 피해 공식을 고르면 그 공식의 칸만 나온다 (확인 뒤 원래 공식으로 되돌린다)
-  const formulaBefore = await valueByLabel('피해 공식');
-  await setByLabel('피해 공식', 'divide');
-  await sleep(200);
-  const divideText = await text('main');
-  await setByLabel('피해 공식', 'additive');
-  await sleep(200);
-  const additiveText = await text('main');
-  await setByLabel('피해 공식', formulaBefore);
-  await sleep(200);
-  check('밸런스 탭: 피해 공식을 고르면 그 공식의 칸만 나온다', divideText.includes('방어 계수 (defenseScale)') && !divideText.includes('방어 1당 빼기') && additiveText.includes('방어 1당 빼기') && !additiveText.includes('방어 계수 (defenseScale)'), `원래 ${formulaBefore}`);
-  // 병력 칸을 고치면 병력 패널의 게이지가 바로 바뀐다
-  const previewRow = () => evalJs(`document.querySelector('.troop-preview .troop-gauge').textContent`);
-  const rowBefore = await previewRow();
-  const baseBefore = await valueByLabel('Lv1 최대 병력 (모든 병종)');
-  await setByLabel('Lv1 최대 병력 (모든 병종)', Number(baseBefore) * 2);
-  await sleep(200);
-  const rowAfter = await previewRow();
-  await setByLabel('Lv1 최대 병력 (모든 병종)', baseBefore);
-  await sleep(200);
-  check('밸런스 탭: 병력 값을 고치면 병력 패널의 게이지가 바로 바뀐다', rowBefore !== rowAfter && (await previewRow()) === rowBefore, `${rowBefore} → ${rowAfter}`);
-  const debuffPanel = await text('section[data-panel="debuffs"]');
-  const balanceDebuffs = readData('balance').debuffs ?? {};
-  check('밸런스 탭: 디버프 패널에 디버프마다 고정값·비율·지속과 거는 스킬이 나온다', Object.values(balanceDebuffs).every((d) => debuffPanel.includes(d.name)) && debuffPanel.includes('고정값') && debuffPanel.includes('지속 (라운드)') && debuffPanel.includes('이 디버프를 거는 스킬'), Object.keys(balanceDebuffs).join(','));
-  check('밸런스 탭: 되돌리면 "프로젝트 파일과 같음"', (await text('.savebar .badge')).includes('프로젝트 파일과 같음'), (await text('.savebar .badge')).trim());
-
-  await tabs('피해 계산기');
+  await evalJs(`document.querySelector('[data-calc-mode="trace"]').click()`);
   await sleep(300);
-  const calcText = await text('main');
-  check('피해 계산기 탭: 값의 출처 표와 계산 과정이 나온다', ['공식에 들어가는 값과 출처', '병종 보정', '대상 취약', '수정하러 가기', '계산 과정', '최종 피해'].every((k) => calcText.includes(k)));
-  await shot('lab-calc', true);
 
   await tabs('병종 상성표');
   await sleep(300);
@@ -339,7 +355,7 @@ try {
   await sleep(300);
   check('캠페인 탭: 시작 편성의 장수마다 시작 레벨 칸이 있고, 넣으면 저장 대상, 비우면 같음', levelInputs === startCount && levelBadge.includes('캠페인') && (await text('.savebar .badge')).includes('프로젝트 파일과 같음'), `${levelInputs}/${startCount}칸, ${levelBadge}`);
 
-  await tabs('피해 계산기');
+  await tabs('피해 분석');
   await sleep(300);
   // "수정하러 가기"를 누르면 병종 · 스킬 탭으로 이동한다
   await evalJs(`[...document.querySelectorAll('button.goto')].find((b) => b.closest('tr').textContent.includes('병종 보정')).click()`);
@@ -412,7 +428,43 @@ try {
     writeFileSync(join(ART_TMP, 'e2e-drop.png'), PNG);
     await tabs('에셋 검수');
     await waitFor(`document.querySelectorAll('.art-slot').length > 10`, 20000, '슬롯 목록');
-    check('에셋 검수 탭: 슬롯 목록(A~F)이 나온다', (await evalJs(`['A1','B1','D1','E3','F2'].every(id => !!document.querySelector('[data-slot="'+id+'"]'))`)) === true);
+    check('에셋 검수 탭: 슬롯 목록(A~F)이 나온다', (await evalJs(`['A1','B1','D1','E10','F2'].every(id => !!document.querySelector('[data-slot="'+id+'"]'))`)) === true);
+    // 영역 편집: 숫자로 고치면 저장 대기 상태가 되고, 좌우 대칭 슬롯은 왼쪽만 고치며, 코드가 정하는 슬롯은 고칠 수 없다 (저장은 하지 않는다)
+    await evalJs(`document.querySelector('[data-slot="A5"]').click()`);
+    await sleep(400);
+    check('에셋 검수: 영역이 있는 슬롯에는 숫자 편집기(x, y, 너비, 높이)가 나온다', (await evalJs(`['x','y','w','h'].every(k => !!document.querySelector('[data-section="region-editor"] [data-field="' + k + '"]'))`)) === true);
+    check('에셋 검수: 고치기 전에는 저장/되돌리기가 꺼져 있다', (await evalJs(`document.querySelector('[data-action="regions-save"]').disabled && document.querySelector('[data-action="regions-revert"]').disabled`)) === true);
+    await setValue('[data-section="region-editor"] [data-field="x"]', 500);
+    await sleep(300);
+    check('에셋 검수: 숫자를 고치면 "저장 안 한 변경"이 표시되고 저장이 켜진다', (await evalJs(`document.querySelector('[data-section="region-editor"]').textContent.includes('저장 안 한 변경 A5') && !document.querySelector('[data-action="regions-save"]').disabled && document.querySelector('[data-section="region-editor"] [data-field="x"]').value === '500'`)) === true);
+    await evalJs(`document.querySelector('[data-action="regions-revert"]').click()`);
+    await sleep(300);
+    check('에셋 검수: 되돌리기를 누르면 원래 값으로 돌아간다', (await evalJs(`document.querySelector('[data-section="region-editor"] [data-field="x"]').value === '560' && document.querySelector('[data-action="regions-save"]').disabled`)) === true);
+    await evalJs(`document.querySelector('[data-slot="A2"]').click()`);
+    await sleep(400);
+    check('에셋 검수: 좌우 대칭 슬롯은 왼쪽/오른쪽 두 줄을 모두 고칠 수 있다', (await evalJs(`document.querySelectorAll('[data-section="region-editor"] .art-region-row').length === 2`)) === true);
+    check('에셋 검수: 헤더 슬롯은 겹침 순서(아래 → 위)가 보이고 A1이 맨 아래, A3이 A2 아래다', (await evalJs(`(() => { const ids = [...document.querySelectorAll('[data-section="layer-order"] li')].map(l => l.dataset.layer); return ids[0] === 'A1' && ids.indexOf('A3') < ids.indexOf('A2') && ids.includes('A9'); })()`)) === true);
+    // 대칭 유지: 왼쪽 x를 고치면 오른쪽이 따라오고, 끄면 따로 움직인다
+    const rightX = () => evalJs(`Number(document.querySelector('[data-section="region-editor"] [data-region="1"] [data-field="x"]').value)`);
+    const rightBefore = await rightX();
+    await setValue('[data-section="region-editor"] [data-region="0"] [data-field="x"]', 30);
+    await sleep(300);
+    check('에셋 검수: 대칭 유지가 켜져 있으면 왼쪽을 고칠 때 오른쪽이 좌우 대칭으로 따라온다', (await rightX()) === 1280 - 30 - (await evalJs(`Number(document.querySelector('[data-section="region-editor"] [data-region="0"] [data-field="w"]').value)`)) && (await rightX()) !== rightBefore);
+    await evalJs(`document.querySelector('[data-action="regions-linked"]').click()`);
+    await setValue('[data-section="region-editor"] [data-region="0"] [data-field="x"]', 40);
+    await sleep(300);
+    check('에셋 검수: 대칭 유지를 끄면 한쪽만 바뀐다', (await rightX()) === 1280 - 30 - (await evalJs(`Number(document.querySelector('[data-section="region-editor"] [data-region="0"] [data-field="w"]').value)`)));
+    // 맞추기: A1의 높이와 왼쪽 끝에 맞춘다
+    await evalJs(`document.querySelector('[data-section="region-editor"] [data-region="0"] [data-align="height"]').click()`);
+    await evalJs(`document.querySelector('[data-section="region-editor"] [data-region="0"] [data-align="left"]').click()`);
+    await sleep(300);
+    check('에셋 검수: "맞추기"로 기준 슬롯(A1)의 높이와 왼쪽 끝에 맞춘다', (await evalJs(`(() => { const f = (k) => Number(document.querySelector('[data-section="region-editor"] [data-region="0"] [data-field="' + k + '"]').value); return f('x') === 0 && f('y') === 0 && f('h') === 70; })()`)) === true);
+    await evalJs(`document.querySelector('[data-action="regions-linked"]').click()`);
+    await evalJs(`document.querySelector('[data-action="regions-revert"]').click()`);
+    await sleep(200);
+    await evalJs(`document.querySelector('[data-slot="D1"]').click()`);
+    await sleep(400);
+    check('에셋 검수: 코드가 위치를 정하는 슬롯은 숫자 칸이 없다', (await evalJs(`!document.querySelector('[data-section="region-editor"] [data-field]')`)) === true);
     await evalJs(`document.querySelector('[data-view="all"]').click()`);
     await sleep(500);
     await waitFor(`!!document.querySelector('.art-card[data-path="docs/art/_e2e-tmp/e2e-keep.png"]')`, 15000, '임시 그림 카드');
@@ -466,6 +518,7 @@ try {
     await sleep(500);
     await evalJs(`document.querySelector('[data-action="viewer-group"]').click()`);
     await sleep(500);
+    await shot('lab-art-structure', true);
     check('에셋 검수: 구조 보기를 켜면 같은 그룹(헤더)의 슬롯이 칩으로 나온다', (await evalJs(`['A1','A2','A3','A4','A5','A6','A7','A8','A9'].every(id => !!document.querySelector('[data-chip="' + id + '"]'))`)) === true);
     await evalJs(`document.querySelector('[data-action="chips-only"]').click()`);
     await sleep(300);
@@ -476,10 +529,36 @@ try {
     await evalJs(`document.querySelector('[data-action="chips-all"]').click()`);
     await sleep(300);
     check('에셋 검수: 칩을 눌러 슬롯을 더 켜고, "모두 켜기"로 되돌린다', a3On && (await evalJs(`[...document.querySelectorAll('[data-chip]')].every(b => b.getAttribute('aria-pressed') === 'true')`)) === true);
-    await evalJs(`document.querySelector('[data-action="viewer-group"]').click()`);
+    // Lab 안의 게임 화면(iframe) 위에서 실제로 끌어 본다: 구조 보기 상태에서도 고른 슬롯(A2, A3)의 상자가 잡히고 숫자 칸이 따라 바뀐다
+    const dragInViewer = async (lx, ly, dx, dy) => {
+      await evalJs(`document.querySelector('.art-viewer-iframe').scrollIntoView({ block: 'center' })`);
+      await sleep(300);
+      const f = await evalJs(`(() => { const r = document.querySelector('.art-viewer-iframe').getBoundingClientRect(); return { x: r.x, y: r.y, k: r.width / 1280 }; })()`);
+      const x0 = f.x + lx * f.k, y0 = f.y + ly * f.k;
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x0, y: y0, button: 'none' });
+      await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: x0, y: y0, button: 'left', buttons: 1, clickCount: 1 });
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x0 + (dx * f.k) / 2, y: y0 + (dy * f.k) / 2, button: 'left', buttons: 1 });
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x0 + dx * f.k, y: y0 + dy * f.k, button: 'left', buttons: 1 });
+      await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: x0 + dx * f.k, y: y0 + dy * f.k, button: 'left', buttons: 0, clickCount: 1 });
+      await sleep(500);
+    };
+    const field = (key) => evalJs(`Number(document.querySelector('[data-section="region-editor"] [data-field="${key}"]').value)`);
+    for (const id of ['A2', 'A3']) {
+      await evalJs(`document.querySelector('[data-slot="${id}"]').click()`);
+      await sleep(600);
+      const before = { x: await field('x'), y: await field('y'), w: await field('w'), h: await field('h') };
+      await dragInViewer(before.x + before.w / 2, before.y + before.h / 2, 40, 10);
+      const after = { x: await field('x'), y: await field('y') };
+      check(`에셋 검수: 게임 화면에서 ${id} 상자를 끌면 숫자 칸이 따라 바뀐다`, Math.abs(after.x - (before.x + 40)) <= 3 && Math.abs(after.y - (before.y + 10)) <= 3, JSON.stringify({ before, after }));
+      await dragInViewer(before.x + 40 + before.w, before.y + 10 + before.h, 20, 6);
+      check(`에셋 검수: ${id}의 모서리를 끌면 크기가 바뀐다`, Math.abs((await field('w')) - (before.w + 20)) <= 3 && Math.abs((await field('h')) - (before.h + 6)) <= 3, `w=${await field('w')} h=${await field('h')}`);
+      await evalJs(`document.querySelector('[data-action="regions-revert"]').click()`);
+      await sleep(300);
+    }
+    await evalJs(`document.querySelector('[data-action="viewer-single"]').click()`);
     await evalJs(`document.querySelector('[data-slot="D5"]').click()`);
     await sleep(600);
-    check('에셋 검수: 이 슬롯은 지금 코드가 그림을 쓰지 않아 끼워 볼 수 없다고 안내한다', (await evalJs(`!document.querySelector('.art-card [data-act="view"]') && document.querySelector('.art-viewer-bar').textContent.includes('끼워 볼 수 없습니다')`)) === true);
+    check('에셋 검수: 이 슬롯은 지금 코드가 그림을 쓰지 않아 끼워 볼 수 없다고 안내한다', (await evalJs(`!document.querySelector('.art-card [data-act="view"]') && document.querySelector('.vc').textContent.includes('끼워 볼 수 없습니다')`)) === true);
     await evalJs(`localStorage.removeItem('art-viewer-game-url')`);
   }
 
@@ -605,7 +684,7 @@ try {
   check('새 편성에 장수를 넣으면 오류가 사라진다', !(await text('.saveissues')).includes('군단이 하나도 없습니다'));
   await tabs('전투 1회');
   await sleep(300);
-  check('전투 1회 탭의 편성 버튼이 작업 중인 편성 목록을 따른다 (새 편성 포함)', (await evalJs(`[...document.querySelectorAll('.presets button')].some(b => b.textContent.includes('새 편성'))`)) === true);
+  check('전투 1회 탭의 편성 선택 목록이 작업 중인 편성 목록을 따른다 (새 편성 포함)', (await evalJs(`[...document.querySelectorAll('select[aria-label="편성 불러오기"] option')].some(o => o.textContent.includes('새 편성'))`)) === true);
   await tabs('기본 편성');
   await sleep(200);
   await clickButton('파일에 저장');

@@ -5,7 +5,7 @@ import { BattleTab } from './features/sim/BattleTab';
 import { CampaignTab } from './features/campaign/CampaignTab';
 import { CharactersTab } from './features/data/CharactersTab';
 import { CompareTab } from './features/sim/CompareTab';
-import { DamageCalculatorPanel } from './features/sim/DamageCalculatorPanel';
+import { DamageAnalysisTab } from './features/sim/DamageAnalysisTab';
 import { DataTab } from './features/data/DataTab';
 import { MapTab } from './features/campaign/MapTab';
 import { MatchupTab } from './features/sim/MatchupTab';
@@ -105,7 +105,7 @@ function Shell() {
           </div>
         )}
         {tab === 'battle' && <BattleTab />}
-        {tab === 'calc' && <DamageCalculatorPanel />}
+        {tab === 'calc' && <DamageAnalysisTab />}
         {tab === 'matchup' && <MatchupTab />}
         {tab === 'balance' && <BalanceTab />}
         {tab === 'data' && <DataTab />}

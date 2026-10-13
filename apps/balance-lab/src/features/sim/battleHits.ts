@@ -18,6 +18,8 @@ export interface HitContext {
   splash: boolean;
   /** 결계가 피해를 무시했는가 */
   barrierBlocked: boolean;
+  /** 이 타격 직전, 공격하는 쪽의 사기 비율 */
+  attackerMoraleShare: number;
   /** 실제로 깎인 병력 */
   actual: number;
 }
@@ -26,7 +28,7 @@ export interface HitContext {
  * 이벤트를 처음부터 다시 따라가서 eventIndex의 공격 피해가 날 때의 병력·열·가드 상태를 구한다.
  * 공격 피해(kind attack)가 아니면 null. lineups는 진영별 편성(군단 uid의 번호 순서)이다.
  */
-export function hitContext(result: BattleResult, lineups: { attacker: LineupEntry[]; defender: LineupEntry[] }, data: GameData, eventIndex: number): HitContext | null {
+export function hitContext(result: BattleResult, lineups: { attacker: LineupEntry[]; defender: LineupEntry[] }, data: GameData, eventIndex: number, startDefenderMorale = 50): HitContext | null {
   const events = result.events ?? [];
   const hit = events[eventIndex];
   if (!hit || hit.type !== 'damage' || hit.kind !== 'attack') return null;
@@ -40,6 +42,7 @@ export function hitContext(result: BattleResult, lineups: { attacker: LineupEntr
     guard.set(u.uid, data.unitTypes[u.unitType]?.guard?.start ?? 0);
   }
 
+  let defenderMorale = startDefenderMorale;
   let skillId = '';
   let guardBefore: { uid: string; rate: number } | null = null;
   let barrierBlocked = false;
@@ -57,6 +60,9 @@ export function hitContext(result: BattleResult, lineups: { attacker: LineupEntr
         break;
       case 'debuffTick':
         troops.set(e.unit, e.troopsAfter);
+        break;
+      case 'morale':
+        defenderMorale = e.defenderMorale;
         break;
       case 'revive':
         troops.set(e.target, e.troopsAfter);
@@ -93,6 +99,7 @@ export function hitContext(result: BattleResult, lineups: { attacker: LineupEntr
     critical: hit.critical === true,
     splash: hit.splash === true,
     barrierBlocked,
+    attackerMoraleShare: result.units.find((u) => u.uid === hit.source)?.side === 'defender' ? defenderMorale : 100 - defenderMorale,
     actual: hit.amount,
   };
 }
@@ -116,5 +123,6 @@ export function explainHit(result: BattleResult, context: HitContext, data: Game
     defenderTroops: context.targetTroops,
     defenderRow: context.targetRow,
     defenderGuarding: context.guarding,
+    attackerMoraleShare: context.attackerMoraleShare,
   });
 }

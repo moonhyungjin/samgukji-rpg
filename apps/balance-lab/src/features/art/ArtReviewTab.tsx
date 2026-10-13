@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArtCard, imageUrl } from './ArtCard';
+import { ArtRegionEditor } from './ArtRegionEditor';
 import { ArtSlotNav } from './ArtSlotNav';
 import { ArtViewerPanel } from './ArtViewerPanel';
 import { formatBytes, matchesFilter, slotsFor, splitDeletable, statusOf } from './artReview';
 import type { ArtImage, ArtSlot, ReviewMap, ReviewStatus, StatusFilter } from './artReview';
+import { editModeOf } from './artRegions';
 import { useArtViewer } from './useArtViewer';
+import { useSlotRegions } from './useSlotRegions';
 
 type View = 'slots' | 'unassigned' | 'all';
 interface Payload {
@@ -13,6 +16,7 @@ interface Payload {
   review: ReviewMap;
 }
 
+const NO_SLOTS: ArtSlot[] = [];
 const FILTER_LABEL: Record<StatusFilter, string> = { all: '전체', pending: '대기', ok: 'OK', no: 'NO' };
 
 /**
@@ -45,9 +49,12 @@ export function ArtReviewTab() {
     void load();
   }, [load]);
 
-  const { slots = [], images = [], review = {} } = data ?? {};
+  const { images = [], review = {} } = data ?? {};
+  // 영역은 편집 중인 값(저장 전)이 슬롯 목록에 섞여 들어온다
+  const regions = useSlotRegions(data?.slots ?? NO_SLOTS, load);
+  const slots = regions.slots;
   const slot = slots.find((x) => x.id === slotId);
-  const v = useArtViewer(slots, view === 'slots' ? slot : undefined, view);
+  const v = useArtViewer(slots, view === 'slots' ? slot : undefined, view, (c) => regions.edit(c.slotId, c.region, { x: c.x, y: c.y, w: c.w, h: c.h }));
 
   const mark = async (path: string, value: ReviewStatus | null) => {
     if (!data) return;
@@ -103,34 +110,44 @@ export function ArtReviewTab() {
         <code>docs/art/battle-slots.json</code>, 검수 결과는 <code>docs/art/review.json</code>에 저장됩니다.
       </p>
 
-      <div className="filters art-bar">
-        <span className="badge">대기 {counts.pending}</span>
-        <span className="badge art-ok">OK {counts.ok}</span>
-        <span className="badge art-no">NO {counts.no}</span>
-        <span className="spacer" />
-        {(['slots', 'unassigned', 'all'] as View[]).map((x) => (
-          <button key={x} type="button" className={view === x ? 'tab sub active' : 'tab sub'} data-view={x} onClick={() => setView(x)}>
-            {x === 'slots' ? '슬롯별' : x === 'unassigned' ? '미배정' : '전체'}
+      <div className="art-bar">
+        <div className="art-bar-row">
+          <span className="badge">대기 {counts.pending}</span>
+          <span className="badge art-ok">OK {counts.ok}</span>
+          <span className="badge art-no">NO {counts.no}</span>
+          <span className="spacer" />
+          <div className="seg" role="group" aria-label="보기 방식">
+            {(['slots', 'unassigned', 'all'] as View[]).map((x) => (
+              <button key={x} type="button" className={view === x ? 'tab sub active' : 'tab sub'} data-view={x} onClick={() => setView(x)}>
+                {x === 'slots' ? '슬롯별' : x === 'unassigned' ? '미배정' : '전체'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="art-bar-row">
+          <label className="vc-inline">
+            <span>상태</span>
+            <select aria-label="상태 필터" value={filter} onChange={(e) => setFilter(e.target.value as StatusFilter)}>
+              {(Object.keys(FILTER_LABEL) as StatusFilter[]).map((f) => (
+                <option key={f} value={f}>
+                  {FILTER_LABEL[f]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span className="spacer" />
+          <button type="button" data-action="apply" onClick={applyDeletions} disabled={deletable.length === 0} title="NO로 표시한 그림 파일을 지웁니다">
+            NO 정리 ({deletable.length}개, {formatBytes(deletable.reduce((n, i) => n + i.bytes, 0))})
           </button>
-        ))}
-        <select aria-label="상태 필터" value={filter} onChange={(e) => setFilter(e.target.value as StatusFilter)}>
-          {(Object.keys(FILTER_LABEL) as StatusFilter[]).map((f) => (
-            <option key={f} value={f}>
-              {FILTER_LABEL[f]}
-            </option>
-          ))}
-        </select>
-        <button type="button" data-action="apply" onClick={applyDeletions} disabled={deletable.length === 0} title="NO로 표시한 그림 파일을 지웁니다">
-          NO 정리 ({deletable.length}개, {formatBytes(deletable.reduce((n, i) => n + i.bytes, 0))})
-        </button>
-        <button type="button" onClick={() => void load()}>
-          새로 읽기
-        </button>
+          <button type="button" onClick={() => void load()}>
+            새로 읽기
+          </button>
+        </div>
       </div>
       {blocked.length > 0 && <p className="note shared">⚠ NO로 표시했지만 게임이 쓰는 파일 {blocked.length}개는 지울 수 없습니다: {blocked.map((i) => i.path.split('/').pop()).join(', ')}</p>}
       {message && <p className="note">{message}</p>}
 
-      <ArtViewerPanel v={v} slot={view === 'slots' ? slot : undefined} slotView={view === 'slots'} />
+      <ArtViewerPanel v={v} slot={view === 'slots' ? slot : undefined} slotView={view === 'slots'} editor={view === 'slots' && slot && slot.regions?.length ? <ArtRegionEditor slot={slot} slots={slots} regions={regions} /> : undefined} />
 
       <div className={view === 'slots' ? 'art-layout slots' : 'art-layout'}>
         {view === 'slots' && <ArtSlotNav slots={slots} images={images} review={review} slotId={slotId} onSelect={setSlotId} />}
@@ -141,7 +158,7 @@ export function ArtReviewTab() {
                 {slot.id} · {slot.name}
               </h4>
               <p className="note">
-                크기 {slot.size} · 상태 {slot.states.join(' / ')}
+                {slot.regions?.length && editModeOf(slot) !== 'locked' ? `크기 ${slot.regions[0].w}×${slot.regions[0].h} · 위치 (${slot.regions[0].x}, ${slot.regions[0].y})` : `크기 ${slot.size}`} · 상태 {slot.states.join(' / ')}
                 {slot.codeDrawn ? ' · 지금은 코드/CSS로 그립니다' : ''}
                 {slot.note ? ` · ${slot.note}` : ''}
               </p>

@@ -120,7 +120,7 @@ export function BattleTab() {
             <p className="note">피해 줄의 "계산"을 누르면 그 순간의 병력·열·가드로 피해가 어떻게 나왔는지 한 단계씩 보여 줍니다 (피해 계산기와 같은 계산).</p>
             <div className="log">
               {entries.map((entry, i) => {
-                const ctx = ran && result ? hitContext(result, ran, state.data, entry.eventIndex) : null;
+                const ctx = ran && result ? hitContext(result, ran, state.data, entry.eventIndex, state.balance.morale.defenderStart) : null;
                 const open = openHit === entry.eventIndex;
                 return (
                   <div key={i} className={open ? 'log-line open' : 'log-line'}>

@@ -16,6 +16,14 @@ export interface ArtSlot {
   match?: string[];
   /** 게임 화면에서 이 슬롯이 차지하는 영역들 (논리 화면 1280×900 좌표). Viewer가 점선으로 표시한다 */
   regions?: { x: number; y: number; w: number; h: number }[];
+  /** 영역을 Lab에서 고치는 방식 (artRegions.ts). 없으면 영역마다 따로(free) */
+  edit?: 'free' | 'mirror' | 'cards' | 'locked';
+  /** edit가 cards일 때 카드 한 장 안의 영역 수 (카드 12장이 이 수만큼씩 이어진다). 없으면 1 */
+  parts?: number;
+  /** 겹치는 순서 (작을수록 아래, 코드가 정한다). 있으면 편집 화면에 층 순서로 보여 준다 */
+  layer?: number;
+  /** 다른 슬롯과 같은 영역을 쓴다 (그 슬롯을 고치면 따라온다) */
+  follow?: string;
   /** 후보 그림을 끼워 볼 수 있는 게임 텍스처 이름 (battleArt.ts의 ART_URLS 키) */
   artKeys?: string[];
 }

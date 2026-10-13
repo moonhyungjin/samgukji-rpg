@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ArtSlot } from './artReview';
-import { DEFAULT_GAME_URL, applicableKeys, groupHighlightMessage, groupSlots, highlightMessage, viewerImageUrl } from './artViewer';
+import { DEFAULT_GAME_URL, applicableKeys, groupHighlightMessage, groupSlots, highlightMessage, parseRectChange, viewerImageUrl } from './artViewer';
+import type { ViewerRectChange } from './artViewer';
 
 type View = 'slots' | 'unassigned' | 'all';
 
@@ -8,7 +9,9 @@ type View = 'slots' | 'unassigned' | 'all';
  * 에셋 검수의 "게임 화면에서 보기" 상태: iframe 연결, 슬롯 영역 표시, 후보 그림 끼우기, 구조 보기(그룹 전체/칩).
  * 게임 화면과는 postMessage로만 대화한다 (apps/game의 ArtViewer.tsx).
  */
-export function useArtViewer(slots: readonly ArtSlot[], slot: ArtSlot | undefined, view: View) {
+export function useArtViewer(slots: readonly ArtSlot[], slot: ArtSlot | undefined, view: View, onRectChange?: (change: ViewerRectChange) => void) {
+  const changeRef = useRef(onRectChange);
+  changeRef.current = onRectChange;
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [gameUrl, setGameUrl] = useState(() => {
     try {
@@ -32,6 +35,8 @@ export function useArtViewer(slots: readonly ArtSlot[], slot: ArtSlot | undefine
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.data && typeof event.data === 'object' && event.data.type === 'art-viewer:ready') setReady(true);
+      const change = parseRectChange(event.data);
+      if (change) changeRef.current?.(change);
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
@@ -41,7 +46,7 @@ export function useArtViewer(slots: readonly ArtSlot[], slot: ArtSlot | undefine
   useEffect(() => {
     if (!ready) return;
     if (view !== 'slots' || !slot) post(highlightMessage(undefined));
-    else post(showGroup ? groupHighlightMessage(slots, slot.group, hidden) : highlightMessage(slot));
+    else post(showGroup ? groupHighlightMessage(slots, slot.group, hidden, slot.id) : highlightMessage(slot));
   }, [ready, slot, slots, view, showGroup, hidden, post]);
 
   // 슬롯이 바뀌면 끼워 볼 대상 텍스처를 첫 번째로

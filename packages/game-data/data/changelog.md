@@ -832,3 +832,23 @@ Balance Lab의 "파일에 저장"을 누를 때마다 자동으로 덧붙는다 
 - unitTypes: + conqueror(패왕), hero(영웅), demon-king(마왕), saint-emperor(성황). lord.promotesTo [] → [conqueror, hero], conqueror → demon-king, hero → saint-emperor
 - unitTypes.*.statMods (부모 대비): 패왕 공+2 / 영웅 공+1 방+1 지+1 / 마왕 공+2 방+1 속+1 / 성황 방+1 지+2 행+1, 2차 baseAp 3
 - skills: + demon-king-menace(위압: 아군 전체, 공격·속도 중 1~2가지 +1), saint-emperor-virtue(성덕: 아군 전체, 방어·지력 중 1~2가지 +1). 둘 다 AP 2
+
+## 2026-10-13 15:55 — 병종
+- unitTypes.lord.statMods.action: 1 → 0
+- unitTypes.conqueror.statMods.attack: 2 → 1
+- unitTypes.conqueror.statMods.action: 0 → 1
+- unitTypes.hero.statMods.attack: 1 → 0
+- unitTypes.hero.statMods.defense: 1 → 0
+- unitTypes.hero.statMods.intellect: 1 → 0
+- unitTypes.hero.statMods.speed: 0 → 1
+- unitTypes.hero.statMods.action: 0 → 1
+- unitTypes.demon-king.statMods.attack: 2 → 1
+- unitTypes.demon-king.statMods.defense: 1 → 0
+- unitTypes.saint-emperor.statMods.attack: 0 → 1
+- unitTypes.saint-emperor.statMods.intellect: 2 → 0
+- unitTypes.saint-emperor.statMods.action: 1 → 0
+
+## 2026-10-13 — 사기
+메모: 사용자 결정. 사기가 전투에 조금 영향을 주도록 하고, 전멸하면 그쪽 사기는 바로 0 (상대 100).
+- balance.morale.maxEffect: 0 → 0.1 (사기 100%면 피해 ×1.1, 0%면 ×0.9, 50%면 ×1). 무작위 6000판 시험: 승률은 그대로(양쪽 50%), 평균 라운드 4.90 → 4.85, 전멸로 끝나는 전투 28.6% → 32.2%
+- 엔진: 한 진영이 전멸하면 그 진영의 사기가 즉시 0이 된다 (양쪽이 동시에 전멸하면 그대로)

@@ -1,6 +1,9 @@
+import type { ReactNode } from 'react';
 import type { CommandPreview } from '@samgukji/battle-engine';
 import type { ControllerSnapshot } from '../battle/controller';
 import { DECIDED_BY_LABEL, END_CAUSE_LABEL, FAMILY_LABEL, SIDE_LABEL, STAT_LABEL } from '../lib/labels';
+import { COMMAND_PARTS, partStyle } from '../render/commandLayout';
+import type { Rect } from '../render/headerLayout';
 
 /** 대상 버튼에 보여 줄 예상 결과 */
 export function previewText(preview: CommandPreview): string {
@@ -36,16 +39,23 @@ interface Props {
   onExit: () => void;
 }
 
+/** 지휘 패널 안의 고정 부품 하나 (좌표는 render/commandLayout.ts, 슬롯 정의는 docs/art/battle-slots.json의 E) */
+function Part({ slot, rect, children }: { slot: string; rect: Rect; children: ReactNode }) {
+  return <div className="command-part" data-slot={slot} style={partStyle(rect)}>{children}</div>;
+}
+
 /** 플레이어 차례의 커맨드 선택과 전투 결과를 보여 준다. */
 export function CommandPanel({ snapshot, onAutoplay, onSkip, onRestart, onExit }: Props) {
   if (snapshot.phase === 'playing') {
     return (
       <section className="panel command" aria-label="전투 지휘">
-        <p className="command-eyebrow">전투 지휘</p>
-        <p className="status" role="status">진행 중…</p>
-        <button type="button" onClick={onSkip}>
-          건너뛰기
-        </button>
+        <Part slot="E2" rect={COMMAND_PARTS.title}><p className="command-eyebrow">전투 지휘</p></Part>
+        <Part slot="E6" rect={COMMAND_PARTS.progress}><p className="status" role="status">진행 중…</p></Part>
+        <Part slot="E6" rect={COMMAND_PARTS.skip}>
+          <button type="button" onClick={onSkip}>
+            건너뛰기
+          </button>
+        </Part>
       </section>
     );
   }
@@ -54,6 +64,7 @@ export function CommandPanel({ snapshot, onAutoplay, onSkip, onRestart, onExit }
     const result = snapshot.result;
     return (
       <section className="panel command" aria-label="전투 결과">
+        <Part slot="E7" rect={COMMAND_PARTS.result}>
         <h3>전투 종료</h3>
         {result && (
           <>
@@ -73,6 +84,7 @@ export function CommandPanel({ snapshot, onAutoplay, onSkip, onRestart, onExit }
             설정으로
           </button>
         </div>
+        </Part>
       </section>
     );
   }
@@ -82,17 +94,23 @@ export function CommandPanel({ snapshot, onAutoplay, onSkip, onRestart, onExit }
 
   return (
     <section className="panel command" aria-label="전투 지휘">
-      <p className="command-eyebrow">전투 지휘</p>
-      <h3>
-        {waiting.name}의 차례 <small>{FAMILY_LABEL[waiting.family]} · AP {waiting.ap}/{waiting.maxAp} · 병력 {waiting.troops}/{waiting.maxTroops}</small>
-      </h3>
-      <p className="note">군단 카드에 마우스를 올리거나 카드를 누르세요. 그 대상에게 가능한 행동만 표시됩니다.<br />가드·대기는 행동 중인 장수 카드에서 선택하세요.</p>
-      {snapshot.error && <p className="error" role="alert">{snapshot.error}</p>}
-      <div className="row">
-        <button type="button" onClick={onAutoplay}>
-          남은 전투를 AI에게 맡기기
-        </button>
-      </div>
+      <Part slot="E2" rect={COMMAND_PARTS.title}><p className="command-eyebrow">전투 지휘</p></Part>
+      <Part slot="E3" rect={COMMAND_PARTS.actor}>
+        <h3>
+          {waiting.name}의 차례 <small>{FAMILY_LABEL[waiting.family]} · AP {waiting.ap}/{waiting.maxAp} · 병력 {waiting.troops}/{waiting.maxTroops}</small>
+        </h3>
+      </Part>
+      <Part slot="E4" rect={COMMAND_PARTS.notice}>
+        <p className="note">군단 카드에 마우스를 올리거나 카드를 누르세요. 그 대상에게 가능한 행동만 표시됩니다.<br />가드·대기는 행동 중인 장수 카드에서 선택하세요.</p>
+        {snapshot.error && <p className="error" role="alert">{snapshot.error}</p>}
+      </Part>
+      <Part slot="E5" rect={COMMAND_PARTS.autoplay}>
+        <div className="row">
+          <button type="button" onClick={onAutoplay}>
+            남은 전투를 AI에게 맡기기
+          </button>
+        </div>
+      </Part>
     </section>
   );
 }

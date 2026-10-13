@@ -36,6 +36,13 @@ export const RULES = [
     lab: ['art'],
   },
   {
+    id: 'engine-tests',
+    when: '엔진 테스트 파일 (packages/battle-engine/test)',
+    test: /^packages\/battle-engine\/test\//,
+    typecheck: true,
+    vitest: 'all',
+  },
+  {
     id: 'engine',
     when: '전투 엔진 (packages/battle-engine/src)',
     test: /^packages\/battle-engine\/src\/(?!campaign\/|strategy\/)/,

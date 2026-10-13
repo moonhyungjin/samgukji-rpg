@@ -1835,7 +1835,7 @@
       "defense": 1,
       "intellect": 1,
       "speed": 0,
-      "action": 1
+      "action": 0
     },
     "autoBuffSkillId": "lord-presence"
   },
@@ -1881,11 +1881,11 @@
       "magic": 10
     },
     "statMods": {
-      "attack": 2,
+      "attack": 1,
       "defense": 0,
       "intellect": 0,
       "speed": 0,
-      "action": 0
+      "action": 1
     },
     "autoBuffSkillId": "lord-presence"
   },
@@ -1931,11 +1931,11 @@
       "magic": 10
     },
     "statMods": {
-      "attack": 1,
-      "defense": 1,
-      "intellect": 1,
-      "speed": 0,
-      "action": 0
+      "attack": 0,
+      "defense": 0,
+      "intellect": 0,
+      "speed": 1,
+      "action": 1
     },
     "autoBuffSkillId": "lord-presence"
   },
@@ -1981,8 +1981,8 @@
       "magic": 10
     },
     "statMods": {
-      "attack": 2,
-      "defense": 1,
+      "attack": 1,
+      "defense": 0,
       "intellect": 0,
       "speed": 1,
       "action": 0
@@ -2031,11 +2031,11 @@
       "magic": 10
     },
     "statMods": {
-      "attack": 0,
+      "attack": 1,
       "defense": 1,
-      "intellect": 2,
+      "intellect": 0,
       "speed": 0,
-      "action": 1
+      "action": 0
     },
     "autoBuffSkillId": "lord-presence"
   }

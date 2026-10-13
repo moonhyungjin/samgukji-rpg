@@ -6,6 +6,7 @@ import { createDefaultState } from './lab/defaults';
 import { LabProvider } from './lab/LabContext';
 import type { SimulationHook } from './lab/useSimulation';
 import { BalanceTab } from './features/balance/BalanceTab';
+import { DamageAnalysisTab } from './features/sim/DamageAnalysisTab';
 import { BattleTab } from './features/sim/BattleTab';
 import { CharactersTab } from './features/data/CharactersTab';
 import { CampaignTab } from './features/campaign/CampaignTab';
@@ -42,10 +43,10 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(html).toContain('병력 보정 방식');
   });
 
-  it('밸런스 탭 맨 위에 공식 실험대와 공식 전체 글이 나온다', () => {
-    const html = render(<BalanceTab />);
+  it('피해 분석 탭에 공식 전체 글과 (실험대로 바꾸면) 실험대가 나온다', () => {
+    const html = render(<DamageAnalysisTab initialMode="lab" />);
     const { balance } = createDefaultState();
-    expect(html).toContain('지금 피해 공식');
+    expect(html).toContain('공식 전체를 글로 보기');
     expect(html).toContain('최종 피해');
     expect(html).toContain('병력 보정');
     if (balance.damage.formula === 'gap') {
@@ -53,11 +54,11 @@ describe('Balance Lab 화면 렌더링', () => {
       expect(html).toContain(`<b class="num">${balance.damage.gap!.perPoint}</b>`);
     }
     if (balance.critical?.chance) expect(html).toContain('크리티컬');
-    for (const label of ['지금 피해 공식 (실험대)', '① 기본값', '② 기본 피해', '③ 최종 피해', '공격 병종', '방어 병종', '스킬 계수', '병력 보정 게이지', '공식 전체를 글로 보기']) expect(html).toContain(label);
-    // 실험대의 최종 피해와 병력 패널 게이지의 피해는 같은 계산이다
+    for (const label of ['지금 피해 공식 (실험대)', '① 기본값', '② 기본 피해', '③ 최종 피해', '공격 병종', '방어 병종', '스킬 계수', '공식 전체를 글로 보기']) expect(html).toContain(label);
+    // 실험대의 최종 피해와 실험대 병력 게이지의 피해는 같은 계산이다
     const finals = [...html.matchAll(/피해 <b class="num big">([\d,]+)<\/b>/g)].map((m) => m[1]);
     const explorerFinal = html.match(/최종 피해<\/span><b class="num">([\d,]+)<\/b>/)?.[1];
-    expect(finals).toHaveLength(2);
+    expect(finals).toHaveLength(1);
     expect(new Set([...finals, explorerFinal]).size).toBe(1);
   });
 
@@ -82,10 +83,11 @@ describe('Balance Lab 화면 렌더링', () => {
     expect(html).toContain('치명타 확률 % (0이면 꺼짐)');
   });
 
-  it('피해 계산기: 병종 중심으로 값의 출처와 계산 과정이 나온다', () => {
+  it('피해 분석: 병종 중심으로 값의 출처와 계산 과정이 나온다 (사기 칸 포함)', () => {
     const html = render(<DamageCalculatorPanel />);
     expectClean(html);
-    expect(html).toContain('피해 계산기');
+    expect(html).toContain('값의 출처 · 계산 과정');
+    expect(html).toContain('사기 %');
     for (const label of ['한 번 맞는 피해', '최종 피해', '병력 보정', '받는 피해 배수', '반격', '공식에 들어가는 값과 출처', '어디서 가져오나', '수정하러 가기', '공격 병종', '방어 병종']) expect(html).toContain(label);
     // 병종 보정/대상 취약의 출처 칸이 보인다
     expect(html).toContain('병종 보정');
