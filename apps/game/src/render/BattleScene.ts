@@ -121,9 +121,11 @@ export class BattleScene implements SceneLike {
 
     if (this.textures.moralePointer) {
       this.moralePointerSprite = new Sprite(this.textures.moralePointer);
-      this.moralePointerSprite.anchor.set(0.5, 0.2);
-      this.moralePointerSprite.width = 16;
-      this.moralePointerSprite.height = 20;
+      // A7 영역의 높이에 맞추고 비율을 지킨다. 가로는 바를 따라 움직이고, 세로는 영역의 맨 위에 둔다
+      const r = HEADER.moralePointer;
+      const k = r.h / this.moralePointerSprite.texture.height;
+      this.moralePointerSprite.anchor.set(0.5, 0);
+      this.moralePointerSprite.scale.set(k);
     }
 
     this.world.addChild(
@@ -493,10 +495,12 @@ export class BattleScene implements SceneLike {
     // 중앙 라운드 현판 (center: 640, 22)
     if (this.textures.plaqueRound) {
       const roundDisc = new Sprite(this.textures.plaqueRound);
+      // A5 영역 안에 비율을 지켜 맞추고 가운데에 둔다
+      const r = HEADER.round;
+      const k = Math.min(r.w / roundDisc.texture.width, r.h / roundDisc.texture.height);
       roundDisc.anchor.set(0.5);
-      roundDisc.position.set(640, 22);
-      roundDisc.width = 54;
-      roundDisc.height = 54;
+      roundDisc.position.set(centerOf(r).x, centerOf(r).y);
+      roundDisc.scale.set(k);
       layer.addChild(roundDisc);
     } else {
       g.roundRect(550, 8, 180, 28, 4).fill(0x10151c).stroke({ width: 1.5, color: 0xc8a96e });
@@ -576,12 +580,14 @@ export class BattleScene implements SceneLike {
 
     // 사기 역삼각형 골드 포인터 (▼)
     if (this.moralePointerSprite) {
-      this.moralePointerSprite.position.set(x + split, y - 4);
+      const pr = HEADER.moralePointer;
+      this.moralePointerSprite.position.set(pr.x + (pr.w * attacker) / 100, pr.y);
       this.moralePointerSprite.visible = true;
     }
 
     // 중앙 "사기" 배지
-    g.roundRect(640 - 18, y - 1, 36, h + 2, 3).fill(0x0a0e14).stroke({ width: 1, color: 0xc8a96e });
+    const lb = HEADER.moraleLabel;
+    g.roundRect(lb.x, lb.y, lb.w, lb.h, 3).fill(0x0a0e14).stroke({ width: 1, color: 0xc8a96e });
 
     this.attackerMoraleText.text = `사기 ${attacker.toFixed(0)}`;
     this.defenderMoraleText.text = `${defenderMorale.toFixed(0)} 사기`;

@@ -20,6 +20,8 @@ export const HEADER = {
   round: regionAt('A5'),
   /** A6 사기 바 */
   moraleBar: regionAt('A6'),
+  /** A7 사기 포인터: 가로는 바 구간(x, w), 세로는 영역 높이 */
+  moralePointer: regionAt('A7'),
   /** A8 사기 숫자 (좌/우) */
   moraleNumbers: { left: regionAt('A8', 0), right: regionAt('A8', 1) },
   /** A9 사기 가운데 배지/글자 */

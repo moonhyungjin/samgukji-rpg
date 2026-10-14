@@ -17,6 +17,7 @@ describe('헤더 고정 영역: 좌표의 원본은 docs/art/battle-slots.json�
     expect(slot('A4')?.regions).toEqual([HEADER.name.left, HEADER.name.right]);
     expect(slot('A5')?.regions).toEqual([HEADER.round]);
     expect(slot('A6')?.regions).toEqual([HEADER.moraleBar]);
+    expect(slot('A7')?.regions).toEqual([HEADER.moralePointer]);
     expect(slot('A8')?.regions).toEqual([HEADER.moraleNumbers.left, HEADER.moraleNumbers.right]);
     expect(slot('A9')?.regions).toEqual([HEADER.moraleLabel]);
   });
