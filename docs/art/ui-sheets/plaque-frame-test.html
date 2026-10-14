@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>진영 현판 테두리 프레임 모듈식 테스트 (양각 브론즈 & 좌우 반전 대칭)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700;900&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-body: #07090e;
+      --bg-panel: #0d1219;
+      --border-panel: #273244;
+      --gold: #f5cf68;
+      --gold-dim: #b89345;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-body);
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "Noto Serif KR", sans-serif;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 1100px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .header-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-panel);
+      border-radius: 8px;
+      padding: 20px 28px;
+      border-left: 4px solid var(--gold);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    }
+    .header-box h1 {
+      font-size: 20px;
+      color: var(--gold);
+      font-family: 'Noto Serif KR', serif;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-box p {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 6px;
+    }
+
+    /* 실시간 인터랙티브 조작 패널 */
+    .control-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-panel);
+      border-radius: 8px;
+      padding: 18px 24px;
+      display: flex;
+      gap: 30px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .control-group label {
+      font-weight: 700;
+      color: var(--gold);
+    }
+    .control-group input[type="text"] {
+      background: #05080c;
+      border: 1px solid #334155;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 700;
+      width: 140px;
+    }
+    .color-btns {
+      display: flex;
+      gap: 8px;
+    }
+    .color-btn {
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      color: #fff;
+    }
+    .btn-green  { background: #16402e; border-color: #22c55e; }
+    .btn-ochre  { background: #5c441c; border-color: #eab308; }
+    .btn-blue   { background: #1c345c; border-color: #3b82f6; }
+    .btn-red    { background: #601c24; border-color: #ef4444; }
+
+    /* 대칭 시연 스테이지 */
+    .stage-section {
+      background: var(--bg-panel);
+      border: 2px solid #5a4625;
+      border-radius: 10px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--gold);
+      font-family: 'Noto Serif KR', serif;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* 최상단 헤더 바 조립 시연 */
+    .header-bar-mockup {
+      width: 100%;
+      height: 60px;
+      background: #090d13 url('header/header_bg_bar.png') no-repeat center;
+      background-size: 100% 100%;
+      border-radius: 4px;
+      border: 1px solid #3a3222;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.9);
+    }
+
+    /* 모듈식 현판 컴포넌트 */
+    .modular-plaque {
+      position: relative;
+      width: 240px;
+      height: 52px;
+      overflow: visible;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.9));
+    }
+    .plaque-plate-bg {
+      position: absolute;
+      top: 4px;
+      left: 12px;
+      right: 12px;
+      bottom: 4px;
+      border-radius: 2px;
+      transition: background 0.3s;
+      z-index: 1;
+    }
+    .plaque-plate-bg.green { background: linear-gradient(90deg, #0d281e, #1c523d, #0d281e); }
+    .plaque-plate-bg.ochre { background: linear-gradient(90deg, #382910, #735422, #382910); }
+    .plaque-plate-bg.blue  { background: linear-gradient(90deg, #102038, #234575, #102038); }
+    .plaque-plate-bg.red   { background: linear-gradient(90deg, #381016, #75222e, #381016); }
+
+    .plaque-border-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .plaque-text {
+      position: relative;
+      z-index: 3;
+      font-size: 19px;
+      font-weight: 900;
+      color: #fff9e6;
+      font-family: 'Noto Serif KR', serif;
+      letter-spacing: 2px;
+      text-shadow:
+        0 2px 4px #000,
+        0 0 8px rgba(245, 207, 104, 0.4),
+        1px 1px 1px #000;
+    }
+
+    /* 상세 비교 그리드 */
+    .parts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .part-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-panel);
+      border-radius: 8px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .part-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+    }
+    .part-badge {
+      font-size: 11px;
+      color: var(--gold);
+      background: rgba(245, 207, 104, 0.12);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .checker-preview {
+      width: 100%;
+      height: 120px;
+      background:
+        linear-gradient(45deg, #18202b 25%, transparent 25%),
+        linear-gradient(-45deg, #18202b 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #18202b 75%),
+        linear-gradient(-45deg, transparent 75%, #18202b 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+      background-color: #0f1620;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .checker-preview img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.7));
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header-box">
+      <h1><span>🐉</span> 진영 현판 테두리 프레임 모듈화 (속이 빈 투명 테두리 + 좌우 반전 대칭)</h1>
+      <p>단일 황동 양각 테두리를 제작하여 우측에 수평 반전 적용 · 내부 색상(초록/파랑/황토/빨강) 및 진영 글씨 실시간 교체 구조</p>
+    </div>
+
+    <!-- 실시간 조작 컨트롤 -->
+    <div class="control-panel">
+      <div class="control-group">
+        <label>좌측(아군) 글씨:</label>
+        <input type="text" id="inputLeftText" value="촉  군">
+        <div class="color-btns">
+          <button class="color-btn btn-green" onclick="setLeftColor('green')">녹색</button>
+          <button class="color-btn btn-blue"  onclick="setLeftColor('blue')">파랑</button>
+          <button class="color-btn btn-ochre" onclick="setLeftColor('ochre')">황토</button>
+          <button class="color-btn btn-red"   onclick="setLeftColor('red')">빨강</button>
+        </div>
+      </div>
+
+      <div class="control-group" style="margin-left: auto;">
+        <label>우측(적군) 글씨:</label>
+        <input type="text" id="inputRightText" value="황 건 군">
+        <div class="color-btns">
+          <button class="color-btn btn-ochre" onclick="setRightColor('ochre')">황토</button>
+          <button class="color-btn btn-blue"  onclick="setRightColor('blue')">파랑</button>
+          <button class="color-btn btn-green" onclick="setRightColor('green')">녹색</button>
+          <button class="color-btn btn-red"   onclick="setRightColor('red')">빨강</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 최상단 헤더 바 조립 시연 스테이지 -->
+    <div class="stage-section">
+      <div class="section-title">
+        <span>⚔️ 최상단 헤더 바 조립 실물 (좌측 원본 테두리 vs 우측 수평 반전 테두리)</span>
+        <span style="font-size: 12px; color: var(--gold-dim);">양쪽 테두리는 동일한 에셋 1개를 좌우 반전하여 사용</span>
+      </div>
+
+      <div class="header-bar-mockup">
+        <!-- 좌측 현판 -->
+        <div class="modular-plaque" id="leftPlaque">
+          <div class="plaque-plate-bg green" id="leftPlateBg"></div>
+          <img class="plaque-border-img" src="../../../apps/game/public/art/battle/ui/header/plaque_frame_border_left.png" alt="좌측 테두리">
+          <span class="plaque-text" id="leftText">촉  군</span>
+        </div>
+
+        <!-- 중앙 더미 사기 바 & 라운드 -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <span style="font-size: 13px; font-weight: bold; color: var(--gold); font-family: 'Noto Serif KR', serif;">2 라운드</span>
+          <img src="../../../apps/game/public/art/battle/ui/header/gauge_morale_tug_bar.png" alt="사기 바" style="height: 18px; width: 320px; object-fit: fill;">
+        </div>
+
+        <!-- 우측 현판 (좌측 테두리를 수평 반전한 프레임!) -->
+        <div class="modular-plaque" id="rightPlaque">
+          <div class="plaque-plate-bg ochre" id="rightPlateBg"></div>
+          <img class="plaque-border-img" src="../../../apps/game/public/art/battle/ui/header/plaque_frame_border_right.png" alt="우측 반전 테두리">
+          <span class="plaque-text" id="rightText">황 건 군</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 분리된 개별 에셋 명세 -->
+    <div class="parts-grid">
+      <!-- 좌측 프레임 -->
+      <div class="part-card">
+        <div class="part-title">
+          <span>1. 좌측용 황동 양각 테두리 프레임 (속 빈 투명 PNG)</span>
+          <span class="part-badge">480 × 176 px</span>
+        </div>
+        <p style="font-size: 12px; color: #94a3b8;">좌측 용 머리 & 상서로운 소용돌이 구름 양각 조각. 중앙 내부가 100% 완전 투명하여 어떤 색상 판도 자연스럽게 수용.</p>
+        <div class="checker-preview">
+          <img src="../../../apps/game/public/art/battle/ui/header/plaque_frame_border_left.png" alt="좌측 프레임">
+        </div>
+        <code style="font-size: 11px; color: #64748b; background: #05080c; padding: 4px 8px; border-radius: 4px;">
+          apps/game/public/art/battle/ui/header/plaque_frame_border_left.png
+        </code>
+      </div>
+
+      <!-- 우측 프레임 -->
+      <div class="part-card">
+        <div class="part-title">
+          <span>2. 우측용 수평 반전 테두리 프레임 (속 빈 투명 PNG)</span>
+          <span class="part-badge">480 × 176 px (Horizontal Flip)</span>
+        </div>
+        <p style="font-size: 12px; color: #94a3b8;">좌측 프레임을 수평 반전(Flip)하여 우측 진영에 1:1 대칭 배치. 디자인 통일감과 양각 입체감 유지.</p>
+        <div class="checker-preview">
+          <img src="../../../apps/game/public/art/battle/ui/header/plaque_frame_border_right.png" alt="우측 프레임">
+        </div>
+        <code style="font-size: 11px; color: #64748b; background: #05080c; padding: 4px 8px; border-radius: 4px;">
+          apps/game/public/art/battle/ui/header/plaque_frame_border_right.png
+        </code>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const inputL = document.getElementById('inputLeftText');
+    const inputR = document.getElementById('inputRightText');
+    const textL = document.getElementById('leftText');
+    const textR = document.getElementById('rightText');
+    const plateL = document.getElementById('leftPlateBg');
+    const plateR = document.getElementById('rightPlateBg');
+
+    inputL.addEventListener('input', (e) => { textL.textContent = e.target.value; });
+    inputR.addEventListener('input', (e) => { textR.textContent = e.target.value; });
+
+    function setLeftColor(c) {
+      plateL.className = 'plaque-plate-bg ' + c;
+    }
+    function setRightColor(c) {
+      plateR.className = 'plaque-plate-bg ' + c;
+    }
+  </script>
+</body>
+</html>

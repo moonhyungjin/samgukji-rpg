@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>상단 부분(최상단 헤더 HUD & 전장 환경) 정밀 독립 에셋 카탈로그</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700;900&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-body: #06080c;
+      --bg-panel: #0d1219;
+      --border-panel: #2a3441;
+      --gold: #f5cf68;
+      --gold-dim: #b89345;
+      --gold-border: #755928;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-body);
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "Noto Serif KR", sans-serif;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 1240px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* 상단 타이틀 바 */
+    .catalog-header {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-panel);
+      border-radius: 8px;
+      padding: 20px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+      border-left: 4px solid var(--gold);
+    }
+    .header-title h1 {
+      font-size: 20px;
+      color: var(--gold);
+      font-family: 'Noto Serif KR', serif;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header-title p {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 6px;
+    }
+    .badge-status {
+      background: rgba(245, 207, 104, 0.15);
+      border: 1px solid var(--gold-border);
+      color: var(--gold);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* 실물 조립 라이브 뷰어 */
+    .assembly-section {
+      background: var(--bg-panel);
+      border: 2px solid var(--gold-border);
+      border-radius: 10px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--gold);
+      font-family: 'Noto Serif KR', serif;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+    .controls input[type="range"] {
+      width: 180px;
+      accent-color: #38bdf8;
+      cursor: pointer;
+    }
+
+    /* 라이브 스테이지 */
+    .live-viewport {
+      width: 100%;
+      height: 480px;
+      background: #000;
+      border: 2px solid #3a3222;
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
+    }
+
+    /* 전장 배경 */
+    .live-battlefield {
+      position: absolute;
+      top: 56px;
+      left: 0;
+      width: 100%;
+      height: 424px;
+      background: url('../../../apps/game/public/art/battle/battlefield_camp_bg.png') no-repeat center top;
+      background-size: cover;
+    }
+
+    /* 최상단 헤더 HUD 바 */
+    .live-header-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 56px;
+      background: url('../../../apps/game/public/art/battle/ui/header/header_bg_bar.png') no-repeat center;
+      background-size: 100% 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 10;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.95);
+    }
+
+    .live-bracket-l {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 56px;
+      pointer-events: none;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+    }
+    .live-bracket-r {
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 56px;
+      pointer-events: none;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+    }
+
+    .live-faction-shu {
+      height: 44px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.8));
+      margin-left: 28px;
+    }
+    .live-faction-yellow {
+      height: 44px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.8));
+      margin-right: 28px;
+    }
+
+    .live-center-hub {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: relative;
+    }
+
+    .live-round-disc {
+      height: 48px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.9));
+      position: relative;
+    }
+    .round-number-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 14px;
+      font-weight: 900;
+      color: #fff;
+      font-family: 'Cinzel', serif;
+      text-shadow: 0 2px 4px #000;
+      pointer-events: none;
+    }
+
+    /* 사기 게이지 */
+    .live-morale-container {
+      position: relative;
+      width: 380px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .live-morale-track {
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.8));
+    }
+    .live-pointer {
+      position: absolute;
+      top: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 24px;
+      object-fit: contain;
+      transition: left 0.1s ease-out;
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.9));
+      z-index: 5;
+    }
+
+    /* 에셋 그리드 */
+    .assets-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+    .asset-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-panel);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .asset-card:hover {
+      border-color: var(--gold-border);
+      transform: translateY(-2px);
+    }
+    .asset-card.span-2 { grid-column: span 2; }
+    .asset-card.span-3 { grid-column: span 3; }
+
+    .asset-preview {
+      width: 100%;
+      min-height: 120px;
+      background:
+        linear-gradient(45deg, #18202b 25%, transparent 25%),
+        linear-gradient(-45deg, #18202b 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #18202b 75%),
+        linear-gradient(-45deg, transparent 75%, #18202b 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+      background-color: #0f1620;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      overflow: hidden;
+    }
+    .asset-preview img {
+      max-width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.7));
+    }
+
+    .asset-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .asset-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .asset-dims {
+      font-size: 11px;
+      color: var(--gold);
+      background: rgba(245, 207, 104, 0.12);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .asset-desc {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+    .asset-path {
+      font-size: 11px;
+      color: #64748b;
+      font-family: monospace;
+      word-break: break-all;
+      background: #080c12;
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #1e2632;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .copy-btn {
+      background: transparent;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .copy-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- 헤더 -->
+    <div class="catalog-header">
+      <div class="header-title">
+        <h1><span>⚔️</span> 상단 영역 독립 에셋 카탈로그 (HUD 헤더 & 전장 환경)</h1>
+        <p>전국란스 7 × 삼국지 앤티크 양각(Embossed Relief) 테마 · 노이즈 0% 완전무결 RGBA 스프라이트</p>
+      </div>
+      <div class="badge-status">1280×425 규격 1:1 매칭 완료</div>
+    </div>
+
+    <!-- 실물 조립 라이브 뷰어 -->
+    <div class="assembly-section">
+      <div class="section-title">
+        <span>🎮 실물 조립 라이브 프리뷰 (Header Bar + Battlefield Environment)</span>
+        <div class="controls">
+          <span>사기(우세도) 조절:</span>
+          <input type="range" id="moraleRange" min="0" max="100" value="50">
+          <span id="moraleValue" style="font-weight: bold; color: var(--gold);">50% (균형)</span>
+        </div>
+      </div>
+
+      <div class="live-viewport">
+        <!-- 전장 배경 (캐릭터 0% 순수 환경) -->
+        <div class="live-battlefield"></div>
+
+        <!-- 최상단 헤더 HUD 바 -->
+        <div class="live-header-bar">
+          <!-- 좌우 L 브래킷 -->
+          <img class="live-bracket-l" src="../../../apps/game/public/art/battle/ui/header/decor_header_bracket_l.png" alt="Bracket L">
+          <img class="live-bracket-r" src="../../../apps/game/public/art/battle/ui/header/decor_header_bracket_r.png" alt="Bracket R">
+
+          <!-- 좌측 촉군 현판 -->
+          <img class="live-faction-shu" src="../../../apps/game/public/art/battle/ui/header/plaque_faction_shu.png" alt="촉군 현판">
+
+          <!-- 중앙 허브: 쌍룡 라운드 현판 & 사기 바 -->
+          <div class="live-center-hub">
+            <div style="position: relative;">
+              <img class="live-round-disc" src="../../../apps/game/public/art/battle/ui/header/plaque_round_dragons_ornate.png" alt="라운드 현판">
+              <span class="round-number-overlay">2</span>
+            </div>
+
+            <!-- 사기 줄다리기 바 -->
+            <div class="live-morale-container">
+              <img class="live-morale-track" src="../../../apps/game/public/art/battle/ui/header/gauge_morale_tug_bar.png" alt="사기 바">
+              <img id="livePointer" class="live-pointer" src="../../../apps/game/public/art/battle/ui/header/pointer_morale_indicator.png" alt="사기 포인터">
+            </div>
+          </div>
+
+          <!-- 우측 황건군 현판 -->
+          <img class="live-faction-yellow" src="../../../apps/game/public/art/battle/ui/header/plaque_faction_yellow.png" alt="황건군 현판">
+        </div>
+      </div>
+    </div>
+
+    <!-- 개별 에셋 목록 그리드 -->
+    <div class="assets-grid">
+
+      <!-- 1. 전장 배경 -->
+      <div class="asset-card span-3">
+        <div class="asset-title">
+          <span>1. 순수 2D 전장 필드 환경 (Battlefield Camp Ground)</span>
+          <span class="asset-dims">1280 × 425 px</span>
+        </div>
+        <div class="asset-desc">캐릭터나 슬롯이 전혀 없는 순수한 2D 횡스크롤 전장 배경. 원경의 안개 낀 삼국지 기암괴석 산맥, 중경의 목책/망루/군막 진지, 근경의 평평한 황토 지면.</div>
+        <div class="asset-preview" style="min-height: 220px;">
+          <img src="../../../apps/game/public/art/battle/battlefield_camp_bg.png" alt="전장 배경">
+        </div>
+        <div class="asset-path">
+          <span>apps/game/public/art/battle/battlefield_camp_bg.png</span>
+          <button class="copy-btn" onclick="copyPath(this)">복사</button>
+        </div>
+      </div>
+
+      <!-- 2. 최상단 헤더 프레임 바 -->
+      <div class="asset-card span-2">
+        <div class="asset-title">
+          <span>2. 최상단 헤더 프레임 바 (Header Frame Bar)</span>
+          <span class="asset-dims">926 × 146 px (1280x68 확장본 포함)</span>
+        </div>
+        <div class="asset-desc">중후한 흑단목 질감 바탕과 상하 금박 베벨 림, 양 끝단 황동 당초문양이 조각된 최상단 HUD 베이스 프레임 바. 투명 RGBA.</div>
+        <div class="asset-preview">
+          <img src="../../../apps/game/public/art/battle/ui/header/header_bg_bar.png" alt="헤더 프레임 바">
+        </div>
+        <div class="asset-path">
+          <span>apps/game/public/art/battle/ui/header/header_bg_bar.png</span>
+          <button class="copy-btn" onclick="copyPath(this)">복사</button>
+        </div>
+      </div>
+
+      <!-- 3. 쌍룡 원형 라운드 현판 -->
+      <div class="asset-card">
+        <div class="asset-title">
+          <span>3. 쌍룡 원형 라운드 현판 (Dragon Round Disc)</span>
+          <span class="asset-dims">388 × 380 px</span>
+        </div>
+        <div class="asset-desc">황금 쌍룡(雙龍)과 상서로운 구름 부조 링으로 둘러싸인 라운드 카운터 현판. 중앙 짙은 비취 플레이트에 라운드 번호 렌더링.</div>
+        <div class="asset-preview">
+          <img src="../../../apps/game/public/art/battle/ui/header/plaque_round_dragons_ornate.png" alt="쌍룡 라운드 현판">
+        </div>
+        <div class="asset-path">
+          <span>apps/game/public/art/battle/ui/header/plaque_round_dragons_ornate.png</span>
+          <button class="copy-btn" onclick="copyPath(this)">복사</button>
+        </div>
+      </div>
+
+      <!-- 4. 촉군 쌍룡 비취 현판 -->
+      <div class="asset-card">
+        <div class="asset-title">
+          <span>4. 아군 진영 양각 현판 (Shu Han Plaque)</span>
+          <span class="asset-dims">437 × 179 px</span>
+        </div>
+        <div class="asset-desc">화려한 금박 양각 쌍룡 부조 프레임과 비취색 칠기 플레이트. 아군 진영(촉군/한군)을 나타내는 상단 명판.</div>
+        <div class="asset-preview">
+          <img src="../../../apps/game/public/art/battle/ui/header/plaque_faction_shu.png" alt="촉군 현판">
+        </div>
+        <div class="asset-path">
+          <span>apps/game/public/art/battle/ui/header/plaque_faction_shu.png</span>
+          <button class="copy-btn" onclick="copyPath(this)">복사</button>
+        </div>
+      </div>
+
+      <!-- 5. 황건군 호랑이 황금 현판 -->
+      <div class="asset-card">
+        <div class="asset-title">
+          <span>5. 적군 진영 양각 현판 (Yellow Turban Plaque)</span>
+          <span class="asset-dims">415 × 159 px</span>
+        </div>
+        <div class="asset-desc">양각 황동 맹호(猛虎) 조각 프레임과 황금빛 칠기 플레이트. 적군 진영(황건군)을 나타내는 상단 명판.</div>
+        <div class="asset-preview">
+          <img src="../../../apps/game/public/art/battle/ui/header/plaque_faction_yellow.png" alt="황건군 현판">
+        </div>
+        <div class="asset-path">
+          <span>apps/game/public/art/battle/ui/header/plaque_faction_yellow.png</span>
+          <button class="copy-btn" onclick="copyPath(this)">복사</button>
+        </div>
+      </div>
+
+      <!-- 6. 사기 줄다리기 바 & 포인터 -->
+      <div class="asset-card">
+        <div class="asset-title">
+          <span>6. 사기 줄다리기 바 & 포인터</span>
+          <span class="asset-dims">925 × 128 px / 48 × 64 px</span>
+        </div>
+        <div class="asset-desc">고풍스러운 브론즈 트랙 안에 아군(청록)/적군(적황) 사기 바가 대칭되고, 중앙 역삼각 골드 포인터(▼)가 실시간 이동.</div>
+        <div class="asset-preview" style="gap: 12px; flex-direction: column;">
+          <img src="../../../apps/game/public/art/battle/ui/header/gauge_morale_tug_bar.png" alt="사기 바" style="max-height: 48px;">
+          <img src="../../../apps/game/public/art/battle/ui/header/pointer_morale_indicator.png" alt="사기 포인터" style="max-height: 40px;">
+        </div>
+        <div class="asset-path">
+          <span>apps/game/public/art/battle/ui/header/gauge_morale_tug_bar.png</span>
+          <button class="copy-btn" onclick="copyPath(this)">복사</button>
+        </div>
+      </div>
+
+      <!-- 7. 황동 코너 브래킷 L/R -->
+      <div class="asset-card span-3">
+        <div class="asset-title">
+          <span>7. 최상단 코너 황동 브래킷 (Corner Filigree Brackets L / R)</span>
+          <span class="asset-dims">205 × 170 px (좌/우 세트)</span>
+        </div>
+        <div class="asset-desc">전국란스 7 풍의 90도 코너 장식. 용과 상서로운 구름 문양이 입체적으로 새겨진 고급 금속 조각.</div>
+        <div class="asset-preview" style="display: flex; gap: 40px;">
+          <img src="../../../apps/game/public/art/battle/ui/header/decor_header_bracket_l.png" alt="브래킷 L">
+          <img src="../../../apps/game/public/art/battle/ui/header/decor_header_bracket_r.png" alt="브래킷 R">
+        </div>
+        <div class="asset-path">
+          <span>apps/game/public/art/battle/ui/header/decor_header_bracket_l.png</span>
+          <button class="copy-btn" onclick="copyPath(this)">복사</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const slider = document.getElementById('moraleRange');
+    const label = document.getElementById('moraleValue');
+    const pointer = document.getElementById('livePointer');
+
+    slider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      label.textContent = `${val}% (${val < 50 ? '적군 우세' : val > 50 ? '아군 우세' : '균형'})`;
+      // Calculate pointer position: 50% = center
+      // Range is from 15% to 85% of container width
+      const minPct = 12;
+      const maxPct = 88;
+      const targetPct = minPct + ((val / 100) * (maxPct - minPct));
+      pointer.style.left = `${targetPct}%`;
+    });
+
+    function copyPath(btn) {
+      const text = btn.previousElementSibling.textContent;
+      navigator.clipboard.writeText(text);
+      const original = btn.textContent;
+      btn.textContent = '복사됨!';
+      btn.style.borderColor = '#10b981';
+      btn.style.color = '#10b981';
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.style.borderColor = '';
+        btn.style.color = '';
+      }, 1500);
+    }
+  </script>
+</body>
+</html>
+
