@@ -7,7 +7,7 @@ import type { ArtImage, ArtSlot } from './artReview';
 
 const slotsFile = fileURLToPath(new URL('../../../../../docs/art/battle-slots.json', import.meta.url));
 const manifest = JSON.parse(readFileSync(slotsFile, 'utf-8')) as { slots: ArtSlot[] };
-const img = (path: string, usedByGame = false): ArtImage => ({ path, bytes: 1000, width: 10, height: 10, usedByGame, usedByDocs: false });
+const img = (path: string, usedByGame = false): ArtImage => ({ path, bytes: 1000, width: 10, height: 10, usedByGame, usedByDocs: false, hasAlpha: null });
 
 describe('에셋 검수: 경로 패턴과 슬롯', () => {
   it('* 는 / 를 넘지 않는다', () => {

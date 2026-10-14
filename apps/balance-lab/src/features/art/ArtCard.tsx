@@ -1,5 +1,6 @@
 import { formatBytes, slotsFor, statusOf } from './artReview';
 import type { ArtImage, ArtSlot, ReviewMap, ReviewStatus } from './artReview';
+import type { FitCheck } from './artSpec';
 
 export const imageUrl = (path: string) => `/api/art/file?path=${encodeURIComponent(path)}`;
 
@@ -12,10 +13,12 @@ interface Props {
   /** "화면에 적용" 버튼 (끼울 수 있는 슬롯을 보고 있을 때만 넘긴다) */
   onApply?: (path: string) => void;
   applyTitle?: string;
+  /** 보고 있는 슬롯의 조건(비율, 크기, 투명)에 맞는지 */
+  fit?: FitCheck[];
 }
 
 /** 그림 한 장: 미리보기, 정보, OK/NO(+화면에 적용) */
-export function ArtCard({ img, slots, review, onMark, onZoom, onApply, applyTitle }: Props) {
+export function ArtCard({ img, slots, review, onMark, onZoom, onApply, applyTitle, fit }: Props) {
   const status = statusOf(img.path, review);
   const owners = slotsFor(img.path, slots).map((s) => s.id);
   return (
@@ -33,6 +36,15 @@ export function ArtCard({ img, slots, review, onMark, onZoom, onApply, applyTitl
           {formatBytes(img.bytes)}
           {owners.length > 0 ? ` · ${owners.join(', ')}` : ' · 미배정'}
         </small>
+        {fit && fit.length > 0 && (
+          <span className="art-fit" data-fit={fit.every((c) => c.ok) ? 'ok' : 'bad'}>
+            {fit.map((c) => (
+              <span key={c.key} className={c.ok ? 'fit ok' : 'fit bad'} data-fit-check={c.key}>
+                {c.ok ? '✓' : '✗'} {c.text}
+              </span>
+            ))}
+          </span>
+        )}
         <span className="art-badges">
           {img.usedByGame && <span className="badge art-used">게임이 씀</span>}
           {!img.usedByGame && img.usedByDocs && <span className="badge">문서가 씀</span>}

@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArtCard, imageUrl } from './ArtCard';
 import { ArtRegionEditor } from './ArtRegionEditor';
 import { ArtSlotNav } from './ArtSlotNav';
+import { ArtSpecPanel } from './ArtSpecPanel';
 import { ArtViewerPanel } from './ArtViewerPanel';
 import { formatBytes, matchesFilter, slotsFor, splitDeletable, statusOf } from './artReview';
 import type { ArtImage, ArtSlot, ReviewMap, ReviewStatus, StatusFilter } from './artReview';
 import { editModeOf } from './artRegions';
+import { fitChecks } from './artSpec';
 import { useArtViewer } from './useArtViewer';
 import { useSlotRegions } from './useSlotRegions';
 
@@ -164,6 +166,7 @@ export function ArtReviewTab() {
               </p>
             </div>
           )}
+          {view === 'slots' && slot && <ArtSpecPanel slot={slot} slots={slots} />}
           {shown.length === 0 ? (
             <p className="note">{view === 'slots' && slot && !slot.match ? '이 슬롯에 연결된 그림이 없습니다. 새로 만들 자리입니다.' : '조건에 맞는 그림이 없습니다.'}</p>
           ) : (
@@ -178,6 +181,7 @@ export function ArtReviewTab() {
                   onZoom={setZoom}
                   onApply={canApply ? v.apply : undefined}
                   applyTitle={`${v.targetKey} 자리에 끼워서 게임 화면에서 봅니다`}
+                  fit={view === 'slots' ? fitChecks(img, slot) : undefined}
                 />
               ))}
             </div>

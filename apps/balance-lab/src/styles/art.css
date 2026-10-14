@@ -445,3 +445,50 @@
   padding: 4px 10px;
   font-size: 12px;
 }
+
+/* 제작 명세서와 맞춤 검사 */
+.art-spec {
+  margin: 10px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.art-spec summary {
+  cursor: pointer;
+}
+
+.art-spec-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+}
+
+.art-spec-text {
+  margin: 0;
+  padding: 10px 12px;
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  border-radius: 6px;
+  background: var(--panel-2);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.art-fit {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+}
+
+.art-fit .fit.ok {
+  color: var(--ok);
+}
+
+.art-fit .fit.bad {
+  color: var(--warn);
+}

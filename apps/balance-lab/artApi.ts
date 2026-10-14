@@ -45,10 +45,10 @@ function walk(dir: string, out: string[]) {
   }
 }
 
-function pngSize(file: string): { width: number; height: number } | null {
+function pngSize(file: string): { width: number; height: number; hasAlpha: boolean } | null {
   try {
     const b = readFileSync(file);
-    if (b.length > 24 && b.toString('latin1', 1, 4) === 'PNG') return { width: b.readUInt32BE(16), height: b.readUInt32BE(20) };
+    if (b.length > 24 && b.toString('latin1', 1, 4) === 'PNG') return { width: b.readUInt32BE(16), height: b.readUInt32BE(20), hasAlpha: b[25] === 4 || b[25] === 6 };
   } catch {
     // 크기를 못 읽어도 목록에는 나온다
   }
@@ -99,6 +99,7 @@ function listImages(): ArtImage[] {
         height: size?.height ?? null,
         usedByGame: mentions(codeText, name),
         usedByDocs: mentions(docText, name),
+        hasAlpha: size?.hasAlpha ?? null,
       };
     })
     .sort((a, b) => a.path.localeCompare(b.path));

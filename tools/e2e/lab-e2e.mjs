@@ -442,6 +442,9 @@ try {
     check('에셋 검수: 되돌리기를 누르면 원래 값으로 돌아간다', (await evalJs(`document.querySelector('[data-section="region-editor"] [data-field="x"]').value === '560' && document.querySelector('[data-action="regions-save"]').disabled`)) === true);
     await evalJs(`document.querySelector('[data-slot="A2"]').click()`);
     await sleep(400);
+    check('에셋 검수: 제작 조건이 있는 슬롯(A2)에는 제작 명세서가 있고 크기·투명·좌우 반전이 적혀 있다', (await evalJs(`(() => { const t = document.querySelector('[data-section="art-spec"]')?.textContent ?? ''; return t.includes('A2_faction-frame.png') && t.includes('투명 배경') && t.includes('좌우로 뒤집어') && t.includes('700×116'); })()`)) === true);
+    check('에셋 검수: 후보 그림마다 비율/크기/투명 맞춤 결과가 표시된다', (await evalJs(`document.querySelectorAll('.art-card [data-fit-check="ratio"]').length > 0`)) === true);
+    check('에셋 검수: 제작 조건이 없는 슬롯(D1)에는 명세서가 없다', (await evalJs(`(async () => { document.querySelector('[data-slot="D1"]').click(); await new Promise(r => setTimeout(r, 300)); const none = !document.querySelector('[data-section="art-spec"]'); document.querySelector('[data-slot="A2"]').click(); await new Promise(r => setTimeout(r, 300)); return none; })()`)) === true);
     check('에셋 검수: 좌우 대칭 슬롯은 왼쪽/오른쪽 두 줄을 모두 고칠 수 있다', (await evalJs(`document.querySelectorAll('[data-section="region-editor"] .art-region-row').length === 2`)) === true);
     check('에셋 검수: 헤더 슬롯은 겹침 순서(아래 → 위)가 보이고 A1이 맨 아래, A3이 A2 아래다', (await evalJs(`(() => { const ids = [...document.querySelectorAll('[data-section="layer-order"] li')].map(l => l.dataset.layer); return ids[0] === 'A1' && ids.indexOf('A3') < ids.indexOf('A2') && ids.includes('A9'); })()`)) === true);
     // 대칭 유지: 왼쪽 x를 고치면 오른쪽이 따라오고, 끄면 따로 움직인다

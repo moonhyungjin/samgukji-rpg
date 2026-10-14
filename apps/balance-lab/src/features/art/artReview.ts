@@ -20,6 +20,20 @@ export interface ArtSlot {
   edit?: 'free' | 'mirror' | 'cards' | 'locked';
   /** edit가 cards일 때 카드 한 장 안의 영역 수 (카드 12장이 이 수만큼씩 이어진다). 없으면 1 */
   parts?: number;
+  /** 그림을 만들 때의 조건 (artSpec.ts가 제작 명세서와 맞춤 검사에 쓴다) */
+  spec?: {
+    /** 파일 이름에 쓰는 영문 이름 */
+    slug: string;
+    /** 투명 배경(알파 채널)이 필요하다 */
+    transparent: boolean;
+    /** 양 끝 장식을 고정하고 가운데만 늘이는 폭 (표시 크기 기준 px) */
+    slice?: number;
+    /** 오른쪽 영역은 이 그림을 좌우 반전해서 쓴다 */
+    mirrored?: boolean;
+    /** 변형 이름 (진영 등). 변형마다 한 장 */
+    variants?: string[];
+    note?: string;
+  };
   /** 겹치는 순서 (작을수록 아래, 코드가 정한다). 있으면 편집 화면에 층 순서로 보여 준다 */
   layer?: number;
   /** 다른 슬롯과 같은 영역을 쓴다 (그 슬롯을 고치면 따라온다) */
@@ -37,6 +51,8 @@ export interface ArtImage {
   usedByGame: boolean;
   /** 문서/스크립트가 파일 이름을 부른다 (미리보기 페이지 등) */
   usedByDocs: boolean;
+  /** PNG에 알파(투명도) 채널이 있다. PNG가 아니면 null */
+  hasAlpha: boolean | null;
 }
 
 /** `*`만 지원하는 경로 패턴을 정규식으로 바꾼다. `*`는 `/`를 넘지 않는다. */
